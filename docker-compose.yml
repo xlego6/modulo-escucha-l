@@ -1,0 +1,116 @@
+version: '3'
+services:
+    web:
+        image: nginx
+        container_name: mel-web
+        volumes:
+            - ./www:/var/www
+            - ./.docker/conf/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        ports:
+            - 8001:80
+        restart: unless-stopped
+        depends_on:
+            - php
+            - db
+        networks:
+            - mel
+    php:
+        build: .docker
+        restart: always
+        container_name: mel-app
+        volumes:
+            - ./.docker/conf/php/php.ini:/usr/local/etc/php/conf.d/php.ini
+            - ./www:/var/www
+        depends_on:
+            - db
+        networks:
+            - mel
+    db:
+        image: postgres:11-alpine
+        container_name: mel-db
+        restart: always
+        environment:
+            POSTGRES_USER: dba
+            POSTGRES_PASSWORD: sql
+            POSTGRES_DB: testimonios
+        ports:
+            - 5556:5432
+        volumes:
+            - ./postgres-data:/var/lib/postgresql/data
+            - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+        networks:
+            - mel
+
+    # =============================================
+    # SERVICIOS DE PROCESAMIENTO
+    # =============================================
+
+    # Servicio de Transcripción (WhisperX con GPU)
+    transcription:
+        build:
+            context: ./services/transcription
+            dockerfile: Dockerfile.gpu
+        container_name: mel-transcription
+        restart: unless-stopped
+        ports:
+            - 5000:5000
+        volumes:
+            # Compartir carpeta de archivos de audio para transcribir
+            - ./www/storage/app/public:/app/storage
+        environment:
+            - WHISPER_MODEL=large-v3-turbo
+            - WHISPER_LANGUAGE=es
+            - WHISPER_DEVICE=cpu  # TODO: Cambiar a 'cuda' cuando se resuelva cuDNN (ver README-GPU.md)
+            - WHISPER_COMPUTE_TYPE=int8
+            - SERVICE_PORT=5000
+            # Token de HuggingFace para diarización (opcional)
+            # Configurar en archivo .env de la raiz del proyecto
+            - HF_TOKEN=${HF_TOKEN:-}
+        networks:
+            - mel
+        # Acceso a GPU NVIDIA
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: 1
+                          capabilities: [gpu]
+
+    # Servicio NER (spaCy)
+    ner:
+        build:
+            context: ./services/ner
+            dockerfile: Dockerfile
+        container_name: mel-ner
+        restart: unless-stopped
+        ports:
+            - 5001:5001
+        environment:
+            - SPACY_MODEL=es_core_news_md
+            - SERVICE_PORT=5001
+        networks:
+            - mel
+        deploy:
+            resources:
+                limits:
+                    memory: 1G
+
+    # Redis para cola de trabajos (opcional)
+    redis:
+        image: redis:7-alpine
+        container_name: mel-redis
+        restart: unless-stopped
+        ports:
+            - 6379:6379
+        volumes:
+            - redis-data:/data
+        networks:
+            - mel
+
+networks:
+    mel:
+        driver: bridge
+
+volumes:
+    redis-data:

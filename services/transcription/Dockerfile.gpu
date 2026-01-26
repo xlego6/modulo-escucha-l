@@ -1,0 +1,49 @@
+# Dockerfile para Servicio de Transcripción con GPU
+# Usa imagen con CUDA 12.1 y cuDNN 9 para compatibilidad con faster-whisper
+
+FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime
+
+# Evitar prompts interactivos
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Instalar ffmpeg (requerido por whisperx)
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements y código
+COPY requirements.txt .
+COPY transcription_service.py .
+
+# Instalar dependencias Python
+RUN pip install --no-cache-dir flask python-docx gunicorn
+
+# Instalar faster-whisper (transcripción base)
+RUN pip install --no-cache-dir faster-whisper
+
+# Instalar whisperx para diarización (opcional pero recomendado)
+RUN pip install --no-cache-dir git+https://github.com/m-bain/whisperx.git || echo "WARN: whisperx no instalado, usando fallback pyannote"
+
+# Instalar pyannote para diarización (fallback)
+RUN pip install --no-cache-dir pyannote.audio || echo "WARN: pyannote no instalado"
+
+# Variables de entorno
+ENV WHISPER_MODEL=large-v3-turbo
+ENV WHISPER_LANGUAGE=es
+ENV WHISPER_COMPUTE_TYPE=float16
+ENV SERVICE_PORT=5000
+ENV HF_TOKEN=""
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/status')" || exit 1
+
+# Usar Gunicorn para producción (más robusto que Flask dev server)
+# --timeout 600: Permite transcripciones de hasta 10 minutos
+# --workers 2: 2 workers para procesar peticiones
+# --threads 2: 2 threads por worker
+# --bind 0.0.0.0:5000: Escuchar en todas las interfaces
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "600", "--workers", "2", "--threads", "2", "--access-logfile", "-", "transcription_service:app"]

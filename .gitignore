@@ -1,0 +1,126 @@
+# ==============================================
+# Modulo Escucha Lite - .gitignore
+# ==============================================
+
+# ----------------
+# Datos sensibles
+# ----------------
+.env
+*.env.local
+*.env.production
+credenciales.txt
+*.pem
+*.key
+
+# ----------------
+# Base de datos
+# ----------------
+postgres-data/
+*.sql.bak
+*.dump
+
+# ----------------
+# Backups generados
+# ----------------
+backups/
+
+# ----------------
+# Laravel
+# ----------------
+www/vendor/
+www/node_modules/
+www/.env
+www/.env.backup
+www/storage/logs/*.log
+www/storage/framework/cache/data/*
+www/storage/framework/sessions/*
+www/storage/framework/views/*
+www/bootstrap/cache/*.php
+www/storage/app/public/*
+!www/storage/app/public/.gitkeep
+
+# Archivos subidos por usuarios
+www/storage/app/adjuntos/
+www/storage/app/transcripciones/
+www/storage/app/audios/
+
+# ----------------
+# Servicios Python
+# ----------------
+services/transcription/__pycache__/
+services/transcription/*.pyc
+services/transcription/venv/
+services/transcription/.venv/
+services/transcription/models/
+services/ner/__pycache__/
+services/ner/*.pyc
+services/ner/venv/
+services/ner/.venv/
+
+# Modelos descargados (grandes)
+*.pt
+*.bin
+*.onnx
+!services/*/requirements.txt
+
+# ----------------
+# IDE y editores
+# ----------------
+.idea/
+.vscode/
+.vs/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+
+# ----------------
+# Sistema operativo
+# ----------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ----------------
+# Temporales
+# ----------------
+*.tmp
+*.temp
+*.bak
+*.cache
+nul
+
+# ----------------
+# Logs
+# ----------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ----------------
+# Testing
+# ----------------
+.phpunit.result.cache
+coverage/
+.nyc_output/
+
+# ----------------
+# Docker (datos locales)
+# ----------------
+docker-compose.override.yml
+redis-data/
+
+# ----------------
+# Archivos de configuracion local
+# ----------------
+.claude/
+*.local

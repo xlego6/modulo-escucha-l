@@ -1,0 +1,18 @@
+# Transcription Service Requirements
+# Instalar con: pip install -r requirements.txt
+
+# Core
+flask>=2.0.0
+torch>=2.0.0
+
+# Transcripcion
+faster-whisper>=1.0.0
+
+# WhisperX para diarizacion
+whisperx @ git+https://github.com/m-bain/whisperx.git
+
+# Diarizacion (opcional)
+pyannote.audio>=3.1.0
+
+# Utilidades
+python-docx>=0.8.11

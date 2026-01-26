@@ -1,0 +1,78 @@
+# ==============================================
+# Modulo Escucha Lite - .gitattributes
+# ==============================================
+
+# Normalizar finales de linea
+* text=auto
+
+# Forzar LF en scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Forzar CRLF en scripts Windows
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Archivos de texto
+*.md text
+*.txt text
+*.json text
+*.xml text
+*.yml text
+*.yaml text
+*.ini text
+*.conf text
+*.cfg text
+
+# PHP y Web
+*.php text
+*.blade.php text
+*.html text
+*.css text
+*.scss text
+*.js text
+*.ts text
+*.vue text
+
+# SQL
+*.sql text
+
+# Python
+*.py text
+
+# Docker
+Dockerfile text
+docker-compose*.yml text
+
+# Binarios (no modificar)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.mp3 binary
+*.mp4 binary
+*.wav binary
+*.ogg binary
+*.webm binary
+
+# Fuentes
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# Diff para archivos lock
+composer.lock text -diff
+package-lock.json text -diff
+
+# Linguist (estadisticas GitHub)
+www/vendor/* linguist-vendored
+www/node_modules/* linguist-vendored
+*.min.js linguist-generated
+*.min.css linguist-generated
