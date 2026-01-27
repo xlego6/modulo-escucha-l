@@ -68,14 +68,14 @@ services:
             - HF_TOKEN=${HF_TOKEN:-}
         networks:
             - mel
-        # Acceso a GPU NVIDIA
-        deploy:
-            resources:
-                reservations:
-                    devices:
-                        - driver: nvidia
-                          count: 1
-                          capabilities: [gpu]
+        # Acceso a GPU NVIDIA (comentado para usar CPU)
+        # deploy:
+        #     resources:
+        #         reservations:
+        #             devices:
+        #                 - driver: nvidia
+        #                   count: 1
+        #                   capabilities: [gpu]
 
     # Servicio NER (spaCy)
     ner:

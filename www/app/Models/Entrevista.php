@@ -11,8 +11,8 @@ class Entrevista extends Model
     protected $primaryKey = 'id_e_ind_fvt';
 
     // Constantes para tipos de adjunto (catálogo 19)
-    const TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA = 305;
-    const TIPO_ADJUNTO_TRANSCRIPCION_FINAL = 306;
+    const TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA = 312;
+    const TIPO_ADJUNTO_TRANSCRIPCION_FINAL = 313;
 
     protected $fillable = [
         'id_subserie',
