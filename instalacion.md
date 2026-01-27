@@ -91,7 +91,13 @@ docker exec -it mel-app composer install
 docker exec -it mel-app php artisan key:generate
 ```
 
-### Paso 6: Acceder a la aplicacion
+### Paso 6: Ejecutar migraciones
+
+```bash
+docker exec -it mel-app php artisan migrate
+```
+
+### Paso 7: Acceder a la aplicacion
 
 Abre en tu navegador: **http://localhost:8001**
 
@@ -181,6 +187,7 @@ cd modulo-escucha-lite
 docker-compose up -d
 docker exec -it mel-app composer install --no-dev --optimize-autoloader
 docker exec -it mel-app php artisan key:generate
+docker exec -it mel-app php artisan migrate --force
 docker exec -it mel-app php artisan config:cache
 docker exec -it mel-app php artisan route:cache
 docker exec -it mel-app php artisan view:cache
@@ -339,6 +346,9 @@ docker exec -it mel-app composer install --no-dev --optimize-autoloader
 
 # Generar clave de aplicacion
 docker exec -it mel-app php artisan key:generate
+
+# Ejecutar migraciones
+docker exec -it mel-app php artisan migrate --force
 
 # Optimizar para produccion
 docker exec -it mel-app php artisan config:cache

@@ -173,7 +173,10 @@ CREATE TABLE esclarecimiento.e_ind_fvt (
     transcripcion_final_at TIMESTAMP,
     transcripcion_final_por INTEGER,
     entidades_detectadas_at TIMESTAMP,
-    anonimizacion_final_at TIMESTAMP
+    anonimizacion_completada_at TIMESTAMP,
+    anonimizacion_final TEXT,
+    anonimizacion_final_at TIMESTAMP,
+    anonimizacion_final_por INTEGER
 );
 
 -- Tabla de adjuntos
@@ -394,14 +397,108 @@ CREATE TABLE esclarecimiento.permiso (
     id_permiso SERIAL PRIMARY KEY,
     id_entrevistador INTEGER REFERENCES esclarecimiento.entrevistador(id_entrevistador),
     id_e_ind_fvt INTEGER REFERENCES esclarecimiento.e_ind_fvt(id_e_ind_fvt),
-    id_tipo INTEGER DEFAULT 1, -- 1=lectura, 2=escritura
+    id_tipo INTEGER DEFAULT 1, -- 1=lectura, 2=escritura, 3=completo
     fecha_otorgado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_vencimiento TIMESTAMP,
     justificacion TEXT,
     id_otorgado_por INTEGER REFERENCES esclarecimiento.entrevistador(id_entrevistador),
+    id_estado INTEGER DEFAULT 1, -- 1=vigente, 2=revocado
+    fecha_desde DATE,
+    fecha_hasta DATE,
+    id_adjunto INTEGER,
+    id_revocado_por INTEGER REFERENCES esclarecimiento.entrevistador(id_entrevistador),
+    fecha_revocado TIMESTAMP,
+    codigo_entrevista VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- =============================================
+-- TABLAS DE PROCESAMIENTO
+-- =============================================
+
+-- Asignaciones de transcripción
+CREATE TABLE esclarecimiento.asignacion_transcripcion (
+    id_asignacion SERIAL PRIMARY KEY,
+    id_e_ind_fvt INTEGER REFERENCES esclarecimiento.e_ind_fvt(id_e_ind_fvt),
+    id_transcriptor INTEGER REFERENCES esclarecimiento.entrevistador(id_entrevistador),
+    id_asignado_por INTEGER,
+    estado VARCHAR(50),
+    fecha_asignacion TIMESTAMP,
+    fecha_inicio_edicion TIMESTAMP,
+    fecha_envio_revision TIMESTAMP,
+    fecha_revision TIMESTAMP,
+    id_revisor INTEGER,
+    comentario_revision TEXT,
+    transcripcion_editada TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_asignacion_transcripcion_estado ON esclarecimiento.asignacion_transcripcion(estado);
+CREATE INDEX idx_asignacion_transcripcion_transcriptor ON esclarecimiento.asignacion_transcripcion(id_transcriptor);
+
+-- Asignaciones de anonimización
+CREATE TABLE esclarecimiento.asignacion_anonimizacion (
+    id_asignacion SERIAL PRIMARY KEY,
+    id_e_ind_fvt INTEGER REFERENCES esclarecimiento.e_ind_fvt(id_e_ind_fvt),
+    id_anonimizador INTEGER REFERENCES esclarecimiento.entrevistador(id_entrevistador),
+    id_asignado_por INTEGER,
+    estado VARCHAR(50),
+    fecha_asignacion TIMESTAMP,
+    fecha_inicio_edicion TIMESTAMP,
+    fecha_envio_revision TIMESTAMP,
+    fecha_revision TIMESTAMP,
+    id_revisor INTEGER,
+    comentario_revision TEXT,
+    tipos_anonimizar VARCHAR(100),
+    formato_reemplazo VARCHAR(50),
+    texto_anonimizado TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_asignacion_anonimizacion_estado ON esclarecimiento.asignacion_anonimizacion(estado);
+CREATE INDEX idx_asignacion_anonimizacion_anonimizador ON esclarecimiento.asignacion_anonimizacion(id_anonimizador);
+
+-- Cola de trabajos de procesamiento (transcripción IA, NER, etc.)
+CREATE TABLE esclarecimiento.trabajo_procesamiento (
+    id_trabajo SERIAL PRIMARY KEY,
+    id_e_ind_fvt INTEGER REFERENCES esclarecimiento.e_ind_fvt(id_e_ind_fvt),
+    tipo VARCHAR(50),
+    estado VARCHAR(50),
+    progreso INTEGER DEFAULT 0,
+    parametros JSONB,
+    id_usuario INTEGER,
+    mensaje TEXT,
+    resultado JSONB,
+    iniciado_at TIMESTAMP,
+    completado_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_trabajo_procesamiento_estado ON esclarecimiento.trabajo_procesamiento(estado);
+
+-- Entidades detectadas (NER)
+CREATE TABLE esclarecimiento.entidad_detectada (
+    id_entidad SERIAL PRIMARY KEY,
+    id_e_ind_fvt INTEGER REFERENCES esclarecimiento.e_ind_fvt(id_e_ind_fvt),
+    tipo VARCHAR(50),
+    texto TEXT,
+    texto_anonimizado VARCHAR(100),
+    posicion_inicio INTEGER,
+    posicion_fin INTEGER,
+    confianza DECIMAL(5,4),
+    verificado BOOLEAN DEFAULT FALSE,
+    excluir_anonimizacion BOOLEAN DEFAULT FALSE,
+    manual BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_entidad_detectada_entrevista ON esclarecimiento.entidad_detectada(id_e_ind_fvt);
+CREATE INDEX idx_entidad_detectada_tipo ON esclarecimiento.entidad_detectada(tipo);
 
 
 -- =============================================

@@ -15,6 +15,7 @@ cd modulo-escucha-lite
 docker-compose up -d
 docker exec -it mel-app composer install
 docker exec -it mel-app php artisan key:generate
+docker exec -it mel-app php artisan migrate
 ```
 
 Acceder a: http://localhost:8001
