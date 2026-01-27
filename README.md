@@ -11,7 +11,7 @@ Sistema ligero de gestion de testimonios basado en modulo-escucha.
 ## Instalacion Rapida (Desarrollo)
 
 ```bash
-cd modulo-escucha-lite
+cd modulo-escucha-l
 
 # Copiar configuracion
 cp www/.env.example www/.env
