@@ -12,8 +12,22 @@ Sistema ligero de gestion de testimonios basado en modulo-escucha.
 
 ```bash
 cd modulo-escucha-lite
-docker-compose up -d
+
+# Copiar configuracion
+cp www/.env.example www/.env
+
+# Iniciar contenedores
+docker compose up -d
+
+# Instalar dependencias PHP
 docker exec -it mel-app composer install
+
+# Crear directorios de storage y permisos
+docker exec mel-app mkdir -p /var/www/storage/logs /var/www/storage/framework/{cache,sessions,views}
+docker exec mel-app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+# Generar clave y ejecutar migraciones
 docker exec -it mel-app php artisan key:generate
 docker exec -it mel-app php artisan migrate
 ```

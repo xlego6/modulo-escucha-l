@@ -85,19 +85,27 @@ Esto iniciara 3 contenedores:
 docker exec -it mel-app composer install
 ```
 
-### Paso 5: Generar clave de aplicacion
+### Paso 5: Crear directorios de storage y permisos
+
+```bash
+docker exec mel-app mkdir -p /var/www/storage/logs /var/www/storage/framework/{cache,sessions,views}
+docker exec mel-app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+```
+
+### Paso 6: Generar clave de aplicacion
 
 ```bash
 docker exec -it mel-app php artisan key:generate
 ```
 
-### Paso 6: Ejecutar migraciones
+### Paso 7: Ejecutar migraciones
 
 ```bash
 docker exec -it mel-app php artisan migrate
 ```
 
-### Paso 7: Acceder a la aplicacion
+### Paso 8: Acceder a la aplicacion
 
 Abre en tu navegador: **http://localhost:8001**
 
@@ -184,8 +192,14 @@ web:
 
 ```bash
 cd modulo-escucha-lite
-docker-compose up -d
+docker compose up -d
 docker exec -it mel-app composer install --no-dev --optimize-autoloader
+
+# Crear directorios de storage y permisos
+docker exec mel-app mkdir -p /var/www/storage/logs /var/www/storage/framework/{cache,sessions,views}
+docker exec mel-app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
 docker exec -it mel-app php artisan key:generate
 docker exec -it mel-app php artisan migrate --force
 docker exec -it mel-app php artisan config:cache
@@ -336,13 +350,18 @@ DB_PASSWORD=CAMBIA_ESTA_PASSWORD_SEGURA
 cd C:\Apps\modulo-escucha-lite
 
 # Iniciar contenedores
-docker-compose up -d
+docker compose up -d
 
 # Verificar que estan corriendo
-docker-compose ps
+docker compose ps
 
 # Instalar dependencias PHP
 docker exec -it mel-app composer install --no-dev --optimize-autoloader
+
+# Crear directorios de storage y permisos
+docker exec mel-app mkdir -p /var/www/storage/logs /var/www/storage/framework/cache /var/www/storage/framework/sessions /var/www/storage/framework/views
+docker exec mel-app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Generar clave de aplicacion
 docker exec -it mel-app php artisan key:generate
