@@ -24,14 +24,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir flask>=2.0.0 && \
     pip install --no-cache-dir spacy>=3.2.0
 
-# Descargar modelo de español (mediano para balance rendimiento/precisión)
-RUN python -m spacy download es_core_news_md
+# Descargar modelo de español (grande para mejor precisión)
+RUN python -m spacy download es_core_news_lg
 
 # Copiar código del servicio
 COPY ner_service.py .
 
 # Variables de entorno configurables
-ENV SPACY_MODEL=es_core_news_md
+ENV SPACY_MODEL=es_core_news_lg
 ENV SERVICE_PORT=5001
 
 # Puerto expuesto
