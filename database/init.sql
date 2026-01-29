@@ -89,6 +89,7 @@ CREATE TABLE esclarecimiento.entrevistador (
     id_usuario INTEGER REFERENCES users(id),
     id_macroterritorio INTEGER REFERENCES catalogos.geo(id_geo),
     id_territorio INTEGER REFERENCES catalogos.geo(id_geo),
+    id_dependencia_origen INTEGER REFERENCES catalogos.cat_item(id_item),
     numero_entrevistador INTEGER,
     id_ubicacion INTEGER REFERENCES catalogos.geo(id_geo),
     id_grupo INTEGER REFERENCES catalogos.criterio_fijo(id_opcion),
