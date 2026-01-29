@@ -141,7 +141,16 @@ class TranscriptionService:
                 segments_list.append(seg_dict)
                 text_parts.append(segment.text.strip())
 
-            formatted_text = " ".join(text_parts)
+            formatted_text = " ".join(text_parts).strip()
+
+            # Validar que hay texto transcrito
+            if not formatted_text:
+                return {
+                    "success": False,
+                    "error": "No se detectó voz en el audio. El archivo puede estar vacío, ser solo ruido o tener un formato incompatible.",
+                    "audio_file": str(audio_path),
+                    "duration": info.duration
+                }
 
             return {
                 "success": True,

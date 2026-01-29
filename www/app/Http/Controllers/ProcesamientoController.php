@@ -153,7 +153,13 @@ class ProcesamientoController extends Controller
             $result = $this->procesamientoService->transcribe($audioPath, $withDiarization);
 
             if ($result['success']) {
-                $texto = $result['text'] ?? '';
+                $texto = trim($result['text'] ?? '');
+
+                // Validar que el texto no esté vacío
+                if (empty($texto)) {
+                    $errores[] = "Sin texto en {$audio->nombre_original}: El audio no contiene voz detectable o está vacío";
+                    continue;
+                }
 
                 // Guardar transcripcion en el adjunto
                 $audio->texto_extraido = $texto;
@@ -233,7 +239,15 @@ class ProcesamientoController extends Controller
         $result = $this->procesamientoService->transcribe($audioPath, $withDiarization);
 
         if ($result['success']) {
-            $texto = $result['text'] ?? '';
+            $texto = trim($result['text'] ?? '');
+
+            // Validar que el texto no esté vacío
+            if (empty($texto)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'El audio no contiene voz detectable o está vacío'
+                ], 400);
+            }
 
             // Guardar transcripcion en el adjunto
             $adjunto->texto_extraido = $texto;
@@ -356,7 +370,20 @@ class ProcesamientoController extends Controller
                     $result = $this->procesamientoService->transcribe($audioPath, $withDiarization);
 
                     if ($result['success']) {
-                        $texto = $result['text'] ?? '';
+                        $texto = trim($result['text'] ?? '');
+
+                        // Validar que el texto no esté vacío
+                        if (empty($texto)) {
+                            $errores++;
+                            $this->sendSSE('error', [
+                                'id' => $id,
+                                'codigo' => $codigo,
+                                'procesados' => $procesados,
+                                'total' => $total,
+                                'mensaje' => "Sin texto en {$codigo}: El audio no contiene voz detectable"
+                            ]);
+                            continue;
+                        }
 
                         // Guardar como adjunto de tipo "Transcripción Automatizada"
                         $entrevista->guardarTranscripcionAutomatizada($texto);
