@@ -18,9 +18,21 @@ class ProcesamientoService
 
     public function __construct()
     {
-        $this->transcriptionUrl = env('TRANSCRIPTION_SERVICE_URL', 'http://localhost:5000');
-        $this->nerUrl = env('NER_SERVICE_URL', 'http://localhost:5001');
-        $this->timeout = env('PROCESSING_TIMEOUT', 600); // 10 minutos default
+        $this->transcriptionUrl = config('services.transcription.url', env('TRANSCRIPTION_SERVICE_URL', 'http://transcription:5000'));
+        $this->nerUrl = config('services.ner.url', env('NER_SERVICE_URL', 'http://ner:5001'));
+        $this->timeout = config('services.processing_timeout', env('PROCESSING_TIMEOUT', 600));
+    }
+
+    /**
+     * Log seguro que no lanza excepciones
+     */
+    protected function safeLog(string $level, string $message): void
+    {
+        try {
+            Log::$level($message);
+        } catch (\Exception $e) {
+            // Silenciar errores de logging para no interrumpir el flujo
+        }
     }
 
     /**
@@ -32,7 +44,7 @@ class ProcesamientoService
             $response = Http::timeout(10)->get("{$this->transcriptionUrl}/status");
             return $response->json() ?? ['available' => false];
         } catch (\Exception $e) {
-            Log::warning("Servicio de transcripcion no disponible: " . $e->getMessage());
+            $this->safeLog('warning', "Servicio de transcripcion no disponible: " . $e->getMessage());
             return [
                 'available' => false,
                 'error' => $e->getMessage()
@@ -49,7 +61,7 @@ class ProcesamientoService
             $response = Http::timeout(10)->get("{$this->nerUrl}/status");
             return $response->json() ?? ['available' => false];
         } catch (\Exception $e) {
-            Log::warning("Servicio NER no disponible: " . $e->getMessage());
+            $this->safeLog('warning', "Servicio NER no disponible: " . $e->getMessage());
             return [
                 'available' => false,
                 'error' => $e->getMessage()
@@ -88,7 +100,7 @@ class ProcesamientoService
             // Convertir ruta para el contenedor de transcripcion
             $transcriptionPath = $this->convertPathForTranscription($audioPath);
 
-            Log::info("Iniciando transcripcion: {$audioPath} -> {$transcriptionPath}");
+            $this->safeLog('info', "Iniciando transcripcion: {$audioPath} -> {$transcriptionPath}");
 
             $response = Http::timeout($this->timeout)
                 ->post("{$this->transcriptionUrl}/transcribe", [
@@ -99,7 +111,7 @@ class ProcesamientoService
             // Verificar codigo HTTP
             if (!$response->successful()) {
                 $body = $response->body();
-                Log::error("Error HTTP en transcripcion: {$response->status()} - " . substr($body, 0, 500));
+                $this->safeLog('error', "Error HTTP en transcripcion: {$response->status()} - " . substr($body, 0, 500));
                 return [
                     'success' => false,
                     'error' => "Error del servidor de transcripcion (HTTP {$response->status()}). Verifique los logs del servicio.",
@@ -110,26 +122,26 @@ class ProcesamientoService
 
             $json = $response->json();
             if ($json === null) {
-                Log::error("Respuesta no-JSON en transcripcion: " . substr($response->body(), 0, 500));
+                $this->safeLog('error', "Respuesta no-JSON en transcripcion: " . substr($response->body(), 0, 500));
                 return ['success' => false, 'error' => 'Respuesta invalida del servicio de transcripcion'];
             }
 
-            Log::info("Transcripcion completada: " . strlen($json['text'] ?? '') . " caracteres");
+            $this->safeLog('info', "Transcripcion completada: " . strlen($json['text'] ?? '') . " caracteres");
             return $json;
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            Log::error("Error de conexion con servicio de transcripcion: " . $e->getMessage());
+            $this->safeLog('error', "Error de conexion con servicio de transcripcion: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => "No se pudo conectar al servicio de transcripcion. Verifique que el contenedor 'transcription' este corriendo."
             ];
         } catch (\Illuminate\Http\Client\RequestException $e) {
-            Log::error("Error en peticion de transcripcion: " . $e->getMessage());
+            $this->safeLog('error', "Error en peticion de transcripcion: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => "Error en la peticion al servicio: " . $e->getMessage()
             ];
         } catch (\Exception $e) {
-            Log::error("Error inesperado en transcripcion: " . get_class($e) . " - " . $e->getMessage());
+            $this->safeLog('error', "Error inesperado en transcripcion: " . get_class($e) . " - " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => "Error inesperado: " . $e->getMessage()
@@ -156,7 +168,7 @@ class ProcesamientoService
                 ]);
 
             if (!$response->successful()) {
-                Log::error("Error HTTP en transcribeAsync: {$response->status()}");
+                $this->safeLog('error', "Error HTTP en transcribeAsync: {$response->status()}");
                 return [
                     'success' => false,
                     'error' => "Error del servidor ({$response->status()})"
@@ -165,7 +177,7 @@ class ProcesamientoService
 
             return $response->json() ?? ['success' => false, 'error' => 'Respuesta invalida'];
         } catch (\Exception $e) {
-            Log::error("Error iniciando transcripcion asincrona: " . $e->getMessage());
+            $this->safeLog('error', "Error iniciando transcripcion asincrona: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -216,7 +228,7 @@ class ProcesamientoService
                 ]);
 
             if (!$response->successful()) {
-                Log::error("Error HTTP en detectEntities: {$response->status()}");
+                $this->safeLog('error', "Error HTTP en detectEntities: {$response->status()}");
                 return [
                     'success' => false,
                     'error' => "Error del servidor ({$response->status()})"
@@ -225,7 +237,7 @@ class ProcesamientoService
 
             return $response->json() ?? ['success' => false, 'error' => 'Respuesta invalida'];
         } catch (\Exception $e) {
-            Log::error("Error en deteccion de entidades: " . $e->getMessage());
+            $this->safeLog('error', "Error en deteccion de entidades: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -252,7 +264,7 @@ class ProcesamientoService
                 ]);
 
             if (!$response->successful()) {
-                Log::error("Error HTTP en anonymize: {$response->status()}");
+                $this->safeLog('error', "Error HTTP en anonymize: {$response->status()}");
                 return [
                     'success' => false,
                     'error' => "Error del servidor ({$response->status()})"
@@ -261,7 +273,7 @@ class ProcesamientoService
 
             return $response->json() ?? ['success' => false, 'error' => 'Respuesta invalida'];
         } catch (\Exception $e) {
-            Log::error("Error en anonimizacion: " . $e->getMessage());
+            $this->safeLog('error', "Error en anonimizacion: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
