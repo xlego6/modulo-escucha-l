@@ -33,9 +33,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Instalar WhisperX desde GitHub
 RUN pip install --no-cache-dir git+https://github.com/m-bain/whisperx.git
 
-# FORZAR PyTorch 2.5.x DESPUES de WhisperX para evitar problemas con weights_only
-# WhisperX instala una version mas nueva que causa problemas de compatibilidad
-RUN pip install --no-cache-dir --force-reinstall torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+# Instalar librosa (requerido para diarizacion con pyannote)
+RUN pip install --no-cache-dir librosa
+
+# FORZAR PyTorch CPU DESPUES de WhisperX para evitar conflictos de versiones CUDA
+# WhisperX instala versiones GPU que causan incompatibilidad torch/torchvision
+RUN pip install --no-cache-dir --force-reinstall \
+    torch==2.5.1 torchaudio==2.5.1 torchvision==0.20.1 \
+    --index-url https://download.pytorch.org/whl/cpu
 
 # Copiar código del servicio
 COPY transcription_service.py .

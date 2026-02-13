@@ -442,12 +442,14 @@ def api_transcribe():
 
     # Permitir override del token HF desde la peticion
     request_hf_token = data.get('hf_token', '')
+    with_diarization = data.get('with_diarization', True)
+
     if request_hf_token:
         svc.hf_token = request_hf_token
 
     result = svc.transcribe(
         data['audio_path'],
-        with_diarization=data.get('with_diarization', True)
+        with_diarization=with_diarization
     )
 
     if result['success']:

@@ -136,6 +136,44 @@
         position: relative;
         z-index: 1;
     }
+    /* Visor de documentos (TXT, DOCX, etc.) */
+    .visor-documento {
+        background: #fafafa;
+        color: #333;
+        font-family: 'Georgia', 'Times New Roman', serif;
+        font-size: 15px;
+        line-height: 1.8;
+        padding: 20px;
+        max-height: 600px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        position: relative;
+    }
+    .visor-documento .documento-header {
+        background: #4a6785;
+        margin: -20px -20px 20px -20px;
+        padding: 15px 20px;
+        border-bottom: 1px solid #3b5570;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .visor-documento .documento-header h5 {
+        margin: 0;
+        color: #fff;
+    }
+    .visor-documento .documento-stats {
+        font-size: 12px;
+        color: #ccc;
+    }
+    /* Proteccion anti-copia */
+    .no-copiar {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
     /* Info de marca de agua en la cabecera */
     .marca-info {
         font-size: 11px;
@@ -261,10 +299,11 @@
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     @php
+                                        $tieneTextoExtraido = !$esTranscripcion && !empty($adjunto->texto_extraido);
                                         $puedeReproducir = $adjunto->es_audio || $adjunto->es_video ||
                                             strpos($adjunto->tipo_mime, 'pdf') !== false ||
                                             strpos($adjunto->tipo_mime, 'image') !== false ||
-                                            $esTranscripcion;
+                                            $esTranscripcion || $tieneTextoExtraido;
                                     @endphp
                                     @if($puedeReproducir)
                                     <button type="button" class="btn btn-info btn-reproducir"
@@ -275,8 +314,9 @@
                                             data-es-audio="{{ $adjunto->es_audio ? '1' : '0' }}"
                                             data-es-video="{{ $adjunto->es_video ? '1' : '0' }}"
                                             data-es-transcripcion="{{ $esTranscripcion ? '1' : '0' }}"
-                                            title="{{ $esTranscripcion ? 'Ver Transcripcion' : 'Ver/Reproducir' }}">
-                                        <i class="fas {{ $esTranscripcion ? 'fa-eye' : 'fa-play' }}"></i>
+                                            data-tiene-texto="{{ $tieneTextoExtraido ? '1' : '0' }}"
+                                            title="{{ $esTranscripcion ? 'Ver Transcripcion' : ($tieneTextoExtraido ? 'Ver Documento' : 'Ver/Reproducir') }}">
+                                        <i class="fas {{ $esTranscripcion ? 'fa-eye' : ($tieneTextoExtraido ? 'fa-eye' : 'fa-play') }}"></i>
                                     </button>
                                     @endif
                                     @if($adjunto->existe_archivo)
@@ -438,6 +478,18 @@ $(document).ready(function() {
         @endforeach
     };
 
+    // Textos de documentos (TXT, DOCX, etc.) con texto extraido
+    const documentosTexto = {
+        @foreach($entrevista->rel_adjuntos as $adjunto)
+            @php
+                $esTransAdj = $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA || $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL;
+            @endphp
+            @if(!$esTransAdj && !empty($adjunto->texto_extraido))
+                {{ $adjunto->id_adjunto }}: @json($adjunto->texto_extraido),
+            @endif
+        @endforeach
+    };
+
     // Funcion para escapar HTML
     function escapeHtml(text) {
         const div = document.createElement('div');
@@ -498,6 +550,7 @@ $(document).ready(function() {
         let esAudio = btn.data('es-audio') === 1 || btn.data('es-audio') === '1';
         let esVideo = btn.data('es-video') === 1 || btn.data('es-video') === '1';
         let esTranscripcion = btn.data('es-transcripcion') === 1 || btn.data('es-transcripcion') === '1';
+        let tieneTexto = btn.data('tiene-texto') === 1 || btn.data('tiene-texto') === '1';
 
         // Si ya esta abierto el mismo, cerrarlo
         if (currentId === id && $('#visor-container').hasClass('active')) {
@@ -523,7 +576,27 @@ $(document).ready(function() {
         let contenido = '';
         let necesitaMarca = false;
 
-        if (esTranscripcion) {
+        if (tieneTexto && !esTranscripcion) {
+            // Mostrar documento con texto extraido (TXT, DOCX, etc.)
+            let texto = documentosTexto[id] || 'Sin contenido';
+            let caracteres = texto.length;
+            let palabras = texto.split(/\s+/).filter(w => w.length > 0).length;
+            necesitaMarca = true;
+
+            contenido = `
+                <div class="visor-documento visor-con-marca">
+                    <div class="documento-header">
+                        <h5><i class="fas fa-file-alt mr-2"></i>${escapeHtml(nombre)}</h5>
+                        <div class="documento-stats">
+                            <span class="mr-3"><i class="fas fa-font mr-1"></i>${caracteres.toLocaleString()} caracteres</span>
+                            <span><i class="fas fa-paragraph mr-1"></i>${palabras.toLocaleString()} palabras</span>
+                        </div>
+                    </div>
+                    <div class="no-copiar documento-texto" oncontextmenu="return false">${escapeHtml(texto)}</div>
+                    ${generarMarcaAgua()}
+                </div>
+            `;
+        } else if (esTranscripcion) {
             // Mostrar transcripción (automatizada o final)
             let texto = transcripciones[id] || 'Sin contenido';
             let caracteres = texto.length;
@@ -627,10 +700,17 @@ $(document).ready(function() {
         currentId = null;
     }
 
-    // Cerrar con tecla Escape
+    // Cerrar con tecla Escape + bloquear atajos de copiar en visor de documentos
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape' && $('#visor-container').hasClass('active')) {
             cerrarVisor();
+        }
+        // Bloquear Ctrl+C, Ctrl+A dentro del visor de documentos
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'a' || e.key === 'C' || e.key === 'A')) {
+            if ($('.visor-documento').length > 0 && $('#visor-container').hasClass('active')) {
+                e.preventDefault();
+                return false;
+            }
         }
     });
 });
