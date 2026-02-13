@@ -66,6 +66,47 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
         border: 2px solid #007bff !important;
         border-radius: 4px;
     }
+    /* Vista previa de transcripcion */
+    .preview-content {
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 4px 4px;
+        padding: 12px 16px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        background: #fff;
+        overflow-y: auto;
+    }
+    .preview-content p { margin: 0 0 0.3em; }
+    .preview-content h4 { color: #2d3748; margin: 0.8em 0 0.3em; }
+    .preview-content blockquote {
+        border-left: 3px solid #6c757d;
+        padding-left: 10px;
+        color: #555;
+        margin: 0.3em 0;
+    }
+    .preview-content ul { margin: 0.3em 0; padding-left: 24px; }
+    .preview-speaker {
+        background: #d1ecf1;
+        color: #0c5460;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    .preview-timestamp {
+        background: #e2e3e5;
+        color: #383d41;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 0.85em;
+    }
+    .preview-mark {
+        background: #fff3cd;
+        color: #856404;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-style: italic;
+    }
 </style>
 @endsection
 

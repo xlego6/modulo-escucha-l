@@ -92,7 +92,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
     .entity-original.entity-MISC { background-color: #d6d8d9; border: 1px solid #c6c8ca; }
     /* Menu contextual para agregar entidades */
     .entity-menu {
-        position: absolute;
+        position: fixed;
         background: #fff;
         border: 1px solid #dee2e6;
         border-radius: 6px;
@@ -496,9 +496,21 @@ $(document).ready(function() {
                 };
 
                 var menu = $('#entity-menu');
+                var menuWidth = 160;
+                var menuHeight = 280;
+                var posX = e.clientX + 5;
+                var posY = e.clientY + 5;
+
+                if (posX + menuWidth > window.innerWidth) {
+                    posX = e.clientX - menuWidth - 5;
+                }
+                if (posY + menuHeight > window.innerHeight) {
+                    posY = e.clientY - menuHeight - 5;
+                }
+
                 menu.css({
-                    top: e.pageY + 5,
-                    left: e.pageX + 5
+                    top: posY,
+                    left: posX
                 }).addClass('show');
             }
         }

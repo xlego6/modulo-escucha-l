@@ -97,7 +97,7 @@ class TranscriptionService:
 
         Args:
             audio_path: Ruta al archivo de audio
-            with_diarization: Si incluir diarizacion de hablantes (no implementado en faster-whisper)
+            with_diarization: Si incluir diarizacion de hablantes
 
         Returns:
             Diccionario con resultados
@@ -152,14 +152,43 @@ class TranscriptionService:
                     "duration": info.duration
                 }
 
+            speakers_count = 0
+            has_diarization = False
+
+            # Aplicar diarizacion si se solicita y hay token
+            if with_diarization and self.hf_token:
+                try:
+                    print(f"Iniciando diarizacion para: {audio_path}")
+
+                    # Cargar audio como waveform para pyannote
+                    import librosa
+                    audio_waveform, _ = librosa.load(str(audio_path), sr=16000, mono=True)
+
+                    # Construir resultado en formato esperado por _apply_diarization
+                    diarize_input = {'segments': segments_list}
+                    diarize_input, speakers_count = self._apply_diarization_pyannote(
+                        audio_waveform, diarize_input
+                    )
+
+                    if speakers_count > 0:
+                        has_diarization = True
+                        segments_list = diarize_input.get('segments', segments_list)
+                        formatted_text = self._format_text(diarize_input)
+                        print(f"Diarizacion completada: {speakers_count} hablante(s)")
+                    else:
+                        print("Diarizacion ejecutada pero no se detectaron hablantes")
+
+                except Exception as e:
+                    print(f"Error en diarizacion (se retorna transcripcion sin hablantes): {e}")
+
             return {
                 "success": True,
                 "audio_file": str(audio_path),
                 "language": info.language,
                 "text": formatted_text,
                 "segments": segments_list,
-                "speakers_count": 0,
-                "has_diarization": False,
+                "speakers_count": speakers_count,
+                "has_diarization": has_diarization,
                 "duration": info.duration,
                 "processed_at": datetime.now().isoformat()
             }
@@ -361,7 +390,8 @@ class TranscriptionService:
             "model": self.model_name,
             "model_loaded": self.model is not None,
             "gpu": gpu_info,
-            "diarization_enabled": WHISPERX_AVAILABLE  # Requiere whisperx + HF_TOKEN
+            "diarization_enabled": bool(self.hf_token),
+            "hf_token_configured": bool(self.hf_token)
         }
 
 
@@ -409,6 +439,12 @@ def api_transcribe():
         return jsonify({"success": False, "error": "audio_path requerido"}), 400
 
     svc = get_service()
+
+    # Permitir override del token HF desde la peticion
+    request_hf_token = data.get('hf_token', '')
+    if request_hf_token:
+        svc.hf_token = request_hf_token
+
     result = svc.transcribe(
         data['audio_path'],
         with_diarization=data.get('with_diarization', True)

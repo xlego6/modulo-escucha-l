@@ -94,7 +94,7 @@ class ProcesamientoService
      * @param bool $withDiarization Incluir diarizacion de hablantes
      * @return array Resultado de la transcripcion
      */
-    public function transcribe(string $audioPath, bool $withDiarization = true): array
+    public function transcribe(string $audioPath, bool $withDiarization = true, string $hfToken = ''): array
     {
         try {
             // Convertir ruta para el contenedor de transcripcion
@@ -102,11 +102,17 @@ class ProcesamientoService
 
             $this->safeLog('info', "Iniciando transcripcion: {$audioPath} -> {$transcriptionPath}");
 
+            $payload = [
+                'audio_path' => $transcriptionPath,
+                'with_diarization' => $withDiarization,
+            ];
+
+            if (!empty($hfToken)) {
+                $payload['hf_token'] = $hfToken;
+            }
+
             $response = Http::timeout($this->timeout)
-                ->post("{$this->transcriptionUrl}/transcribe", [
-                    'audio_path' => $transcriptionPath,
-                    'with_diarization' => $withDiarization
-                ]);
+                ->post("{$this->transcriptionUrl}/transcribe", $payload);
 
             // Verificar codigo HTTP
             if (!$response->successful()) {

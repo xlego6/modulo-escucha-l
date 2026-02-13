@@ -318,11 +318,140 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Renderizar markdown a HTML para vista previa
+function renderPreview(targetId) {
+    var text = $('#' + targetId).val();
+
+    // Escapar HTML para evitar inyeccion
+    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Procesar linea por linea
+    var lines = text.split('\n');
+    var html = '';
+    var inList = false;
+
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+
+        // Encabezados: ## texto
+        if (/^## (.+)$/.test(line)) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<h4>' + applyInlineFormat(line.replace(/^## /, '')) + '</h4>';
+            continue;
+        }
+
+        // Listas: - texto
+        if (/^- (.+)$/.test(line)) {
+            if (!inList) { html += '<ul>'; inList = true; }
+            html += '<li>' + applyInlineFormat(line.replace(/^- /, '')) + '</li>';
+            continue;
+        }
+
+        // Cerrar lista si ya no estamos en una
+        if (inList) { html += '</ul>'; inList = false; }
+
+        // Citas: > texto
+        if (/^&gt; (.+)$/.test(line)) {
+            html += '<blockquote>' + applyInlineFormat(line.replace(/^&gt; /, '')) + '</blockquote>';
+            continue;
+        }
+
+        // Linea vacia
+        if (line.trim() === '') {
+            html += '<br>';
+            continue;
+        }
+
+        // Linea normal
+        html += '<p>' + applyInlineFormat(line) + '</p>';
+    }
+
+    if (inList) html += '</ul>';
+
+    return html;
+}
+
+// Aplicar formato inline (negrita, cursiva, subrayado, marcas especiales)
+function applyInlineFormat(text) {
+    // Negrita: **texto**
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Cursiva: *texto* (sin confundir con negrita)
+    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Subrayado: _texto_
+    text = text.replace(/\b_(.+?)_\b/g, '<u>$1</u>');
+
+    // Marcas de hablante: [Entrevistador]:, [Entrevistado]:, [Testigo]:, [Nombre]:
+    text = text.replace(/\[([^\]]+)\]:/g, '<span class="preview-speaker">[$1]:</span>');
+
+    // Timestamps: [00:00] o [00:00:00]
+    text = text.replace(/\[(\d{2}:\d{2}(?::\d{2})?)\]/g, '<span class="preview-timestamp">[$1]</span>');
+
+    // Marcas especiales: [inaudible], [pausa], [risas], [llanto]
+    text = text.replace(/\[(inaudible|pausa|risas|llanto)\]/gi, '<span class="preview-mark">[$1]</span>');
+
+    return text;
+}
+
+// Alternar entre modo edicion y vista previa
+function togglePreview(targetId) {
+    var $textarea = $('#' + targetId);
+    var $btn = $('#btn-preview-' + targetId);
+    var previewId = targetId + '-preview';
+    var $preview = $('#' + previewId);
+
+    // Si estamos en modo edicion, cambiar a vista previa
+    if ($textarea.is(':visible')) {
+        // Crear div de vista previa si no existe
+        if (!$preview.length) {
+            $preview = $('<div id="' + previewId + '" class="preview-content"></div>');
+            $textarea.after($preview);
+        }
+
+        // Renderizar y mostrar
+        $preview.html(renderPreview(targetId));
+        $preview.css({
+            'min-height': $textarea.css('min-height') || '400px',
+            'height': $textarea.outerHeight() + 'px'
+        });
+        $textarea.hide();
+        $preview.show();
+
+        // Actualizar boton
+        $btn.removeClass('btn-outline-primary').addClass('btn-primary');
+        $btn.find('i').removeClass('fa-eye').addClass('fa-edit');
+        $btn.find('span').text('Editar');
+
+        // Deshabilitar botones de formato (no aplican en vista previa)
+        $btn.closest('.editor-toolbar').find('.btn-group').not($btn.parent()).find('button').prop('disabled', true);
+    } else {
+        // Volver a modo edicion
+        $preview.hide();
+        $textarea.show();
+        $textarea.focus();
+
+        // Restaurar boton
+        $btn.removeClass('btn-primary').addClass('btn-outline-primary');
+        $btn.find('i').removeClass('fa-edit').addClass('fa-eye');
+        $btn.find('span').text('Vista Previa');
+
+        // Rehabilitar botones
+        $btn.closest('.editor-toolbar').find('.btn-group').not($btn.parent()).find('button').prop('disabled', false);
+    }
+}
+
 // Auto-inicializar editores cuando el DOM este listo
 $(document).ready(function() {
     $('.editor-toolbar').each(function() {
         var targetId = $(this).data('target').replace('#', '');
         initEditor(targetId);
+
+        // Atajo Ctrl+P para vista previa
+        $('#' + targetId).on('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                togglePreview(targetId);
+            }
+        });
     });
 });
 </script>

@@ -90,7 +90,7 @@
 @endif
 
 <div class="row">
-    <div class="col-md-8">
+    <div class="col-md-12">
         {{-- Lista de Entrevistas para Asignar --}}
         <div class="card">
             <div class="card-header">
@@ -156,14 +156,6 @@
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    @if(!$asignacion || $asignacion->estado != 'aprobada')
-                                    <button type="button" class="btn btn-sm btn-warning btn-detectar-entidades"
-                                            data-id="{{ $entrevista->id_e_ind_fvt }}"
-                                            data-codigo="{{ $entrevista->entrevista_codigo }}"
-                                            title="Detectar entidades (NER)">
-                                        <i class="fas fa-magic"></i>
-                                    </button>
-                                    @endif
                                     <a href="{{ route('procesamientos.previsualizar-anonimizacion', $entrevista->id_e_ind_fvt) }}"
                                        class="btn btn-sm {{ $asignacion && $asignacion->estado == 'aprobada' ? 'btn-success' : 'btn-danger' }}"
                                        title="{{ $asignacion && $asignacion->estado == 'aprobada' ? 'Ver anonimizacion final' : 'Previsualizar/Editar anonimizacion' }}">
@@ -174,6 +166,14 @@
                                             onclick="abrirModalAsignar({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}')"
                                             title="{{ $asignacion && $asignacion->estado == 'aprobada' ? 'Reasignar anonimizador' : 'Asignar a anonimizador' }}">
                                         <i class="fas fa-user-plus"></i>
+                                    </button>
+                                    @endif
+                                    @if($entrevista->rel_adjuntos->contains(fn($a) => $a->es_audio || $a->es_video))
+                                    <button type="button" class="btn btn-sm btn-dark btn-anonimizar-audio"
+                                            data-id="{{ $entrevista->id_e_ind_fvt }}"
+                                            data-codigo="{{ $entrevista->entrevista_codigo }}"
+                                            title="Anonimizar audio/video">
+                                        <i class="fas fa-microphone-slash"></i>
                                     </button>
                                     @endif
                                 </div>
@@ -198,63 +198,6 @@
         </div>
     </div>
 
-    <div class="col-md-4">
-        <!-- Tipos de Entidades a Detectar -->
-        <div class="card card-outline card-warning">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Tipos a Detectar (NER)</h3>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small mb-2">Tipos para el boton <i class="fas fa-magic"></i></p>
-                <div class="row">
-                    <div class="col-6">
-                        <div class="custom-control custom-checkbox custom-control-sm">
-                            <input type="checkbox" class="custom-control-input tipo-detectar" id="det-PER" value="PER" checked>
-                            <label class="custom-control-label small" for="det-PER"><span class="badge badge-primary">PER</span></label>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="custom-control custom-checkbox custom-control-sm">
-                            <input type="checkbox" class="custom-control-input tipo-detectar" id="det-LOC" value="LOC" checked>
-                            <label class="custom-control-label small" for="det-LOC"><span class="badge badge-success">LOC</span></label>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="custom-control custom-checkbox custom-control-sm">
-                            <input type="checkbox" class="custom-control-input tipo-detectar" id="det-ORG" value="ORG" checked>
-                            <label class="custom-control-label small" for="det-ORG"><span class="badge badge-info">ORG</span></label>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="custom-control custom-checkbox custom-control-sm">
-                            <input type="checkbox" class="custom-control-input tipo-detectar" id="det-DATE" value="DATE" checked>
-                            <label class="custom-control-label small" for="det-DATE"><span class="badge badge-secondary">DATE</span></label>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="custom-control custom-checkbox custom-control-sm">
-                            <input type="checkbox" class="custom-control-input tipo-detectar" id="det-EVENT" value="EVENT">
-                            <label class="custom-control-label small" for="det-EVENT"><span class="badge badge-warning">EVENT</span></label>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="custom-control custom-checkbox custom-control-sm">
-                            <input type="checkbox" class="custom-control-input tipo-detectar" id="det-GUN" value="GUN">
-                            <label class="custom-control-label small" for="det-GUN"><span class="badge badge-danger">GUN</span></label>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="custom-control custom-checkbox custom-control-sm">
-                            <input type="checkbox" class="custom-control-input tipo-detectar" id="det-MISC" value="MISC">
-                            <label class="custom-control-label small" for="det-MISC"><span class="badge badge-dark">MISC</span></label>
-                        </div>
-                    </div>
-                </div>
-                <small class="text-muted d-block mt-2"><i class="fas fa-info-circle"></i> MISC genera muchos falsos positivos</small>
-            </div>
-        </div>
-
-    </div>
 </div>
 
 {{-- Modal Asignar Anonimizador --}}
@@ -418,24 +361,13 @@ $('#formAsignar').on('submit', function(e) {
 });
 
 $(document).ready(function() {
-    // Detectar entidades NER
-    $('.btn-detectar-entidades').on('click', function() {
+    // Anonimizar audio
+    $('.btn-anonimizar-audio').on('click', function() {
         var $btn = $(this);
         var id = $btn.data('id');
         var codigo = $btn.data('codigo');
 
-        // Obtener tipos seleccionados
-        var tiposSeleccionados = [];
-        $('.tipo-detectar:checked').each(function() {
-            tiposSeleccionados.push($(this).val());
-        });
-
-        if (tiposSeleccionados.length === 0) {
-            alert('Debe seleccionar al menos un tipo de entidad a detectar en el panel de la derecha');
-            return;
-        }
-
-        if (!confirm('¿Detectar entidades en la transcripcion de ' + codigo + '?\n\nTipos: ' + tiposSeleccionados.join(', ') + '\n\nEste proceso puede tomar unos segundos.')) {
+        if (!confirm('¿Anonimizar audio/video de ' + codigo + '?\n\nSe creara una copia con voz distorsionada. Este proceso puede tomar varios segundos.')) {
             return;
         }
 
@@ -443,30 +375,24 @@ $(document).ready(function() {
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
         $.ajax({
-            url: '{{ url("procesamientos/entidades") }}/' + id + '/detectar',
+            url: '{{ url("procesamientos/anonimizacion") }}/' + id + '/anonimizar-audio',
             method: 'POST',
             data: {
-                _token: '{{ csrf_token() }}',
-                tipos: tiposSeleccionados.join(',')
+                _token: '{{ csrf_token() }}'
             },
             success: function(response) {
                 if (response.success) {
-                    // Actualizar badge de entidades
-                    var $badge = $btn.closest('tr').find('td:eq(2) .badge');
-                    $badge.removeClass('badge-light text-muted').addClass('badge-info')
-                        .text(response.total_entidades + ' entidades');
-
-                    $btn.removeClass('btn-warning').addClass('btn-success')
+                    $btn.removeClass('btn-dark').addClass('btn-success')
                         .html('<i class="fas fa-check"></i>');
-
-                    alert('Detectadas ' + response.total_entidades + ' entidades en ' + codigo);
+                    alert('Audio anonimizado: ' + response.procesados + ' archivo(s) procesado(s).');
+                    location.reload();
                 } else {
                     alert('Error: ' + (response.error || 'Error desconocido'));
                     $btn.prop('disabled', false).html(htmlOriginal);
                 }
             },
             error: function(xhr) {
-                var msg = xhr.responseJSON?.error || 'Error al detectar entidades';
+                var msg = xhr.responseJSON?.error || 'Error al anonimizar audio';
                 alert('Error: ' + msg);
                 $btn.prop('disabled', false).html(htmlOriginal);
             }

@@ -134,6 +134,7 @@ class ProcesamientoController extends Controller
 
         // Opciones de transcripcion
         $withDiarization = $request->input('diarizar', true);
+        $hfToken = $request->input('hf_token', '');
 
         $transcripcionesCompletas = [];
         $totalCaracteres = 0;
@@ -150,7 +151,7 @@ class ProcesamientoController extends Controller
             }
 
             // Llamar al servicio de transcripcion
-            $result = $this->procesamientoService->transcribe($audioPath, $withDiarization);
+            $result = $this->procesamientoService->transcribe($audioPath, $withDiarization, $hfToken);
 
             if ($result['success']) {
                 $texto = trim($result['text'] ?? '');
@@ -286,8 +287,9 @@ class ProcesamientoController extends Controller
 
         $ids = $request->input('ids');
         $withDiarization = $request->input('diarizar', true);
+        $hfToken = $request->input('hf_token', '');
 
-        return response()->stream(function() use ($ids, $withDiarization) {
+        return response()->stream(function() use ($ids, $withDiarization, $hfToken) {
             // Desactivar buffer de salida
             if (ob_get_level()) ob_end_clean();
 
@@ -367,7 +369,7 @@ class ProcesamientoController extends Controller
                     }
 
                     // Llamar al servicio de transcripcion
-                    $result = $this->procesamientoService->transcribe($audioPath, $withDiarization);
+                    $result = $this->procesamientoService->transcribe($audioPath, $withDiarization, $hfToken);
 
                     if ($result['success']) {
                         $texto = trim($result['text'] ?? '');
@@ -856,6 +858,7 @@ class ProcesamientoController extends Controller
         // Admin/Lider: ve todas las entrevistas y asignaciones
         // Buscar entrevistas con transcripción (adjunto tipo 312 o anotaciones legacy)
         $pendientes = Entrevista::where('id_activo', 1)
+            ->with('rel_adjuntos')
             ->where(function($q) {
                 $q->whereHas('rel_adjuntos', function($qa) {
                     $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
@@ -949,15 +952,90 @@ class ProcesamientoController extends Controller
     }
 
     /**
+     * Anonimizar audio/video mediante distorsion con ffmpeg
+     */
+    public function anonimizarAudio($id)
+    {
+        $entrevista = Entrevista::with('rel_adjuntos')->findOrFail($id);
+
+        // Filtrar adjuntos de audio/video con archivo fisico
+        $adjuntosAV = $entrevista->rel_adjuntos->filter(function($a) {
+            return ($a->es_audio || $a->es_video) && !empty($a->ubicacion);
+        });
+
+        if ($adjuntosAV->isEmpty()) {
+            return response()->json(['success' => false, 'error' => 'No se encontraron adjuntos de audio/video'], 400);
+        }
+
+        $procesados = 0;
+        $errores = [];
+
+        foreach ($adjuntosAV as $adjunto) {
+            $rutaEntrada = storage_path('app/public/' . $adjunto->ubicacion);
+
+            if (!file_exists($rutaEntrada)) {
+                $errores[] = "Archivo no encontrado: {$adjunto->nombre_original}";
+                continue;
+            }
+
+            $directorio = dirname($adjunto->ubicacion);
+            $extension = pathinfo($adjunto->ubicacion, PATHINFO_EXTENSION);
+            $nombreSalida = 'anonimizado_' . pathinfo($adjunto->ubicacion, PATHINFO_FILENAME) . '.' . $extension;
+            $ubicacionSalida = $directorio . '/' . $nombreSalida;
+            $rutaSalida = storage_path('app/public/' . $ubicacionSalida);
+
+            // Ejecutar ffmpeg con filtro de distorsion de voz
+            $cmd = sprintf(
+                'ffmpeg -i %s -af "asetrate=48000*0.85,aresample=48000,equalizer=f=1000:width_type=h:width=200:g=-10" -y %s 2>&1',
+                escapeshellarg($rutaEntrada),
+                escapeshellarg($rutaSalida)
+            );
+
+            exec($cmd, $output, $returnCode);
+
+            if ($returnCode !== 0) {
+                $errores[] = "Error ffmpeg en {$adjunto->nombre_original}: " . implode("\n", array_slice($output, -5));
+                continue;
+            }
+
+            // Crear registro de adjunto anonimizado
+            Adjunto::create([
+                'id_e_ind_fvt' => $entrevista->id_e_ind_fvt,
+                'ubicacion' => $ubicacionSalida,
+                'nombre_original' => '[Anonimizado] ' . $adjunto->nombre_original,
+                'tipo_mime' => $adjunto->tipo_mime,
+                'id_tipo' => $adjunto->id_tipo,
+                'tamano' => file_exists($rutaSalida) ? filesize($rutaSalida) : null,
+                'duracion' => $adjunto->duracion,
+                'existe_archivo' => file_exists($rutaSalida) ? 1 : 0,
+            ]);
+
+            $procesados++;
+        }
+
+        if ($procesados === 0 && !empty($errores)) {
+            return response()->json([
+                'success' => false,
+                'error' => implode('; ', $errores),
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'procesados' => $procesados,
+            'errores' => $errores,
+        ]);
+    }
+
+    /**
      * Vista previa de anonimizacion
      */
     public function previsualizarAnonimizacion($id)
     {
         $entrevista = Entrevista::findOrFail($id);
 
-        // Obtener entidades de la BD
+        // Obtener entidades de la BD (todas, incluyendo excluidas)
         $entidadesDB = EntidadDetectada::where('id_e_ind_fvt', $id)
-            ->where('excluir_anonimizacion', false)
             ->orderBy('posicion_inicio')
             ->get();
 
@@ -969,6 +1047,8 @@ class ProcesamientoController extends Controller
                 'replacement' => $e->texto_anonimizado,
                 'start' => $e->posicion_inicio,
                 'end' => $e->posicion_fin,
+                'manual' => (bool) $e->manual,
+                'excluir' => (bool) $e->excluir_anonimizacion,
             ];
         })->toArray();
 

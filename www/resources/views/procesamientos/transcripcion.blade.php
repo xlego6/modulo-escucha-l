@@ -328,10 +328,22 @@
                     <input type="checkbox" class="custom-control-input" id="diarizar" checked>
                     <label class="custom-control-label" for="diarizar">Diarizacion (identificar hablantes)</label>
                 </div>
-                <small class="text-muted d-block">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Requiere token de HuggingFace configurado en el servidor.
-                </small>
+                <div id="hf-token-group" class="mt-2">
+                    <label class="small">Token de HuggingFace</label>
+                    <div class="input-group input-group-sm">
+                        <input type="password" class="form-control" id="hf_token"
+                               placeholder="hf_..." autocomplete="off">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" id="btn-toggle-token" title="Mostrar/ocultar token">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Opcional si ya esta configurado en el servidor. Se usa solo para esta sesion.
+                    </small>
+                </div>
             </div>
         </div>
     </div>
@@ -341,6 +353,24 @@
 @section('js')
 <script>
 $(document).ready(function() {
+    // Toggle visibilidad del token
+    $('#btn-toggle-token').on('click', function() {
+        var input = $('#hf_token');
+        var icon = $(this).find('i');
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            input.attr('type', 'password');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+
+    // Mostrar/ocultar campo token segun diarizacion
+    $('#diarizar').on('change', function() {
+        $('#hf-token-group').toggle($(this).is(':checked'));
+    });
+
     // Detectar GPU disponible
     detectarGPU();
 
@@ -380,7 +410,8 @@ $(document).ready(function() {
                 modelo: $('#modelo-whisper').val(),
                 idioma: $('#idioma').val(),
                 dispositivo: $('#dispositivo').val(),
-                diarizar: $('#diarizar').is(':checked') ? 1 : 0
+                diarizar: $('#diarizar').is(':checked') ? 1 : 0,
+                hf_token: $('#hf_token').val() || ''
             },
             success: function(response) {
                 $('#resultado-loading').hide();
@@ -477,6 +508,7 @@ function iniciarProcesamientoLote(ids) {
     formData.append('idioma', $('#idioma').val());
     formData.append('dispositivo', $('#dispositivo').val());
     formData.append('diarizar', $('#diarizar').is(':checked') ? 1 : 0);
+    formData.append('hf_token', $('#hf_token').val() || '');
     formData.append('_token', '{{ csrf_token() }}');
 
     // Usar fetch con POST para enviar los IDs y recibir SSE

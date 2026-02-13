@@ -97,6 +97,13 @@
         </button>
     </div>
 
+    {{-- Boton: Vista Previa --}}
+    <div class="btn-group btn-group-sm mr-2" role="group">
+        <button type="button" class="btn btn-outline-primary" id="btn-preview-{{ $targetId }}" onclick="togglePreview('{{ $targetId }}')" title="Vista previa (Ctrl+P)">
+            <i class="fas fa-eye mr-1"></i><span>Vista Previa</span>
+        </button>
+    </div>
+
     {{-- Estadisticas --}}
     <div class="ml-auto">
         <small class="text-muted">

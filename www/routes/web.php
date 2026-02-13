@@ -117,6 +117,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // =============================================
+    // ADJUNTOS: Ver/reproducir (accesible para transcriptores)
+    // =============================================
+    Route::get('adjuntos/ver/{id}', [AdjuntoController::class, 'ver'])->name('adjuntos.ver');
+
+    // =============================================
     // RUTAS QUE REQUIEREN COMPROMISO DE RESERVA
     // =============================================
     Route::middleware(['compromiso.reserva'])->group(function () {
@@ -135,7 +140,6 @@ Route::middleware(['auth'])->group(function () {
             Route::get('adjuntos/gestionar/{id}', [AdjuntoController::class, 'gestionar'])->name('adjuntos.gestionar');
             Route::post('adjuntos/subir/{id}', [AdjuntoController::class, 'subir'])->name('adjuntos.subir');
             Route::get('adjuntos/descargar/{id}', [AdjuntoController::class, 'descargar'])->name('adjuntos.descargar');
-            Route::get('adjuntos/ver/{id}', [AdjuntoController::class, 'ver'])->name('adjuntos.ver');
             Route::delete('adjuntos/eliminar/{id}', [AdjuntoController::class, 'eliminar'])->name('adjuntos.eliminar');
         });
 
@@ -200,6 +204,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('procesamientos/anonimizacion', [ProcesamientoController::class, 'anonimizacion'])->name('procesamientos.anonimizacion');
         Route::get('procesamientos/anonimizacion/{id}/previsualizar', [ProcesamientoController::class, 'previsualizarAnonimizacion'])->name('procesamientos.previsualizar-anonimizacion');
         Route::post('procesamientos/anonimizacion/{id}', [ProcesamientoController::class, 'generarAnonimizacion'])->name('procesamientos.generar-anonimizacion');
+        Route::post('procesamientos/anonimizacion/{id}/anonimizar-audio', [ProcesamientoController::class, 'anonimizarAudio'])->name('procesamientos.anonimizar-audio');
 
         // Asignación de anonimización (Admin/Líder)
         Route::post('procesamientos/asignar-anonimizacion', [ProcesamientoController::class, 'asignarAnonimizacion'])->name('procesamientos.asignar-anonimizacion');
