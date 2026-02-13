@@ -149,30 +149,3 @@ docker-compose up -d
 ```
 # Si la imagen del Docker no tiene el modelo NER correcto o no detecta entidades
 docker compose build --no-cache ner && docker compose up -d ner 
-
-
-## Desarrollo
-
-Para adaptar funcionalidades del modulo original:
-
-1. Revisar codigo en `../modulo-de-captura/` o `../www/`
-2. Copiar y simplificar controladores/modelos necesarios
-3. Adaptar vistas Blade
-
-## Modulos Implementados
-
-- [x] Autenticacion local
-- [x] CRUD Entrevistas (con wizard)
-- [x] CRUD Personas
-- [x] Gestion de Adjuntos
-- [x] Buscador avanzado
-- [x] Estadisticas y Dashboard
-- [x] Mapa geografico
-- [x] Exportacion Excel
-- [x] Gestion de Usuarios
-- [x] Permisos y control de acceso
-- [x] Catalogos
-- [x] Traza de actividad
-- [x] Transcripcion automatica (WhisperX)
-- [x] Deteccion de entidades (spaCy NER)
-- [x] Anonimizacion de textos
