@@ -29,6 +29,12 @@ RUN pip install --no-cache-dir git+https://github.com/m-bain/whisperx.git || ech
 # Instalar pyannote para diarización (fallback)
 RUN pip install --no-cache-dir pyannote.audio || echo "WARN: pyannote no instalado"
 
+# Instalar librosa (requerido para cargar audio en diarización)
+RUN pip install --no-cache-dir librosa
+
+# Instalar torchvision compatible (requerido por pyannote.audio)
+RUN pip install --no-cache-dir torchvision || echo "WARN: torchvision no instalado"
+
 # Variables de entorno
 ENV WHISPER_MODEL=large-v3-turbo
 ENV WHISPER_LANGUAGE=es

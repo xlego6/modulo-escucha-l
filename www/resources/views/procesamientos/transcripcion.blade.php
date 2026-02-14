@@ -421,7 +421,7 @@ $(document).ready(function() {
                     $('#resultado-exito').show();
                     $('#res-codigo').text(codigo);
                     $('#res-caracteres').text(response.text_length ? response.text_length.toLocaleString() : '0');
-                    $('#res-hablantes').text(response.speakers || 'N/A');
+                    $('#res-hablantes').text(response.speakers !== undefined ? response.speakers : 'N/A');
                     $('#res-texto').val(response.text || 'Sin texto');
                     $('#btn-editar-transcripcion').attr('href', '{{ url("procesamientos/edicion") }}/' + id);
 

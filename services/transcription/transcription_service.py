@@ -224,10 +224,19 @@ class TranscriptionService:
             if cache_key in _diarize_model_cache:
                 diarize_model = _diarize_model_cache[cache_key]
             else:
-                diarize_model = Pipeline.from_pretrained(
-                    "pyannote/speaker-diarization-3.1",
-                    use_auth_token=self.hf_token
+                # PyTorch 2.6+ cambio weights_only=True por defecto
+                _original_torch_load = torch.load
+                torch.load = lambda *args, **kwargs: _original_torch_load(
+                    *args, **{**kwargs, 'weights_only': False}
                 )
+                try:
+                    diarize_model = Pipeline.from_pretrained(
+                        "pyannote/speaker-diarization-3.1",
+                        use_auth_token=self.hf_token
+                    )
+                finally:
+                    torch.load = _original_torch_load
+
                 diarize_model.to(torch.device(self.device))
                 _diarize_model_cache[cache_key] = diarize_model
 
@@ -273,10 +282,20 @@ class TranscriptionService:
                     print("ADVERTENCIA: HF_TOKEN requerido para diarizacion con pyannote")
                     return result, 0
 
-                diarize_model = Pipeline.from_pretrained(
-                    "pyannote/speaker-diarization-3.1",
-                    use_auth_token=self.hf_token
+                # PyTorch 2.6+ cambio weights_only=True por defecto,
+                # pyannote/speechbrain aun no soportan esto completamente.
+                _original_torch_load = torch.load
+                torch.load = lambda *args, **kwargs: _original_torch_load(
+                    *args, **{**kwargs, 'weights_only': False}
                 )
+                try:
+                    diarize_model = Pipeline.from_pretrained(
+                        "pyannote/speaker-diarization-3.1",
+                        use_auth_token=self.hf_token
+                    )
+                finally:
+                    torch.load = _original_torch_load
+
                 diarize_model.to(torch.device(self.device))
                 _diarize_model_cache[cache_key] = diarize_model
 
