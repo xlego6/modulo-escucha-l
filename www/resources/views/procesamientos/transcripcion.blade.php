@@ -425,6 +425,16 @@ $(document).ready(function() {
                     $('#res-texto').val(response.text || 'Sin texto');
                     $('#btn-editar-transcripcion').attr('href', '{{ url("procesamientos/edicion") }}/' + id);
 
+                    // Mostrar advertencia de diarizacion si hubo error
+                    if (response.diarization_error) {
+                        $('#resultado-exito').after(
+                            '<div class="alert alert-warning mt-2" id="diarization-warning">' +
+                            '<i class="fas fa-exclamation-triangle mr-1"></i> ' +
+                            '<strong>Diarizacion:</strong> ' + response.diarization_error +
+                            '</div>'
+                        );
+                    }
+
                     // Marcar fila como completada
                     btn.removeClass('btn-primary').addClass('btn-success')
                        .html('<i class="fas fa-check"></i>').prop('disabled', true);

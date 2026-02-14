@@ -172,7 +172,8 @@ class ProcesamientoController extends Controller
                     'archivo' => $audio->nombre_original,
                     'texto' => $texto,
                     'caracteres' => strlen($texto),
-                    'hablantes' => $result['speakers_count'] ?? 0
+                    'hablantes' => $result['speakers_count'] ?? 0,
+                    'diarization_error' => $result['diarization_error'] ?? null
                 ];
 
                 $totalCaracteres += strlen($texto);
@@ -201,6 +202,10 @@ class ProcesamientoController extends Controller
         // Guardar como adjunto de tipo "Transcripción Automatizada"
         $entrevista->guardarTranscripcionAutomatizada(trim($textoCompleto));
 
+        // Recopilar errores de diarizacion
+        $diarizacionErrors = array_filter(array_column($transcripcionesCompletas, 'diarization_error'));
+        $diarizacionError = !empty($diarizacionErrors) ? $diarizacionErrors[0] : null;
+
         return response()->json([
             'success' => true,
             'message' => 'Transcripcion completada',
@@ -210,7 +215,8 @@ class ProcesamientoController extends Controller
             'text_length' => $totalCaracteres,
             'text' => $textoCompleto,
             'speakers' => $totalHablantes,
-            'errores' => $errores
+            'errores' => $errores,
+            'diarization_error' => $diarizacionError
         ]);
     }
 

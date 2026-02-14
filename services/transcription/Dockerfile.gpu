@@ -32,8 +32,11 @@ RUN pip install --no-cache-dir pyannote.audio || echo "WARN: pyannote no instala
 # Instalar librosa (requerido para cargar audio en diarización)
 RUN pip install --no-cache-dir librosa
 
-# Instalar torchvision compatible (requerido por pyannote.audio)
-RUN pip install --no-cache-dir torchvision || echo "WARN: torchvision no instalado"
+# FORZAR reinstalación de torch + torchvision + torchaudio compatibles entre sí
+# whisperx puede instalar versiones de torch que rompen la compatibilidad con torchvision
+RUN pip install --no-cache-dir --force-reinstall \
+    torch==2.5.1 torchaudio==2.5.1 torchvision==0.20.1 \
+    --index-url https://download.pytorch.org/whl/cu121
 
 # Variables de entorno
 ENV WHISPER_MODEL=large-v3-turbo
@@ -52,4 +55,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
 # --workers 2: 2 workers para procesar peticiones
 # --threads 2: 2 threads por worker
 # --bind 0.0.0.0:5000: Escuchar en todas las interfaces
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "600", "--workers", "2", "--threads", "2", "--access-logfile", "-", "transcription_service:app"]
+# Verificar que pyannote se importa correctamente (falla el build si hay incompatibilidad)
+RUN python -c "from pyannote.audio import Pipeline; print('OK: pyannote.audio importado correctamente')"
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "600", "--workers", "2", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", "transcription_service:app"]

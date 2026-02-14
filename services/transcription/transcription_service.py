@@ -17,8 +17,13 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
 from flask import Flask, request, jsonify
+import logging
 import threading
 import queue
+
+# Configurar logging para que funcione con gunicorn
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
 
 # Verificar dependencias
 try:
@@ -154,11 +159,13 @@ class TranscriptionService:
 
             speakers_count = 0
             has_diarization = False
+            diarization_error = None
 
             # Aplicar diarizacion si se solicita y hay token
             if with_diarization and self.hf_token:
                 try:
-                    print(f"Iniciando diarizacion para: {audio_path}")
+                    logger.info(f"Iniciando diarizacion para: {audio_path}")
+                    logger.info(f"HF token presente: si (len={len(self.hf_token)})")
 
                     # Cargar audio como waveform para pyannote
                     import librosa
@@ -174,14 +181,25 @@ class TranscriptionService:
                         has_diarization = True
                         segments_list = diarize_input.get('segments', segments_list)
                         formatted_text = self._format_text(diarize_input)
-                        print(f"Diarizacion completada: {speakers_count} hablante(s)")
+                        logger.info(f"Diarizacion completada: {speakers_count} hablante(s)")
                     else:
-                        print("Diarizacion ejecutada pero no se detectaron hablantes")
+                        logger.warning("Diarizacion ejecutada pero no se detectaron hablantes")
+                        diarization_error = ("No se detectaron hablantes. Verifique que haya aceptado los terminos "
+                                           "de los modelos pyannote en HuggingFace: "
+                                           "pyannote/speaker-diarization-3.1, "
+                                           "pyannote/segmentation-3.0 y "
+                                           "pyannote/speaker-diarization-community-1")
 
                 except Exception as e:
-                    print(f"Error en diarizacion (se retorna transcripcion sin hablantes): {e}")
+                    import traceback
+                    logger.error(f"Error en diarizacion (se retorna transcripcion sin hablantes): {e}")
+                    logger.error(traceback.format_exc())
+                    diarization_error = str(e)
+            elif with_diarization and not self.hf_token:
+                logger.warning("Diarizacion solicitada pero no hay HF_TOKEN configurado.")
+                diarization_error = "Token de HuggingFace no proporcionado. Configure HF_TOKEN en .env o ingreselo en la UI."
 
-            return {
+            result_dict = {
                 "success": True,
                 "audio_file": str(audio_path),
                 "language": info.language,
@@ -192,6 +210,11 @@ class TranscriptionService:
                 "duration": info.duration,
                 "processed_at": datetime.now().isoformat()
             }
+
+            if diarization_error:
+                result_dict["diarization_error"] = diarization_error
+
+            return result_dict
 
         except Exception as e:
             import traceback
@@ -232,7 +255,7 @@ class TranscriptionService:
                 try:
                     diarize_model = Pipeline.from_pretrained(
                         "pyannote/speaker-diarization-3.1",
-                        use_auth_token=self.hf_token
+                        token=self.hf_token
                     )
                 finally:
                     torch.load = _original_torch_load
@@ -246,7 +269,14 @@ class TranscriptionService:
                 'sample_rate': whisperx.audio.SAMPLE_RATE  # 16000
             }
 
-            diarize_segments = diarize_model(audio_data)
+            diarize_output = diarize_model(audio_data)
+
+            # pyannote 3.4+ devuelve DiarizeOutput, extraer el Annotation
+            if hasattr(diarize_output, 'speaker_diarization'):
+                diarize_segments = diarize_output.speaker_diarization
+            else:
+                diarize_segments = diarize_output
+
             result = whisperx.assign_word_speakers(diarize_segments, result)
 
             # Contar hablantes
@@ -262,7 +292,7 @@ class TranscriptionService:
             return result, len(speakers)
 
         except Exception as e:
-            print(f"Error en diarizacion whisperx: {e}")
+            logger.error(f"Error en diarizacion whisperx: {e}", exc_info=True)
             return result, 0
 
     def _apply_diarization_pyannote(self, audio, result) -> tuple:
@@ -291,7 +321,7 @@ class TranscriptionService:
                 try:
                     diarize_model = Pipeline.from_pretrained(
                         "pyannote/speaker-diarization-3.1",
-                        use_auth_token=self.hf_token
+                        token=self.hf_token
                     )
                 finally:
                     torch.load = _original_torch_load
@@ -305,7 +335,13 @@ class TranscriptionService:
                 'sample_rate': SAMPLE_RATE
             }
 
-            diarize_segments = diarize_model(audio_data)
+            diarize_output = diarize_model(audio_data)
+
+            # pyannote 3.4+ devuelve DiarizeOutput, extraer el Annotation
+            if hasattr(diarize_output, 'speaker_diarization'):
+                diarize_segments = diarize_output.speaker_diarization
+            else:
+                diarize_segments = diarize_output
 
             # Asignar hablantes manualmente a los segmentos (sin whisperx)
             result = self._assign_speakers_manual(diarize_segments, result)
@@ -323,7 +359,19 @@ class TranscriptionService:
             return result, len(speakers)
 
         except Exception as e:
-            print(f"Error en diarizacion pyannote: {e}")
+            error_msg = str(e)
+            logger.error(f"Error en diarizacion pyannote: {error_msg}", exc_info=True)
+
+            # Detectar error de acceso a repos gated de HuggingFace
+            if 'GatedRepoError' in type(e).__name__ or 'gated repo' in error_msg.lower() or '403' in error_msg:
+                logger.error(
+                    "ACCESO DENEGADO: Debe aceptar los terminos de uso de los modelos pyannote en HuggingFace. "
+                    "Visite estos enlaces con su cuenta HF y haga clic en 'Agree and access repository':\n"
+                    "  1. https://huggingface.co/pyannote/speaker-diarization-3.1\n"
+                    "  2. https://huggingface.co/pyannote/segmentation-3.0\n"
+                    "  3. https://huggingface.co/pyannote/speaker-diarization-community-1"
+                )
+
             return result, 0
 
     def _assign_speakers_manual(self, diarize_segments, result) -> dict:
