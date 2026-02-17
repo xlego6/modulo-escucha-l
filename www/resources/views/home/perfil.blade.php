@@ -41,7 +41,7 @@
                     <div class="text-center">
                         <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                         <p class="mb-0"><strong>Compromiso aceptado</strong></p>
-                        <small class="text-muted">{{ \Carbon\Carbon::parse($entrevistador->compromiso_reserva)->format('d/m/Y H:i') }}</small>
+                        <small class="text-muted">{{ $entrevistador->compromiso_reserva->format('d/m/Y H:i') }}</small>
                     </div>
                 @else
                     <p class="text-muted">

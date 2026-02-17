@@ -10,6 +10,10 @@ class Entrevistador extends Model
     protected $table = 'esclarecimiento.entrevistador';
     protected $primaryKey = 'id_entrevistador';
 
+    protected $casts = [
+        'compromiso_reserva' => 'datetime',
+    ];
+
     protected $fillable = [
         'id_usuario',
         'id_macroterritorio',
