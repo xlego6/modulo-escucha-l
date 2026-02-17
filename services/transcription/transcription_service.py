@@ -71,7 +71,13 @@ class TranscriptionService:
     ):
         self.model_name = model_name
         self.device = device if torch.cuda.is_available() else "cpu"
-        self.compute_type = compute_type if self.device == "cuda" else "float32"
+        # int8 es soportado en CPU por faster-whisper y es mas rapido que float32
+        if self.device == "cuda":
+            self.compute_type = compute_type
+        elif compute_type in ("int8", "int8_float16", "int16", "float32"):
+            self.compute_type = compute_type
+        else:
+            self.compute_type = "int8"
         self.batch_size = batch_size
         self.language = language
         self.hf_token = hf_token
