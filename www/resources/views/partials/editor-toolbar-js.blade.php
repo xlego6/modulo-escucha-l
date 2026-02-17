@@ -138,6 +138,14 @@ function editorAction(action, targetId) {
             editorInsert('[' + audioTime + '] ', targetId);
             break;
 
+        case 'paragraph':
+            editorInsert('\n\n', targetId);
+            break;
+
+        case 'brackets':
+            wrapSelection(targetId, '[', ']');
+            break;
+
         case 'find':
             $('#modalBuscarReemplazar-' + targetId).modal('show');
             setTimeout(function() {

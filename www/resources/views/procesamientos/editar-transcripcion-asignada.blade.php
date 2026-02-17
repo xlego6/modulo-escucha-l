@@ -130,12 +130,12 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <div class="mb-3">
                     <label class="d-block">{{ $adjunto->nombre_original }}</label>
                     @if(strpos($adjunto->tipo_mime, 'audio') !== false)
-                    <audio controls class="w-100" preload="metadata">
+                    <audio controls controlsList="nodownload" class="w-100" preload="metadata">
                         <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
                         Su navegador no soporta audio HTML5
                     </audio>
                     @elseif(strpos($adjunto->tipo_mime, 'video') !== false)
-                    <video controls class="w-100" preload="metadata">
+                    <video controls controlsList="nodownload" class="w-100" preload="metadata">
                         <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
                         Su navegador no soporta video HTML5
                     </video>

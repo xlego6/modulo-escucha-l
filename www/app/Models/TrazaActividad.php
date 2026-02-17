@@ -71,6 +71,16 @@ class TrazaActividad extends Model
             'eliminar_adjunto' => 'Eliminar adjunto',
             'exportar_entrevistas' => 'Exportar entrevistas',
             'exportar_personas' => 'Exportar personas',
+            'iniciar_transcripcion' => 'Iniciar transcripción',
+            'editar_transcripcion' => 'Editar transcripción',
+            'aprobar_transcripcion' => 'Aprobar transcripción',
+            'rechazar_transcripcion' => 'Rechazar transcripción',
+            'enviar_revision' => 'Enviar a revisión',
+            'asignar_transcripcion' => 'Asignar transcripción',
+            'editar_anonimizacion' => 'Editar anonimización',
+            'aprobar_anonimizacion' => 'Aprobar anonimización',
+            'rechazar_anonimizacion' => 'Rechazar anonimización',
+            'asignar_anonimizacion' => 'Asignar anonimización',
         ];
 
         return $acciones[$this->accion] ?? ucfirst(str_replace('_', ' ', $this->accion ?? ''));
@@ -86,6 +96,8 @@ class TrazaActividad extends Model
             'permiso' => 'Permiso',
             'catalogo' => 'Catálogo',
             'item_catalogo' => 'Item de catálogo',
+            'transcripcion' => 'Transcripción',
+            'anonimizacion' => 'Anonimización',
         ];
 
         return $objetos[$this->objeto] ?? ucfirst(str_replace('_', ' ', $this->objeto ?? ''));
@@ -110,6 +122,16 @@ class TrazaActividad extends Model
             'eliminar_adjunto' => 'danger',
             'exportar_entrevistas' => 'primary',
             'exportar_personas' => 'primary',
+            'iniciar_transcripcion' => 'success',
+            'editar_transcripcion' => 'warning',
+            'aprobar_transcripcion' => 'success',
+            'rechazar_transcripcion' => 'danger',
+            'enviar_revision' => 'info',
+            'asignar_transcripcion' => 'primary',
+            'editar_anonimizacion' => 'warning',
+            'aprobar_anonimizacion' => 'success',
+            'rechazar_anonimizacion' => 'danger',
+            'asignar_anonimizacion' => 'primary',
         ];
 
         return $clases[$this->accion] ?? 'secondary';

@@ -5,6 +5,65 @@
 Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @endsection
 
+@section('css')
+<style>
+    .editor-toolbar {
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px 4px 0 0;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+    }
+    .editor-toolbar .btn {
+        padding: 0.25rem 0.5rem;
+    }
+    #transcripcion {
+        border-radius: 0 0 4px 4px !important;
+    }
+    /* Vista previa de transcripcion */
+    .preview-content {
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 4px 4px;
+        padding: 12px 16px;
+        font-family: monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        background: #fff;
+        overflow-y: auto;
+    }
+    .preview-content p { margin: 0 0 0.3em; }
+    .preview-content h4 { color: #2d3748; margin: 0.8em 0 0.3em; }
+    .preview-content blockquote {
+        border-left: 3px solid #6c757d;
+        padding-left: 10px;
+        color: #555;
+        margin: 0.3em 0;
+    }
+    .preview-content ul { margin: 0.3em 0; padding-left: 24px; }
+    .preview-speaker {
+        background: #d1ecf1;
+        color: #0c5460;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+    .preview-timestamp {
+        background: #e2e3e5;
+        color: #383d41;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 0.85em;
+    }
+    .preview-mark {
+        background: #fff3cd;
+        color: #856404;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-style: italic;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="row">
     {{-- Panel izquierdo: Información --}}
@@ -123,31 +182,19 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Transcripcion (Editable)</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnToggleEdit">
-                        <i class="fas fa-eye"></i> Ver como texto
-                    </button>
-                </div>
             </div>
             <form action="{{ route('procesamientos.guardar-asignacion', $asignacion->id_asignacion) }}" method="POST" id="formTranscripcion">
                 @csrf
-                <div class="card-body p-0">
-                    {{-- Editor --}}
-                    <textarea name="transcripcion" id="transcripcion" class="form-control border-0"
-                              style="min-height: 500px; resize: vertical; font-family: monospace;">{{ $asignacion->transcripcion_editada }}</textarea>
-                    {{-- Vista previa (oculta por defecto) --}}
-                    <div id="vistaPrevia" style="display: none; max-height: 500px; overflow-y: auto; padding: 15px;">
-                        <pre style="white-space: pre-wrap; font-family: 'Segoe UI', sans-serif; font-size: 0.95em; margin: 0;">{{ $asignacion->transcripcion_editada }}</pre>
-                    </div>
+                <div class="card-body p-2">
+                    @include('partials.editor-toolbar', ['targetId' => 'transcripcion'])
+                    <textarea name="transcripcion" id="transcripcion" class="form-control"
+                              style="min-height: 500px; resize: vertical; font-family: monospace;"
+                              placeholder="Edite la transcripcion...">{{ $asignacion->transcripcion_editada }}</textarea>
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save mr-1"></i> Guardar Cambios
                     </button>
-                    <span class="text-muted ml-3">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span id="charCount">{{ strlen($asignacion->transcripcion_editada) }}</span> caracteres
-                    </span>
                 </div>
             </form>
         </div>
@@ -208,32 +255,9 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @endsection
 
 @section('js')
+@include('partials.editor-toolbar-js')
 <script>
 $(document).ready(function() {
-    var editMode = true;
-
-    // Toggle entre edición y vista previa
-    $('#btnToggleEdit').on('click', function() {
-        editMode = !editMode;
-
-        if (editMode) {
-            $('#transcripcion').show();
-            $('#vistaPrevia').hide();
-            $(this).html('<i class="fas fa-eye"></i> Ver como texto');
-        } else {
-            // Actualizar vista previa con contenido actual
-            $('#vistaPrevia pre').text($('#transcripcion').val());
-            $('#transcripcion').hide();
-            $('#vistaPrevia').show();
-            $(this).html('<i class="fas fa-edit"></i> Modo edicion');
-        }
-    });
-
-    // Actualizar contador de caracteres
-    $('#transcripcion').on('input', function() {
-        $('#charCount').text($(this).val().length);
-    });
-
     // Confirmación antes de salir si hay cambios sin guardar
     var originalContent = $('#transcripcion').val();
     var hasChanges = false;
