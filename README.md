@@ -147,5 +147,12 @@ docker-compose down -v
 rm -rf postgres-data
 docker-compose up -d
 ```
-# Si la imagen del Docker no tiene el modelo NER correcto o no detecta entidades
+### Si la imagen del Docker no tiene el modelo NER correcto o no detecta entidades
 docker compose build --no-cache ner && docker compose up -d ner 
+
+### Para actualizar a nueva versión de separación de hablantes
+```
+git pull
+docker compose build --no-cache transcription
+docker compose up -d transcription
+```
