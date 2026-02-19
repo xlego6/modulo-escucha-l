@@ -1598,16 +1598,43 @@ class ProcesamientoController extends Controller
                 $idEntrevista = $asignacion->id_e_ind_fvt;
 
                 foreach ($estadoEntidades as $ent) {
-                    // Buscar entidad por texto y posicion
-                    $entidadDB = EntidadDetectada::where('id_e_ind_fvt', $idEntrevista)
-                        ->where('texto', $ent['text'])
-                        ->where('posicion_inicio', $ent['start'])
-                        ->first();
+                    // Buscar entidad preferentemente por id_entidad (más confiable)
+                    if (!empty($ent['db_id'])) {
+                        $entidadDB = EntidadDetectada::where('id_entidad', $ent['db_id'])
+                            ->where('id_e_ind_fvt', $idEntrevista)
+                            ->first();
+                    } else {
+                        $entidadDB = EntidadDetectada::where('id_e_ind_fvt', $idEntrevista)
+                            ->where('texto', $ent['text'])
+                            ->where('posicion_inicio', $ent['start'])
+                            ->first();
+                    }
 
                     if ($entidadDB) {
                         // excluir_anonimizacion = true significa que NO se cubre (descubierta)
                         $entidadDB->excluir_anonimizacion = !$ent['cubierta'];
                         $entidadDB->save();
+                    }
+                }
+            }
+        }
+
+        // Eliminar del BD las entidades cuya etiqueta fue removida por el usuario
+        if ($request->has('entidades_eliminadas')) {
+            $eliminadas = json_decode($request->entidades_eliminadas, true);
+            if (is_array($eliminadas) && count($eliminadas) > 0) {
+                $idEntrevista = $asignacion->id_e_ind_fvt;
+                foreach ($eliminadas as $ent) {
+                    if (!empty($ent['id'])) {
+                        // ent.id en entidades[] es el id_entidad de la BD
+                        EntidadDetectada::where('id_entidad', $ent['id'])
+                            ->where('id_e_ind_fvt', $idEntrevista)
+                            ->delete();
+                    } else {
+                        EntidadDetectada::where('id_e_ind_fvt', $idEntrevista)
+                            ->where('texto', $ent['text'])
+                            ->where('posicion_inicio', $ent['start'])
+                            ->delete();
                     }
                 }
             }
@@ -1727,6 +1754,9 @@ class ProcesamientoController extends Controller
         $entrevista->anonimizacion_final_at = now();
         $entrevista->anonimizacion_final_por = $user->id;
         $entrevista->save();
+
+        // Guardar como adjunto público anonimizado en el expediente
+        $entrevista->guardarTranscripcionAnonimizada($asignacion->texto_anonimizado, $user->id);
 
         // Actualizar asignacion
         $asignacion->estado = AsignacionAnonimizacion::ESTADO_APROBADA;

@@ -319,6 +319,7 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                 <input type="hidden" name="formato_reemplazo" id="input_formato">
                 <input type="hidden" name="entidades_manuales" id="input_entidades_manuales">
                 <input type="hidden" name="estado_entidades" id="input_estado_entidades">
+                <input type="hidden" name="entidades_eliminadas" id="input_entidades_eliminadas">
 
                 <div class="card-body p-2">
                     {{-- Vista Edicion (texto liquido) --}}
@@ -382,6 +383,21 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                                 <span class="badge badge-dark">MISC</span> Otros
                             </div>
                         </div>
+
+                        {{-- Menu contextual (clic derecho) sobre entidades del editor visual --}}
+                        <div class="entity-menu" id="entity-context-menu">
+                            <div class="entity-menu-header" id="ctx-header">Entidad</div>
+                            <div class="entity-menu-item" id="ctx-cubrir-todas">
+                                <i class="fas fa-eye-slash mr-1 text-dark"></i> Cubrir todas las instancias
+                            </div>
+                            <div class="entity-menu-item" id="ctx-descubrir-todas">
+                                <i class="fas fa-eye mr-1 text-secondary"></i> Descubrir todas las instancias
+                            </div>
+                            <div class="entity-menu-item text-danger" id="ctx-eliminar-etiqueta" style="border-top:1px solid #eee;margin-top:2px;padding-top:6px;">
+                                <i class="fas fa-trash mr-1"></i> Eliminar etiqueta
+                            </div>
+                        </div>
+
                             <div class="col-md-6">
                                 <h6 class="text-muted mb-2">
                                     <i class="fas fa-user-secret mr-1"></i>Anonimizado
@@ -456,6 +472,10 @@ var estadoEntidades = [];
 // Variables para seleccion de texto
 var seleccionActual = null;
 
+// Para menu contextual de entidades (clic derecho)
+var entidadContextual = null;
+var syncingScroll = false;
+
 $(document).ready(function() {
     actualizarResumen();
     actualizarInputs();
@@ -518,16 +538,92 @@ $(document).ready(function() {
         }
     });
 
-    // Ocultar menu al hacer clic fuera
+    // Ocultar menus al hacer clic fuera
     $(document).on('click', function(e) {
         if (!$(e.target).closest('#entity-menu').length && !$(e.target).closest('#texto-original-marcado').length) {
             $('#entity-menu').removeClass('show');
             seleccionActual = null;
         }
+        if (!$(e.target).closest('#entity-context-menu').length) {
+            $('#entity-context-menu').removeClass('show');
+        }
+    });
+
+    // Scroll sincronizado entre columnas del editor visual
+    $('#texto-original-marcado').on('scroll', function() {
+        if (syncingScroll) return;
+        syncingScroll = true;
+        var pct = this.scrollTop / (this.scrollHeight - this.clientHeight) || 0;
+        var ot = $('#editor-visual')[0];
+        ot.scrollTop = pct * (ot.scrollHeight - ot.clientHeight);
+        syncingScroll = false;
+    });
+    $('#editor-visual').on('scroll', function() {
+        if (syncingScroll) return;
+        syncingScroll = true;
+        var pct = this.scrollTop / (this.scrollHeight - this.clientHeight) || 0;
+        var ot = $('#texto-original-marcado')[0];
+        ot.scrollTop = pct * (ot.scrollHeight - ot.clientHeight);
+        syncingScroll = false;
+    });
+
+    // Menu contextual (clic derecho) sobre entidades del editor visual
+    $(document).on('contextmenu', '#editor-visual .entity-clickable', function(e) {
+        e.preventDefault();
+        var id = parseInt($(this).data('id'));
+        var ent = estadoEntidades.find(function(en) { return en.id === id; });
+        if (!ent) return;
+        entidadContextual = { text: ent.text, type: ent.type };
+        var badgeClasses = { PER:'primary', LOC:'success', ORG:'info', DATE:'secondary', EVENT:'warning', GUN:'danger', MISC:'dark' };
+        var bc = badgeClasses[ent.type] || 'dark';
+        $('#ctx-header').html('<span class="badge badge-' + bc + '">' + ent.type + '</span> &ldquo;' + escapeHtml(ent.text) + '&rdquo;');
+        var posX = e.clientX + 5, posY = e.clientY + 5;
+        if (posX + 230 > window.innerWidth) posX = e.clientX - 235;
+        if (posY + 130 > window.innerHeight) posY = e.clientY - 135;
+        $('#entity-context-menu').css({ top: posY, left: posX }).addClass('show');
+    });
+
+    $('#ctx-cubrir-todas').on('click', function() {
+        if (!entidadContextual) return;
+        estadoEntidades.forEach(function(ent) {
+            if (ent.text === entidadContextual.text && ent.type === entidadContextual.type) ent.cubierta = true;
+        });
+        $('#entity-context-menu').removeClass('show');
+        renderizarEditorVisual();
+        sincronizarConTextarea();
+    });
+
+    $('#ctx-descubrir-todas').on('click', function() {
+        if (!entidadContextual) return;
+        estadoEntidades.forEach(function(ent) {
+            if (ent.text === entidadContextual.text && ent.type === entidadContextual.type) ent.cubierta = false;
+        });
+        $('#entity-context-menu').removeClass('show');
+        renderizarEditorVisual();
+        sincronizarConTextarea();
+    });
+
+    $('#ctx-eliminar-etiqueta').on('click', function() {
+        if (!entidadContextual) return;
+        var texto = entidadContextual.text, tipo = entidadContextual.type;
+        if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
+        estadoEntidades = estadoEntidades.filter(function(ent) {
+            return !(ent.text === texto && ent.type === tipo);
+        });
+        $('#entity-context-menu').removeClass('show');
+        entidadContextual = null;
+        renderizarEditorVisual();
+        sincronizarConTextarea();
+        if (typeof toastr !== 'undefined') toastr.info('Etiqueta "' + texto + '" (' + tipo + ') eliminada');
     });
 
     // Antes de enviar el formulario, guardar las entidades manuales y el estado de todas
     $('#formAnonimizacion').on('submit', function() {
+        // Asegurar que el textarea refleja el estado visual actual
+        if ($('#vista-visual').is(':visible')) {
+            sincronizarConTextarea();
+        }
+
         // Entidades manuales nuevas
         var entidadesManuales = estadoEntidades.filter(function(ent) {
             return ent.manual === true;
@@ -538,6 +634,7 @@ $(document).ready(function() {
         var estadoParaGuardar = estadoEntidades.map(function(ent) {
             return {
                 id: ent.id,
+                db_id: ent.db_id || null,
                 text: ent.text,
                 start: ent.start,
                 end: ent.end,
@@ -545,6 +642,15 @@ $(document).ready(function() {
             };
         });
         $('#input_estado_entidades').val(JSON.stringify(estadoParaGuardar));
+
+        // Entidades eliminadas: las que estaban en entidades originales pero ya no en estadoEntidades
+        var activosKey = new Set(estadoEntidades.map(function(e) {
+            return (e.start || 0) + '-' + e.text + '-' + e.type;
+        }));
+        var eliminadas = entidades.filter(function(ent) {
+            return !activosKey.has((ent.start || 0) + '-' + ent.text + '-' + ent.type);
+        });
+        $('#input_entidades_eliminadas').val(JSON.stringify(eliminadas));
     });
 });
 
@@ -609,6 +715,7 @@ function inicializarEditorVisual() {
 
         estadoEntidades.push({
             id: idCounter++,
+            db_id: ent.id || null,
             text: ent.text,
             type: ent.type,
             start: ent.start || 0,
@@ -795,6 +902,7 @@ function agregarEntidad(tipo) {
     instancias.forEach(function(inst) {
         var nuevaEntidad = {
             id: Date.now() + entidadesAgregadas,
+            db_id: null,
             text: textoABuscar,
             type: tipo,
             start: inst.start,
@@ -1023,12 +1131,13 @@ function actualizarResumen() {
 }
 
 function mostrarVista(vista) {
-    $('#vista-editar').hide();
-    $('#vista-visual').hide();
-
     if (vista === 'editar') {
+        sincronizarConTextarea();
+        $('#vista-visual').hide();
         $('#vista-editar').show();
     } else if (vista === 'visual') {
+        renderizarEditorVisual();
+        $('#vista-editar').hide();
         $('#vista-visual').show();
     }
 

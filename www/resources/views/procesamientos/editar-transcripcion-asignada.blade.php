@@ -19,6 +19,9 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     }
     #transcripcion {
         border-radius: 0 0 4px 4px !important;
+        min-height: calc(100vh - 300px);
+        resize: vertical;
+        font-family: monospace;
     }
     /* Vista previa de transcripcion */
     .preview-content {
@@ -61,104 +64,142 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
         border-radius: 3px;
         font-style: italic;
     }
+
+    /* Reproductor flotante */
+    #floating-player {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1050;
+        width: 340px;
+    }
+    #floating-player .card {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        border: 1px solid #adb5bd;
+        margin-bottom: 0;
+    }
+    #floating-player .card-header {
+        cursor: grab;
+        user-select: none;
+        padding: 0.4rem 0.75rem;
+        background: #343a40;
+        color: #fff;
+        border-radius: 4px 4px 0 0;
+    }
+    #floating-player .card-header:active { cursor: grabbing; }
+    #floating-player .card-header .btn-tool { color: #adb5bd; }
+    #floating-player .card-header .btn-tool:hover { color: #fff; }
+    #floating-player .card-body {
+        padding: 0.5rem;
+        background: #fff;
+    }
+    #floating-player audio,
+    #floating-player video { width: 100%; }
+    #floating-player .media-item label {
+        font-size: 0.8em;
+        color: #6c757d;
+        margin-bottom: 2px;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    #floating-player .media-item + .media-item {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #dee2e6;
+    }
+    #floating-player .media-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 4px;
+    }
+    #floating-player .media-controls .btn {
+        padding: 0.15rem 0.4rem;
+        font-size: 0.78em;
+    }
+
+    /* Tarjetas de info compactas abajo */
+    .info-cards-row .card { margin-bottom: 0; }
+    .info-cards-row dl.row dt,
+    .info-cards-row dl.row dd {
+        font-size: 0.85em;
+        margin-bottom: 0.2rem;
+    }
 </style>
 @endsection
 
 @section('content')
-<div class="row">
-    {{-- Panel izquierdo: Información y Audio --}}
-    <div class="col-md-4">
-        {{-- Estado de la asignación --}}
-        <div class="card">
-            <div class="card-header bg-{{ $asignacion->estado == 'rechazada' ? 'danger' : 'info' }}">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Estado de la Asignacion</h3>
+
+{{-- Reproductor flotante --}}
+@if($entrevista->rel_adjuntos && $entrevista->rel_adjuntos->count() > 0)
+<div id="floating-player">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center" id="player-drag-handle">
+            <span><i class="fas fa-headphones mr-1"></i>Audio/Video</span>
+            <button type="button" class="btn btn-tool btn-sm" id="btn-toggle-player" title="Minimizar/Expandir">
+                <i class="fas fa-minus" id="icon-toggle-player"></i>
+            </button>
+        </div>
+        <div class="card-body" id="player-body">
+            @foreach($entrevista->rel_adjuntos as $adjunto)
+            <div class="media-item">
+                <label title="{{ $adjunto->nombre_original }}">{{ $adjunto->nombre_original }}</label>
+                @if(strpos($adjunto->tipo_mime, 'audio') !== false)
+                <audio controls controlsList="nodownload" preload="metadata" id="media-{{ $adjunto->id_adjunto }}" class="w-100">
+                    <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
+                </audio>
+                @elseif(strpos($adjunto->tipo_mime, 'video') !== false)
+                <video controls controlsList="nodownload" preload="metadata" style="max-height: 160px;" id="media-{{ $adjunto->id_adjunto }}" class="w-100">
+                    <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
+                </video>
+                @endif
+                <div class="media-controls">
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', -10)">
+                            <i class="fas fa-backward"></i> -10s
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', 10)">
+                            +10s <i class="fas fa-forward"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="changeSpeed('media-{{ $adjunto->id_adjunto }}')">
+                            <i class="fas fa-tachometer-alt"></i> <span class="speed-label">1x</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-5">Estado:</dt>
-                    <dd class="col-sm-7">
-                        <span class="badge {{ $asignacion->estado_badge_class }}">
-                            {{ $asignacion->fmt_estado }}
-                        </span>
-                    </dd>
+            @endforeach
+        </div>
+    </div>
+</div>
+@endif
 
-                    <dt class="col-sm-5">Asignada:</dt>
-                    <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}</dd>
+{{-- Editor principal (ancho completo) --}}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0"><i class="fas fa-keyboard mr-2"></i>Transcripcion</h3>
+                <span class="badge badge-{{ $asignacion->estado == 'rechazada' ? 'danger' : 'info' }}">
+                    {{ $asignacion->fmt_estado }} &mdash; {{ $entrevista->entrevista_codigo }}
+                </span>
+            </div>
 
-                    @if($asignacion->fecha_inicio_edicion)
-                    <dt class="col-sm-5">Inicio Edicion:</dt>
-                    <dd class="col-sm-7">{{ $asignacion->fecha_inicio_edicion->format('d/m/Y H:i') }}</dd>
-                    @endif
-                </dl>
-
-                @if($asignacion->estado == 'rechazada' && $asignacion->comentario_revision)
-                <div class="alert alert-danger mt-3 mb-0">
-                    <strong><i class="fas fa-exclamation-triangle mr-1"></i> Motivo del rechazo:</strong><br>
+            @if($asignacion->estado == 'rechazada' && $asignacion->comentario_revision)
+            <div class="card-body py-2 px-3 border-bottom">
+                <div class="alert alert-danger mb-0">
+                    <strong><i class="fas fa-exclamation-triangle mr-1"></i> Motivo del rechazo:</strong>
                     {{ $asignacion->comentario_revision }}
                 </div>
-                @endif
             </div>
-        </div>
+            @endif
 
-        {{-- Información de la entrevista --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Datos de la Entrevista</h3>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Codigo:</dt>
-                    <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
-
-                    <dt class="col-sm-4">Titulo:</dt>
-                    <dd class="col-sm-8">{{ $entrevista->titulo }}</dd>
-
-                    <dt class="col-sm-4">Fecha:</dt>
-                    <dd class="col-sm-8">{{ $entrevista->entrevista_fecha ? \Carbon\Carbon::parse($entrevista->entrevista_fecha)->format('d/m/Y') : '-' }}</dd>
-                </dl>
-            </div>
-        </div>
-
-        {{-- Reproductor de Audio --}}
-        @if($entrevista->rel_adjuntos && $entrevista->rel_adjuntos->count() > 0)
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-headphones mr-2"></i>Audio/Video</h3>
-            </div>
-            <div class="card-body">
-                @foreach($entrevista->rel_adjuntos as $adjunto)
-                <div class="mb-3">
-                    <label class="d-block">{{ $adjunto->nombre_original }}</label>
-                    @if(strpos($adjunto->tipo_mime, 'audio') !== false)
-                    <audio controls controlsList="nodownload" class="w-100" preload="metadata">
-                        <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
-                        Su navegador no soporta audio HTML5
-                    </audio>
-                    @elseif(strpos($adjunto->tipo_mime, 'video') !== false)
-                    <video controls controlsList="nodownload" class="w-100" preload="metadata">
-                        <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
-                        Su navegador no soporta video HTML5
-                    </video>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
-    </div>
-
-    {{-- Panel derecho: Editor de transcripción --}}
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-keyboard mr-2"></i>Transcripcion</h3>
-            </div>
             <form action="{{ route('procesamientos.guardar-asignacion', $asignacion->id_asignacion) }}" method="POST" id="formTranscripcion">
                 @csrf
                 <div class="card-body p-2">
                     @include('partials.editor-toolbar', ['targetId' => 'transcripcion'])
                     <textarea name="transcripcion" id="transcripcion" class="form-control"
-                              style="min-height: 500px; resize: vertical; font-family: monospace;"
                               placeholder="Escriba aqui la transcripcion del audio...">{{ old('transcripcion', $asignacion->transcripcion_editada ?? $entrevista->getTextoParaProcesamiento()) }}</textarea>
                 </div>
                 <div class="card-footer">
@@ -182,13 +223,86 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 </div>
             </form>
         </div>
+    </div>
+</div>
 
-        {{-- Transcripción automática (si existe) --}}
-        @php $transcripcionAuto = $entrevista->getTextoParaProcesamiento(); @endphp
-        @if($transcripcionAuto && $asignacion->transcripcion_editada != $transcripcionAuto)
+{{-- Tarjetas de información (parte inferior) --}}
+<div class="row info-cards-row">
+
+    {{-- Estado de la asignación --}}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-2 bg-{{ $asignacion->estado == 'rechazada' ? 'danger' : 'info' }}">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i>Estado de la Asignacion</h3>
+            </div>
+            <div class="card-body py-2">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Estado:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge {{ $asignacion->estado_badge_class }}">
+                            {{ $asignacion->fmt_estado }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-5">Asignada:</dt>
+                    <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}</dd>
+
+                    @if($asignacion->fecha_inicio_edicion)
+                    <dt class="col-sm-5">Inicio Edicion:</dt>
+                    <dd class="col-sm-7">{{ $asignacion->fecha_inicio_edicion->format('d/m/Y H:i') }}</dd>
+                    @endif
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    {{-- Información de la entrevista --}}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-2">
+                <h3 class="card-title"><i class="fas fa-file-alt mr-1"></i>Datos de la Entrevista</h3>
+            </div>
+            <div class="card-body py-2">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Codigo:</dt>
+                    <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
+
+                    <dt class="col-sm-4">Titulo:</dt>
+                    <dd class="col-sm-8">{{ $entrevista->titulo }}</dd>
+
+                    <dt class="col-sm-4">Fecha:</dt>
+                    <dd class="col-sm-8">{{ $entrevista->entrevista_fecha ? \Carbon\Carbon::parse($entrevista->entrevista_fecha)->format('d/m/Y') : '-' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    {{-- Transcripción automática (acceso rápido) --}}
+    @php $transcripcionAuto = $entrevista->getTextoParaProcesamiento(); @endphp
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-2">
+                <h3 class="card-title"><i class="fas fa-keyboard mr-1"></i>Atajos de Teclado</h3>
+            </div>
+            <div class="card-body py-2">
+                <ul class="list-unstyled mb-0 small">
+                    <li><kbd>Ctrl</kbd> + <kbd>S</kbd> &mdash; Guardar borrador</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>Space</kbd> &mdash; Play/Pause</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>←</kbd> &mdash; Retroceder 10s</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>→</kbd> &mdash; Avanzar 10s</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Transcripción automática colapsada --}}
+@if($transcripcionAuto && $asignacion->transcripcion_editada != $transcripcionAuto)
+<div class="row mt-3">
+    <div class="col-12">
         <div class="card card-outline card-secondary collapsed-card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-robot mr-2"></i>Transcripcion Automatica (Referencia)</h3>
+            <div class="card-header py-2">
+                <h3 class="card-title"><i class="fas fa-robot mr-1"></i>Transcripcion Automatica (Referencia)</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-plus"></i>
@@ -199,9 +313,9 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <pre class="mb-0" style="white-space: pre-wrap; font-size: 0.9em;">{{ $transcripcionAuto }}</pre>
             </div>
         </div>
-        @endif
     </div>
 </div>
+@endif
 
 {{-- Modal confirmar envío --}}
 <div class="modal fade" id="modalEnviar" tabindex="-1">
@@ -235,18 +349,32 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @section('js')
 @include('partials.editor-toolbar-js')
 <script>
+function skipMedia(id, seconds) {
+    var media = document.getElementById(id);
+    if (media) media.currentTime += seconds;
+}
+
+var speeds = [1, 1.25, 1.5, 1.75, 2, 0.75];
+var speedIndex = {};
+function changeSpeed(id) {
+    if (!speedIndex[id]) speedIndex[id] = 0;
+    speedIndex[id] = (speedIndex[id] + 1) % speeds.length;
+    var media = document.getElementById(id);
+    if (media) {
+        media.playbackRate = speeds[speedIndex[id]];
+        $(media).closest('.media-item').find('.speed-label').text(speeds[speedIndex[id]] + 'x');
+    }
+}
+
 function enviarARevision() {
-    // Verificar que hay contenido
     var texto = $('#transcripcion').val().trim();
     if (texto.length < 50) {
         alert('La transcripcion debe tener al menos 50 caracteres');
         return;
     }
 
-    // Guardar primero y luego mostrar modal
     $('#formTranscripcion').one('submit', function(e) {
         e.preventDefault();
-
         $.ajax({
             url: $(this).attr('action'),
             method: 'POST',
@@ -264,7 +392,7 @@ function enviarARevision() {
 }
 
 // Auto-guardar cada 60 segundos
-var autoSaveInterval = setInterval(function() {
+setInterval(function() {
     var form = $('#formTranscripcion');
     $.ajax({
         url: form.attr('action'),
@@ -275,5 +403,72 @@ var autoSaveInterval = setInterval(function() {
         }
     });
 }, 60000);
+
+$(document).ready(function() {
+    // Atajos de teclado
+    $(document).on('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            $('#formTranscripcion').submit();
+        }
+        var getMedia = function() { return $('audio, video').first()[0]; };
+        if (e.ctrlKey && e.key === ' ') {
+            e.preventDefault();
+            var m = getMedia();
+            if (m) m.paused ? m.play() : m.pause();
+        }
+        if (e.ctrlKey && e.key === 'ArrowLeft') {
+            e.preventDefault();
+            var m = getMedia();
+            if (m) m.currentTime -= 10;
+        }
+        if (e.ctrlKey && e.key === 'ArrowRight') {
+            e.preventDefault();
+            var m = getMedia();
+            if (m) m.currentTime += 10;
+        }
+    });
+
+    // ── Reproductor flotante: toggle minimizar ──────────────────────────
+    $('#btn-toggle-player').on('click', function() {
+        var $body = $('#player-body');
+        var $icon = $('#icon-toggle-player');
+        if ($body.is(':visible')) {
+            $body.slideUp(150);
+            $icon.removeClass('fa-minus').addClass('fa-plus');
+        } else {
+            $body.slideDown(150);
+            $icon.removeClass('fa-plus').addClass('fa-minus');
+        }
+    });
+
+    // ── Reproductor flotante: arrastrar ────────────────────────────────
+    var $player  = $('#floating-player');
+    var $handle  = $('#player-drag-handle');
+    var dragging = false;
+    var startX, startY, origLeft, origTop;
+
+    $handle.on('mousedown', function(e) {
+        if ($(e.target).closest('#btn-toggle-player').length) return;
+        dragging = true;
+        startX   = e.clientX;
+        startY   = e.clientY;
+        var rect = $player[0].getBoundingClientRect();
+        origLeft = rect.left;
+        origTop  = rect.top;
+        $player.css({ position: 'fixed', left: origLeft, top: origTop, right: 'auto' });
+        e.preventDefault();
+    });
+
+    $(document).on('mousemove', function(e) {
+        if (!dragging) return;
+        $player.css({
+            left: Math.max(0, origLeft + e.clientX - startX),
+            top:  Math.max(0, origTop  + e.clientY - startY)
+        });
+    });
+
+    $(document).on('mouseup', function() { dragging = false; });
+});
 </script>
 @endsection

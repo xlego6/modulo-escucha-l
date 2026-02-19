@@ -13,6 +13,7 @@ class Entrevista extends Model
     // Constantes para tipos de adjunto (catálogo 19)
     const TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA = 312;
     const TIPO_ADJUNTO_TRANSCRIPCION_FINAL = 313;
+    const TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA = 314;
 
     protected $fillable = [
         'id_subserie',
@@ -225,12 +226,18 @@ class Entrevista extends Model
     }
 
     /**
-     * Obtener texto para procesamiento (transcripción automatizada o anotaciones legacy)
+     * Obtener texto para procesamiento (transcripción final > automatizada > anotaciones legacy)
      * Mantiene compatibilidad con datos anteriores
      */
     public function getTextoParaProcesamiento()
     {
-        // Primero intentar obtener del adjunto de transcripción
+        // Prioridad 1: transcripción final aprobada
+        $final = $this->getTranscripcionFinal();
+        if ($final) {
+            return $final;
+        }
+
+        // Prioridad 2: transcripción automatizada
         $transcripcion = $this->getTranscripcionAutomatizada();
         if ($transcripcion) {
             return $transcripcion;
@@ -274,6 +281,65 @@ class Entrevista extends Model
             ->whereNotNull('texto_extraido')
             ->where('texto_extraido', '!=', '')
             ->exists();
+    }
+
+    // =============================================
+    // MÉTODOS PARA TRANSCRIPCIÓN PÚBLICA ANONIMIZADA
+    // =============================================
+
+    /**
+     * Obtener el adjunto de transcripción pública anonimizada
+     */
+    public function getAdjuntoTranscripcionAnonimizada()
+    {
+        return $this->rel_adjuntos()
+            ->where('id_tipo', self::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA)
+            ->orderBy('created_at', 'desc')
+            ->first();
+    }
+
+    /**
+     * Obtener el texto de la transcripción pública anonimizada
+     */
+    public function getTranscripcionAnonimizada()
+    {
+        $adjunto = $this->getAdjuntoTranscripcionAnonimizada();
+        return $adjunto ? $adjunto->texto_extraido : null;
+    }
+
+    /**
+     * Guardar transcripción pública anonimizada como adjunto
+     * @param string $texto Texto anonimizado aprobado
+     * @param int|null $aprobadoPor ID del usuario que aprobó
+     * @return Adjunto
+     */
+    public function guardarTranscripcionAnonimizada($texto, $aprobadoPor = null)
+    {
+        $adjunto = $this->getAdjuntoTranscripcionAnonimizada();
+        $codigo = $this->entrevista_codigo ?? 'SIN-CODIGO';
+
+        if ($adjunto) {
+            $adjunto->texto_extraido = $texto;
+            $adjunto->texto_extraido_at = now();
+            $adjunto->tamano = strlen($texto);
+            $adjunto->save();
+        } else {
+            $nombre = 'transcripcion_anonimizada_' . $codigo . '.txt';
+
+            $adjunto = Adjunto::create([
+                'id_e_ind_fvt'      => $this->id_e_ind_fvt,
+                'id_tipo'           => self::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA,
+                'nombre_original'   => $nombre,
+                'tipo_mime'         => 'text/plain',
+                'ubicacion'         => '',
+                'tamano'            => strlen($texto),
+                'texto_extraido'    => $texto,
+                'texto_extraido_at' => now(),
+                'existe_archivo'    => 0,
+            ]);
+        }
+
+        return $adjunto;
     }
 
     /**
