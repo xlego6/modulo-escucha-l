@@ -126,13 +126,20 @@
             <!-- Idioma -->
             <div class="col-md-6">
                 <div class="form-group">
-                    <label for="id_idioma" class="required-field">Idioma del Testimonio</label>
-                    <select class="form-control" id="id_idioma" name="id_idioma" required>
-                        <option value="">-- Seleccione --</option>
+                    <label for="id_idioma">Idioma(s) del Testimonio</label>
+                    <select class="form-control select2" id="id_idioma" name="idiomas[]" multiple>
                         @foreach($catalogos['idiomas'] as $id => $descripcion)
-                        <option value="{{ $id }}" {{ $entrevista->id_idioma == $id ? 'selected' : '' }}>{{ $descripcion }}</option>
+                        <option value="{{ $id }}">{{ $descripcion }}</option>
                         @endforeach
                     </select>
+                </div>
+            </div>
+
+            <!-- Detalle idiomas -->
+            <div class="col-md-6" id="detalle_idiomas_container" style="display:none;">
+                <div class="form-group">
+                    <label for="detalle_idiomas">Detalle Idioma(s) Mencionado(s)</label>
+                    <textarea class="form-control" id="detalle_idiomas" name="detalle_idiomas" rows="2" placeholder="Especifique el o los idiomas...">{{ $entrevista->detalle_idiomas }}</textarea>
                 </div>
             </div>
 

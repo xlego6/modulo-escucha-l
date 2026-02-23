@@ -87,13 +87,24 @@ class BuscadorController extends Controller
                   ->orWhere('entrevista_codigo', 'ILIKE', '%' . $termino . '%')
                   ->orWhere('anotaciones', 'ILIKE', '%' . $termino . '%') // Legacy
                   ->orWhere('nombre_proyecto', 'ILIKE', '%' . $termino . '%')
+                  ->orWhere('detalle_idiomas', 'ILIKE', '%' . $termino . '%')
+                  // Buscar en contenido del testimonio (campos de texto)
+                  ->orWhereHas('rel_contenido', function($qc) use ($termino) {
+                      $qc->where('otras_poblaciones_mencionadas', 'ILIKE', '%' . $termino . '%')
+                         ->orWhere('otras_ocupaciones_mencionadas', 'ILIKE', '%' . $termino . '%')
+                         ->orWhere('detalle_grupos_etnicos', 'ILIKE', '%' . $termino . '%')
+                         ->orWhere('otros_hechos_victimizantes', 'ILIKE', '%' . $termino . '%')
+                         ->orWhere('detalle_resistencias', 'ILIKE', '%' . $termino . '%')
+                         ->orWhere('responsables_individuales', 'ILIKE', '%' . $termino . '%')
+                         ->orWhere('temas_abordados', 'ILIKE', '%' . $termino . '%');
+                  })
                   // Buscar en adjunto de transcripción automatizada
                   ->orWhereHas('rel_adjuntos', function($qa) use ($termino) {
                       $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
                          ->where('texto_extraido', 'ILIKE', '%' . $termino . '%');
                   });
             })
-            ->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario', 'rel_lugar_entrevista', 'rel_dependencia_origen', 'rel_equipo_estrategia'])
+            ->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario', 'rel_lugar_entrevista', 'rel_dependencia_origen', 'rel_equipo_estrategia', 'rel_contenido'])
             ->limit($limite)
             ->get();
 
@@ -115,6 +126,26 @@ class BuscadorController extends Controller
             }
             if (stripos($e->nombre_proyecto ?? '', $termino) !== false) {
                 $coincidencias[] = 'Proyecto/Investigacion';
+            }
+            if (stripos($e->detalle_idiomas ?? '', $termino) !== false) {
+                $coincidencias[] = 'Detalle Idiomas';
+            }
+            // Buscar en contenido del testimonio
+            if ($e->rel_contenido) {
+                $camposContenido = [
+                    'otras_poblaciones_mencionadas' => 'Otras Poblaciones',
+                    'otras_ocupaciones_mencionadas' => 'Otras Ocupaciones',
+                    'detalle_grupos_etnicos' => 'Detalle Etnicos',
+                    'otros_hechos_victimizantes' => 'Otros Hechos',
+                    'detalle_resistencias' => 'Detalle Resistencias',
+                    'responsables_individuales' => 'Responsables Individuales',
+                    'temas_abordados' => 'Temas Abordados',
+                ];
+                foreach ($camposContenido as $campo => $etiqueta) {
+                    if (stripos($e->rel_contenido->$campo ?? '', $termino) !== false) {
+                        $coincidencias[] = $etiqueta;
+                    }
+                }
             }
             $e->setAttribute('coincidencias', $coincidencias);
         }

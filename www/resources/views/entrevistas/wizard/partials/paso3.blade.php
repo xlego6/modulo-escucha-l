@@ -12,15 +12,15 @@
             <!-- Fechas de los hechos -->
             <div class="col-md-6">
                 <div class="form-group">
-                    <label for="fecha_hechos_inicial" class="required-field">Fecha Inicial de los Hechos</label>
-                    <input type="date" class="form-control" id="fecha_hechos_inicial" name="fecha_hechos_inicial" required>
+                    <label for="fecha_hechos_inicial">Fecha Inicial de los Hechos</label>
+                    <input type="date" class="form-control" id="fecha_hechos_inicial" name="fecha_hechos_inicial">
                     <small class="form-text text-muted">Fecha del hecho mas antiguo mencionado</small>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label for="fecha_hechos_final" class="required-field">Fecha Final de los Hechos</label>
-                    <input type="date" class="form-control" id="fecha_hechos_final" name="fecha_hechos_final" required>
+                    <label for="fecha_hechos_final">Fecha Final de los Hechos</label>
+                    <input type="date" class="form-control" id="fecha_hechos_final" name="fecha_hechos_final">
                     <small class="form-text text-muted">Fecha del hecho mas reciente mencionado</small>
                 </div>
             </div>
@@ -37,6 +37,14 @@
                 </div>
             </div>
 
+            <!-- Otras poblaciones mencionadas -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="otras_poblaciones_mencionadas">Otra(s) Poblacion(es) Mencionada(s)</label>
+                    <textarea class="form-control" id="otras_poblaciones_mencionadas" name="otras_poblaciones_mencionadas" rows="2" placeholder="Otras poblaciones no incluidas en el listado..."></textarea>
+                </div>
+            </div>
+
             <!-- Ocupaciones mencionadas -->
             <div class="col-md-6">
                 <div class="form-group">
@@ -46,6 +54,14 @@
                         <option value="{{ $id }}">{{ $descripcion }}</option>
                         @endforeach
                     </select>
+                </div>
+            </div>
+
+            <!-- Otras ocupaciones mencionadas -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="otras_ocupaciones_mencionadas">Otra(s) Ocupacion(es) Mencionada(s)</label>
+                    <textarea class="form-control" id="otras_ocupaciones_mencionadas" name="otras_ocupaciones_mencionadas" rows="2" placeholder="Otras ocupaciones no incluidas en el listado..."></textarea>
                 </div>
             </div>
 
@@ -97,6 +113,14 @@
                 </div>
             </div>
 
+            <!-- Detalle grupos etnicos -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="detalle_grupos_etnicos">Detalle de Grupo(s) Etnico(s)</label>
+                    <textarea class="form-control" id="detalle_grupos_etnicos" name="detalle_grupos_etnicos" rows="2" placeholder="Detalle adicional sobre los grupos etnicos mencionados..."></textarea>
+                </div>
+            </div>
+
             <!-- Rangos etarios mencionados -->
             <div class="col-md-6">
                 <div class="form-group">
@@ -130,6 +154,34 @@
                         <option value="{{ $id }}">{{ $descripcion }}</option>
                         @endforeach
                     </select>
+                </div>
+            </div>
+
+            <!-- Otros hechos victimizantes -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="otros_hechos_victimizantes">Otro(s) Hecho(s) Victimizante(s)</label>
+                    <textarea class="form-control" id="otros_hechos_victimizantes" name="otros_hechos_victimizantes" rows="2" placeholder="Otros hechos victimizantes no incluidos en el listado..."></textarea>
+                </div>
+            </div>
+
+            <!-- Practicas de resistencia -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Practica(s) de Resistencia Mencionada(s)</label>
+                    <select class="form-control select2-paso3" id="contenido_practicas_resistencia" name="contenido_practicas_resistencia[]" multiple>
+                        @foreach($catalogos['practicas_resistencia'] as $id => $descripcion)
+                        <option value="{{ $id }}">{{ $descripcion }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- Detalle resistencias -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="detalle_resistencias">Detalle de Resistencia(s)</label>
+                    <textarea class="form-control" id="detalle_resistencias" name="detalle_resistencias" rows="2" placeholder="Detalle adicional sobre las practicas de resistencia mencionadas..."></textarea>
                 </div>
             </div>
 

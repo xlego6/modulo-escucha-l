@@ -73,9 +73,25 @@
                                 <td>{{ $entrevista->num_testimoniantes ?? 'No especificado' }}</td>
                             </tr>
                             <tr>
-                                <th>Idioma:</th>
-                                <td>{{ $entrevista->rel_idioma->descripcion ?? 'No especificado' }}</td>
+                                <th>Idioma(s):</th>
+                                <td>
+                                    @if($entrevista->rel_idiomas && $entrevista->rel_idiomas->count() > 0)
+                                        @foreach($entrevista->rel_idiomas as $idioma)
+                                            <span class="badge badge-info mr-1">{{ $idioma->descripcion }}</span>
+                                        @endforeach
+                                    @elseif($entrevista->rel_idioma)
+                                        {{ $entrevista->rel_idioma->descripcion }}
+                                    @else
+                                        <span class="text-muted">No especificado</span>
+                                    @endif
+                                </td>
                             </tr>
+                            @if($entrevista->detalle_idiomas)
+                            <tr>
+                                <th>Detalle Idiomas:</th>
+                                <td>{{ $entrevista->detalle_idiomas }}</td>
+                            </tr>
+                            @endif
                         </table>
                     </div>
                     <div class="col-md-6">
@@ -451,6 +467,23 @@
                         </div>
                     </div>
 
+                    @if($entrevista->rel_contenido->otras_poblaciones_mencionadas || $entrevista->rel_contenido->otras_ocupaciones_mencionadas)
+                    <div class="row mb-2">
+                        @if($entrevista->rel_contenido->otras_poblaciones_mencionadas)
+                        <div class="col-md-6">
+                            <strong>Otra(s) Poblacion(es):</strong><br>
+                            <span class="text-muted">{{ $entrevista->rel_contenido->otras_poblaciones_mencionadas }}</span>
+                        </div>
+                        @endif
+                        @if($entrevista->rel_contenido->otras_ocupaciones_mencionadas)
+                        <div class="col-md-6">
+                            <strong>Otra(s) Ocupacion(es):</strong><br>
+                            <span class="text-muted">{{ $entrevista->rel_contenido->otras_ocupaciones_mencionadas }}</span>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+
                     <!-- Sexos, Identidades, Orientaciones -->
                     <div class="row mb-2">
                         <div class="col-md-4">
@@ -519,6 +552,15 @@
                         </div>
                     </div>
 
+                    @if($entrevista->rel_contenido->detalle_grupos_etnicos)
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <strong>Detalle Grupo(s) Etnico(s):</strong><br>
+                            <span class="text-muted">{{ $entrevista->rel_contenido->detalle_grupos_etnicos }}</span>
+                        </div>
+                    </div>
+                    @endif
+
                     <hr>
 
                     <!-- Hechos Victimizantes -->
@@ -534,6 +576,38 @@
                             @endif
                         </div>
                     </div>
+
+                    @if($entrevista->rel_contenido->otros_hechos_victimizantes)
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <strong>Otro(s) Hecho(s) Victimizante(s):</strong><br>
+                            <span class="text-muted">{{ $entrevista->rel_contenido->otros_hechos_victimizantes }}</span>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Practicas de Resistencia -->
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <strong>Practica(s) de Resistencia:</strong><br>
+                            @if($entrevista->rel_contenido->rel_practicas_resistencia && $entrevista->rel_contenido->rel_practicas_resistencia->count() > 0)
+                                @foreach($entrevista->rel_contenido->rel_practicas_resistencia as $item)
+                                    <span class="badge badge-success mr-1 mb-1">{{ $item->descripcion }}</span>
+                                @endforeach
+                            @else
+                                <span class="text-muted">No especificado</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if($entrevista->rel_contenido->detalle_resistencias)
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <strong>Detalle Resistencia(s):</strong><br>
+                            <span class="text-muted">{{ $entrevista->rel_contenido->detalle_resistencias }}</span>
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Responsables -->
                     <div class="row mb-2">

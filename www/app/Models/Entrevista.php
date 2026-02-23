@@ -50,6 +50,7 @@ class Entrevista extends Model
         'fecha_toma_final',
         'id_area_compatible',
         'observaciones_toma',
+        'detalle_idiomas',
     ];
 
     protected $casts = [
@@ -116,6 +117,10 @@ class Entrevista extends Model
 
     public function rel_necesidades_reparacion() {
         return $this->belongsToMany(CatItem::class, 'esclarecimiento.entrevista_necesidad_reparacion', 'id_e_ind_fvt', 'id_necesidad', 'id_e_ind_fvt', 'id_item');
+    }
+
+    public function rel_idiomas() {
+        return $this->belongsToMany(CatItem::class, 'esclarecimiento.entrevista_idioma', 'id_e_ind_fvt', 'id_idioma', 'id_e_ind_fvt', 'id_item');
     }
 
     // Relación Paso 3 - Contenido

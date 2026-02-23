@@ -31,6 +31,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
                 'rel_equipo_estrategia',
                 'rel_tipo_testimonio',
                 'rel_idioma',
+                'rel_idiomas',
                 'rel_area_compatible',
                 'rel_formatos',
                 'rel_modalidades',
@@ -45,6 +46,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
                 'rel_contenido.rel_ocupaciones',
                 'rel_contenido.rel_hechos_victimizantes',
                 'rel_contenido.rel_responsables',
+                'rel_contenido.rel_practicas_resistencia',
             ]);
 
         if (!empty($this->filtros['fecha_desde'])) {
@@ -109,7 +111,8 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             'Departamento Toma',
             'Municipio Toma',
             'Modalidad(es)',
-            'Idioma',
+            'Idioma(s)',
+            'Detalle Idiomas',
             'Fecha Toma Inicial',
             'Fecha Toma Final',
             'Necesidades Reparacion',
@@ -128,8 +131,14 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             'Fecha Hechos Inicial',
             'Fecha Hechos Final',
             'Poblaciones Mencionadas',
+            'Otras Poblaciones Mencionadas',
             'Ocupaciones Mencionadas',
+            'Otras Ocupaciones Mencionadas',
             'Hechos Victimizantes',
+            'Otros Hechos Victimizantes',
+            'Practicas de Resistencia',
+            'Detalle Resistencias',
+            'Detalle Grupos Etnicos',
             'Responsables Colectivos',
             'Responsables Individuales',
             'Temas Abordados',
@@ -185,6 +194,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
         $ocupaciones = $contenido ? $contenido->rel_ocupaciones->pluck('descripcion')->implode(', ') : '';
         $hechos = $contenido ? $contenido->rel_hechos_victimizantes->pluck('descripcion')->implode(', ') : '';
         $responsables = $contenido ? $contenido->rel_responsables->pluck('descripcion')->implode(', ') : '';
+        $practicas = $contenido ? $contenido->rel_practicas_resistencia->pluck('descripcion')->implode(', ') : '';
 
         // Adjuntos
         $adjuntos = $entrevista->rel_adjuntos;
@@ -228,7 +238,10 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             $entrevista->rel_entrevistador ? $entrevista->rel_entrevistador->id_territorio : '',
             $entrevista->rel_lugar_entrevista ? $entrevista->rel_lugar_entrevista->descripcion : '',
             $modalidades,
-            $entrevista->rel_idioma ? $entrevista->rel_idioma->descripcion : '',
+            $entrevista->rel_idiomas->count() > 0
+                ? $entrevista->rel_idiomas->pluck('descripcion')->implode(', ')
+                : ($entrevista->rel_idioma ? $entrevista->rel_idioma->descripcion : ''),
+            $entrevista->detalle_idiomas ?? '',
             $entrevista->fecha_toma_inicial,
             $entrevista->fecha_toma_final,
             $necesidades,
@@ -249,8 +262,14 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             $contenido ? $contenido->fecha_hechos_inicial : '',
             $contenido ? $contenido->fecha_hechos_final : '',
             $poblaciones,
+            $contenido ? $contenido->otras_poblaciones_mencionadas : '',
             $ocupaciones,
+            $contenido ? $contenido->otras_ocupaciones_mencionadas : '',
             $hechos,
+            $contenido ? $contenido->otros_hechos_victimizantes : '',
+            $practicas,
+            $contenido ? $contenido->detalle_resistencias : '',
+            $contenido ? $contenido->detalle_grupos_etnicos : '',
             $responsables,
             $contenido ? $contenido->responsables_individuales : '',
             $contenido ? $contenido->temas_abordados : '',

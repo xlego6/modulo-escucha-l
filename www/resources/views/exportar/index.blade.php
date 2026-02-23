@@ -188,7 +188,7 @@
                             </li>
                             <li class="mb-2">
                                 <strong>Datos Testimoniales:</strong>
-                                <span class="text-muted">Titulo, Dependencia, Tipo testimonio, Formato(s), Num. testimoniantes, Lugar de toma, Modalidad, Idioma, Fechas de toma, Necesidades reparacion, Areas compatibles, Anexos, Observaciones, Entrevistador</span>
+                                <span class="text-muted">Titulo, Dependencia, Tipo testimonio, Formato(s), Num. testimoniantes, Lugar de toma, Modalidad, Idioma(s), Detalle idiomas, Fechas de toma, Necesidades reparacion, Areas compatibles, Anexos, Observaciones, Entrevistador</span>
                             </li>
                             <li class="mb-2">
                                 <strong>Testimoniantes:</strong>
@@ -196,7 +196,7 @@
                             </li>
                             <li class="mb-2">
                                 <strong>Contenido:</strong>
-                                <span class="text-muted">Fechas de hechos, Poblaciones mencionadas, Ocupaciones, Hechos victimizantes, Responsables colectivos e individuales, Temas abordados</span>
+                                <span class="text-muted">Fechas de hechos, Poblaciones mencionadas, Otras poblaciones, Ocupaciones, Otras ocupaciones, Hechos victimizantes, Otros hechos, Practicas de resistencia, Detalle resistencias, Detalle grupos etnicos, Responsables colectivos e individuales, Temas abordados</span>
                             </li>
                             <li class="mb-2">
                                 <strong>Adjuntos:</strong>
