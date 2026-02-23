@@ -354,7 +354,7 @@
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-upload"></i> Subir Archivo</h3>
             </div>
-            <form action="{{ route('adjuntos.subir', $entrevista->id_e_ind_fvt) }}" method="POST" enctype="multipart/form-data">
+            <form id="form-subir-archivo" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
                     <div class="form-group">
@@ -375,9 +375,21 @@
                         </div>
                         <small class="text-muted">Maximo 500MB. Formatos: audio, video, PDF, imagenes, documentos.</small>
                     </div>
+
+                    <!-- Indicador de progreso -->
+                    <div id="upload-progress-container" style="display:none;">
+                        <div class="mb-1 d-flex justify-content-between">
+                            <small id="upload-status-text" class="text-muted">Subiendo archivo...</small>
+                            <small id="upload-percent-text" class="font-weight-bold">0%</small>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small id="upload-detail-text" class="text-muted"></small>
+                    </div>
                 </div>
                 <div class="card-footer">
-                    <button type="submit" class="btn btn-success btn-block">
+                    <button type="submit" class="btn btn-success btn-block" id="btn-subir">
                         <i class="fas fa-upload"></i> Subir Archivo
                     </button>
                 </div>
@@ -502,6 +514,112 @@ $(document).ready(function() {
         var fileName = e.target.files[0] ? e.target.files[0].name : 'Seleccionar archivo...';
         var label = this.nextElementSibling;
         label.textContent = fileName;
+    });
+
+    // Formatear bytes a unidad legible
+    function formatBytes(bytes) {
+        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MB';
+        if (bytes >= 1024) return (bytes / 1024).toFixed(2) + ' KB';
+        return bytes + ' bytes';
+    }
+
+    // Subida con indicador de progreso
+    $('#form-subir-archivo').on('submit', function(e) {
+        e.preventDefault();
+
+        var fileInput = document.getElementById('archivo');
+        var tipoSelect = document.getElementById('id_tipo');
+
+        if (!tipoSelect.value) {
+            alert('Debe seleccionar un tipo de archivo.');
+            return;
+        }
+        if (!fileInput.files.length) {
+            alert('Debe seleccionar un archivo.');
+            return;
+        }
+
+        var formData = new FormData(this);
+        var fileSize = fileInput.files[0].size;
+        var startTime = Date.now();
+
+        // Mostrar barra de progreso, deshabilitar boton
+        $('#upload-progress-container').show();
+        $('#btn-subir').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Subiendo...');
+        $('#upload-progress-bar').css('width', '0%').removeClass('bg-danger').addClass('bg-success progress-bar-animated');
+        $('#upload-status-text').text('Subiendo archivo...');
+        $('#upload-percent-text').text('0%');
+        $('#upload-detail-text').text('');
+
+        var xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', function(evt) {
+            if (evt.lengthComputable) {
+                var percent = Math.round((evt.loaded / evt.total) * 100);
+                $('#upload-progress-bar').css('width', percent + '%').attr('aria-valuenow', percent);
+                $('#upload-percent-text').text(percent + '%');
+
+                // Calcular velocidad y tiempo restante
+                var elapsed = (Date.now() - startTime) / 1000;
+                if (elapsed > 0.5) {
+                    var speed = evt.loaded / elapsed;
+                    var remaining = (evt.total - evt.loaded) / speed;
+                    var detalle = formatBytes(evt.loaded) + ' / ' + formatBytes(evt.total);
+                    if (remaining > 0 && percent < 100) {
+                        if (remaining >= 60) {
+                            detalle += ' — ~' + Math.ceil(remaining / 60) + ' min restante(s)';
+                        } else {
+                            detalle += ' — ~' + Math.ceil(remaining) + ' seg restante(s)';
+                        }
+                        detalle += ' (' + formatBytes(speed) + '/s)';
+                    }
+                    $('#upload-detail-text').text(detalle);
+                }
+
+                if (percent >= 100) {
+                    $('#upload-status-text').text('Procesando archivo en el servidor...');
+                    $('#upload-progress-bar').removeClass('progress-bar-animated');
+                    $('#upload-detail-text').text('');
+                }
+            }
+        });
+
+        xhr.addEventListener('load', function() {
+            if (xhr.status >= 200 && xhr.status < 400) {
+                $('#upload-status-text').text('Archivo subido correctamente.');
+                $('#upload-progress-bar').css('width', '100%');
+                $('#upload-percent-text').text('100%');
+                $('#upload-detail-text').text('');
+                // Recargar pagina para mostrar el nuevo adjunto
+                setTimeout(function() {
+                    window.location.reload();
+                }, 500);
+            } else {
+                var msg = 'Error al subir el archivo.';
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    if (resp.message) msg = resp.message;
+                } catch(e) {}
+                $('#upload-status-text').text(msg);
+                $('#upload-progress-bar').removeClass('bg-success progress-bar-animated').addClass('bg-danger').css('width', '100%');
+                $('#upload-percent-text').text('Error');
+                $('#upload-detail-text').text('');
+                $('#btn-subir').prop('disabled', false).html('<i class="fas fa-upload"></i> Subir Archivo');
+            }
+        });
+
+        xhr.addEventListener('error', function() {
+            $('#upload-status-text').text('Error de conexion al subir el archivo.');
+            $('#upload-progress-bar').removeClass('bg-success progress-bar-animated').addClass('bg-danger').css('width', '100%');
+            $('#upload-percent-text').text('Error');
+            $('#upload-detail-text').text('');
+            $('#btn-subir').prop('disabled', false).html('<i class="fas fa-upload"></i> Subir Archivo');
+        });
+
+        xhr.open('POST', '{{ route("adjuntos.subir", $entrevista->id_e_ind_fvt) }}');
+        xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+        xhr.send(formData);
     });
 
     // Funcion para obtener fecha/hora actual formateada
