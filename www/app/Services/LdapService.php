@@ -120,48 +120,77 @@ class LdapService
         }
 
         $usernameSam = explode('@', trim($email))[0] ?? trim($email);
-        $bindUser = $this->resolveBindUser($usernameSam);
         $host = $this->useSsl ? "ldaps://{$this->host}" : $this->host;
 
-        $connection = @ldap_connect($host, $this->port);
+        $bindCandidates = $this->buildBindCandidates($email, $usernameSam);
+        $errors = [];
 
-        if (!$connection) {
-            Log::error('No fue posible crear conexión LDAP.', [
-                'host' => $host,
-                'port' => $this->port,
-            ]);
-            return null;
-        }
+        foreach ($bindCandidates as $bindUser) {
+            $connection = @ldap_connect($host, $this->port);
 
-        @ldap_set_option($connection, LDAP_OPT_PROTOCOL_VERSION, 3);
-        @ldap_set_option($connection, LDAP_OPT_REFERRALS, 0);
-        @ldap_set_option($connection, LDAP_OPT_NETWORK_TIMEOUT, $this->timeout);
-
-        if ($this->useStarttls && !$this->useSsl) {
-            if (!@ldap_start_tls($connection)) {
-                Log::error('No fue posible iniciar StartTLS en LDAP.', [
+            if (!$connection) {
+                Log::error('No fue posible crear conexión LDAP.', [
                     'host' => $host,
                     'port' => $this->port,
-                    'ldap_error' => @ldap_error($connection),
                 ]);
-                @ldap_unbind($connection);
                 return null;
             }
-        }
 
-        if (!@ldap_bind($connection, $bindUser, $password)) {
-            Log::warning('LDAP bind fallido.', [
-                'host' => $host,
-                'port' => $this->port,
+            @ldap_set_option($connection, LDAP_OPT_PROTOCOL_VERSION, 3);
+            @ldap_set_option($connection, LDAP_OPT_REFERRALS, 0);
+            @ldap_set_option($connection, LDAP_OPT_NETWORK_TIMEOUT, $this->timeout);
+
+            if ($this->useStarttls && !$this->useSsl) {
+                if (!@ldap_start_tls($connection)) {
+                    Log::error('No fue posible iniciar StartTLS en LDAP.', [
+                        'host' => $host,
+                        'port' => $this->port,
+                        'ldap_error' => @ldap_error($connection),
+                    ]);
+                    @ldap_unbind($connection);
+                    return null;
+                }
+            }
+
+            if (@ldap_bind($connection, $bindUser, $password)) {
+                return $connection;
+            }
+
+            $errors[] = [
                 'bind_user' => $bindUser,
                 'ldap_error' => @ldap_error($connection),
                 'ldap_errno' => @ldap_errno($connection),
-            ]);
+            ];
+
             @ldap_unbind($connection);
-            return null;
         }
 
-        return $connection;
+        Log::warning('LDAP bind fallido en todos los formatos probados.', [
+            'host' => $host,
+            'port' => $this->port,
+            'attempts' => $errors,
+        ]);
+
+        return null;
+    }
+
+    protected function buildBindCandidates(string $email, string $usernameSam): array
+    {
+        $candidates = [
+            $this->resolveBindUser($usernameSam),
+            $email,
+            $usernameSam,
+        ];
+
+        if (!empty($this->domain)) {
+            $candidates[] = $usernameSam . '@' . $this->domain;
+        }
+
+        if (!empty($this->netbios)) {
+            $candidates[] = $this->netbios . '\\' . $usernameSam;
+        }
+
+        return array_values(array_unique(array_filter(array_map('trim', $candidates))));
     }
 
     protected function resolveBindUser(string $usernameSam): string
