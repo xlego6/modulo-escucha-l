@@ -140,7 +140,10 @@ docker-compose logs -f
 docker exec -it mel-app bash
 
 # Ejecutar artisan
-docker exec -it mel-app php artisan [comando]
+docker exec -it mel-app php artisan
+
+#migrar artisan (para cambios en bases de datos)
+docker exec mel-app php artisan migrate
 
 # Reiniciar BD (elimina datos)
 docker-compose down -v
