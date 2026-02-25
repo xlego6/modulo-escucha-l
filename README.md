@@ -11,7 +11,7 @@ Sistema ligero de gestion de testimonios basado en modulo-escucha.
 ## Instalacion Rapida (Desarrollo)
 
 ### Windows (CMD o PowerShell)
-
+cambio
 ```cmd
 cd modulo-escucha-l
 
