@@ -94,6 +94,7 @@
         </div>
 
         <!-- Cambiar Contraseña -->
+        @if(Auth::user()->id_nivel == 1)
         <div class="card card-secondary">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-key mr-2"></i>Cambiar Contraseña</h3>
@@ -134,6 +135,19 @@
                 </div>
             </form>
         </div>
+        @else
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-key mr-2"></i>Contraseña</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    La gestión de contraseña para su perfil se realiza a través del directorio activo institucional.
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 
