@@ -1,0 +1,105 @@
+<footer class="bg-[#e6b823] text-gray-600">
+    <div class="max-w-full mx-auto px-8 py-10 md:py-14">
+        <div class="flex flex-col gap-10 md:flex-row md:items-start">
+            <div class="flex-1 flex flex-col gap-5 md:justify-center md:self-stretch">
+                <div>
+                    <img
+                        src="{{ asset('header-footer/Logo-CNMH-02.png') }}"
+                        alt="Centro Nacional de Memoria Histórica"
+                        class="w-full pr-10"
+                    />
+                </div>
+
+                <div class="flex gap-2 md:ml-8">
+                    <a href="#" class="w-9 h-9 bg-[#3b5998] flex items-center justify-center rounded-sm" aria-label="Facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" class="w-5 h-5">
+                            <path d="M22.675 0h-21.35C.597 0 0 .598 0 1.333v21.333C0 23.403.597 24 1.325 24h11.495v-9.294H9.691v-3.622h3.129V8.413c0-3.1 1.894-4.788 4.659-4.788 1.325 0 2.466.098 2.798.142v3.245h-1.922c-1.505 0-1.796.715-1.796 1.763v2.314h3.587l-.467 3.622h-3.12V24h6.116C23.403 24 24 23.403 24 22.667V1.333C24 .598 23.403 0 22.675 0z" />
+                        </svg>
+                    </a>
+
+                    <a href="#" class="w-9 h-9 bg-[#000000] flex items-center justify-center rounded-sm" aria-label="X (Twitter)">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" class="w-5 h-5">
+                            <path d="M22.54 0h-4.9l-7.16 9.5L6.18 0H0l8.38 12.02L0 24h4.9l7.16-9.6L17.82 24H24l-8.62-12z" />
+                        </svg>
+                    </a>
+
+                    <a href="#" class="w-9 h-9 bg-[#ff0000] flex items-center justify-center rounded-sm" aria-label="YouTube">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" class="w-5 h-5">
+                            <path d="M23.5 6.2a2.9 2.9 0 0 0-2-2C19 4 12 4 12 4s-7 0-9.5.2a2.9 2.9 0 0 0-2 2A29.7 29.7 0 0 0 0 12a29.7 29.7 0 0 0 .5 5.8 2.9 2.9 0 0 0 2 2C5 20 12 20 12 20s7 0 9.5-.2a2.9 2.9 0 0 0 2-2A29.7 29.7 0 0 0 24 12a29.7 29.7 0 0 0-.5-5.8zM9.75 15.5V8.5L15.5 12z" />
+                        </svg>
+                    </a>
+
+                    <a href="#" class="w-9 h-9 bg-[#c13584] flex items-center justify-center rounded-sm" aria-label="Instagram">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" class="w-5 h-5">
+                            <path d="M7 2C4.2 2 2 4.2 2 7v10c0 2.8 2.2 5 5 5h10c2.8 0 5-2.2 5-5V7c0-2.8-2.2-5-5-5H7zm10 2a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h10zm-5 3.5A4.5 4.5 0 1 0 16.5 12 4.51 4.51 0 0 0 12 7.5zm0 7.5A3 3 0 1 1 15 12a3 3 0 0 1-3 3zm4.75-7.88a1.12 1.12 0 1 1 1.12-1.12 1.12 1.12 0 0 1-1.12 1.12z" />
+                        </svg>
+                    </a>
+
+                    <a href="#" class="w-9 h-9 bg-[#0077b5] flex items-center justify-center rounded-sm" aria-label="LinkedIn">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" class="w-5 h-5">
+                            <path d="M20.45 20.45h-3.55v-5.4c0-1.29-.02-2.95-1.8-2.95-1.8 0-2.08 1.4-2.08 2.85v5.5H9.47V9h3.41v1.56h.05c.47-.9 1.63-1.84 3.36-1.84 3.6 0 4.27 2.37 4.27 5.45v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.78A1.77 1.77 0 0 0 0 1.78v20.44A1.77 1.77 0 0 0 1.78 24h20.44A1.77 1.77 0 0 0 24 22.22V1.78A1.77 1.77 0 0 0 22.22 0z" />
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="space-y-1 md:ml-8">
+                    <a href="#" class="block hover:underline">Políticas, lineamientos y manuales</a>
+                    <a href="#" class="block hover:underline">Términos y condiciones</a>
+                    <a href="#" class="block hover:underline">Mapa de sitio</a>
+                </div>
+            </div>
+
+            <div class="hidden md:block w-px bg-gray-600 self-stretch mx-6"></div>
+
+            <div class="flex-1 flex flex-col gap-4">
+                <h2 class="font-semibold text-base">Horarios</h2>
+                <div>
+                    <p class="font-semibold">Atención al ciudadano:</p>
+                    <p>Lunes a Viernes</p>
+                    <p>8:00 a.m. a 4:00 p.m. jornada continua (días hábiles)</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Ventanilla única presencial:</p>
+                    <p>Carrera 7 # 32 -16. Local: 211 (Centro Comercial San Martín)</p>
+                    <p>Lunes a Viernes</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Ventanilla única, radicación electrónica:</p>
+                    <p>Lunes a Viernes</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Notificaciones judiciales, radicación electrónica:</p>
+                    <p>Lunes a Viernes</p>
+                    <p>8:00 a.m. a 12:30 y de 1:30 a 5:00 p.m. (días hábiles)</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Centro de Documentación – Dirección Archivo de los Derechos Humanos:</p>
+                    <p>Miércoles y Jueves previa agenda por solicitud, mediante canales electrónicos institucionales.</p>
+                </div>
+            </div>
+
+            <div class="hidden md:block w-px bg-gray-600 self-stretch mx-6"></div>
+
+            <div class="flex-1 flex flex-col gap-3">
+                <h2 class="font-semibold text-base">Centro Nacional de Memoria Histórica</h2>
+                <p>Carrera 7 No 32-42 Pisos 30 y 31<br />Bogotá, Colombia.<br />Código Postal 110421.</p>
+                <div>
+                    <p class="font-semibold">Línea gratuita o línea de servicio a la ciudadanía/usuario</p>
+                    <p>+571 601 7965060</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Línea anticorrupción:</p>
+                    <p>+571 601 796 5060</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Buzón notificaciones judiciales:</p>
+                    <p>notificaciones@cnmh.gov.co</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Correo radicación electrónica:</p>
+                    <p>radicacion@cnmh.gov.co</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>

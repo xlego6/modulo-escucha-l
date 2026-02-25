@@ -1,0 +1,150 @@
+<header class="w-full bg-[#e6b823] relative" style="z-index: 1050;">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="grid grid-cols-3 items-center py-3">
+            <div></div>
+            <div class="flex justify-center">
+                <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
+                    <img
+                        src="{{ asset('header-footer/Logo-CNMH-02.png') }}"
+                        alt="Centro Nacional de Memoria Histórica"
+                        class="h-16 md:h-24"
+                    />
+                </a>
+            </div>
+            <div class="flex justify-end md:hidden">
+                <button
+                    data-collapse-toggle="main-nav"
+                    type="button"
+                    class="inline-flex items-center p-2 text-gray-900 hover:bg-[#f5cd50] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009ad9]"
+                    aria-controls="main-nav"
+                    aria-expanded="false"
+                >
+                    <span class="sr-only">Abrir menú</span>
+                    <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-[#f5cd50]">
+        <div class="max-w-6xl mx-auto px-4">
+            <nav class="hidden md:flex gap-6 text-sm md:text-base font-medium text-[#3c3c3c] justify-center">
+                <div class="relative">
+                    <button
+                        id="dropdownInicioButton"
+                        data-dropdown-toggle="dropdownInicio"
+                        data-dropdown-trigger="hover"
+                        data-navitem
+                        class="flex items-center gap-1 py-3 border-b-4 border-[#1ca4d7]"
+                        type="button"
+                    >
+                        Inicio
+                        <svg class="w-3 h-3 ms-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                            <path d="m1 1 4 4 4-4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                        </svg>
+                    </button>
+
+                    <div id="dropdownInicio" class="z-20 hidden bg-[#f5cd50] shadow-md rounded-sm w-72 mt-0.5">
+                        <ul class="py-2 text-sm text-gray-900" aria-labelledby="dropdownInicioButton">
+                            <li>
+                                <a href="#contexto" class="block px-4 py-2 hover:bg-[#f1c33d]">Contexto</a>
+                            </li>
+                            <li class="relative group">
+                                <button type="button" class="flex w-full items-center justify-between px-4 py-2 hover:bg-[#f1c33d]">
+                                    Directora General
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707A1 1 0 118.707 5.293l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                <div class="absolute top-0 left-full ml-0.5 hidden group-hover:block bg-[#f5cd50] shadow-md rounded-sm w-72">
+                                    <ul class="py-2">
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Oficina de Control Interno</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Oficina Asesora Jurídica</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Dirección Administrativa y Financiera</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Observatorio de Memoria y Conflicto</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Grupo de Planeación</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Pedagogía de la memoria histórica</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Cooperación Internacional y Alianzas – ECIA</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <li class="relative group">
+                                <button type="button" class="flex w-full items-center justify-between px-4 py-2 bg-[#f5cd50]/80 hover:bg-[#f1c33d]">
+                                    Direcciones técnicas
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707A1 1 0 118.707 5.293l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                <div class="absolute top-0 left-full ml-0.5 hidden group-hover:block bg-[#f5cd50] shadow-md rounded-sm w-72">
+                                    <ul class="py-2">
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Museo de Memoria de Colombia</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Archivo de los Derechos Humanos</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Acuerdos de la Verdad</a></li>
+                                        <li><a href="#" class="block px-4 py-2 text-sm hover:bg-[#f1c33d]">Construcción de la Memoria</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <a href="#agenda" data-navitem class="py-3 border-b-4 border-transparent hover:border-[#1ca4d7]">Agenda</a>
+                <a href="#noticias" data-navitem class="py-3 border-b-4 border-transparent hover:border-[#1ca4d7]">Noticias</a>
+                <a href="#atencion" data-navitem class="py-3 border-b-4 border-transparent hover:border-[#1ca4d7]">Atención y Servicio a la Ciudadanía</a>
+                <a href="#transparencia" data-navitem class="py-3 border-b-4 border-transparent hover:border-[#1ca4d7]">Transparencia</a>
+                <a href="#participa" data-navitem class="py-3 border-b-4 border-transparent hover:border-[#1ca4d7]">Participa</a>
+            </nav>
+
+            <div id="main-nav" class="hidden md:hidden">
+                <ul class="flex flex-col gap-1 py-3 text-[#3c3c3c] font-medium">
+                    <li>
+                        <button type="button" data-collapse-toggle="mobile-inicio" class="flex w-full items-center justify-between py-2">
+                            <span class="font-semibold">Inicio</span>
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
+                            </svg>
+                        </button>
+                        <div id="mobile-inicio" class="hidden pl-3">
+                            <a href="#contexto" class="block py-1 text-sm">Contexto</a>
+                            <button type="button" data-collapse-toggle="mobile-directora" class="flex w-full items-center justify-between py-1 text-sm">
+                                <span>Directora General</span>
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
+                                </svg>
+                            </button>
+                            <div id="mobile-directora" class="hidden pl-3">
+                                <a href="#" class="block py-1 text-sm">Oficina de Control Interno</a>
+                                <a href="#" class="block py-1 text-sm">Oficina Asesora Jurídica</a>
+                                <a href="#" class="block py-1 text-sm">Dirección Administrativa y Financiera</a>
+                                <a href="#" class="block py-1 text-sm">Observatorio de Memoria y Conflicto</a>
+                                <a href="#" class="block py-1 text-sm">Grupo de Planeación</a>
+                                <a href="#" class="block py-1 text-sm">Pedagogía de la memoria histórica</a>
+                                <a href="#" class="block py-1 text-sm">Cooperación Internacional y Alianzas – ECIA</a>
+                            </div>
+                            <button type="button" data-collapse-toggle="mobile-direcciones" class="flex w-full items-center justify-between py-1 text-sm">
+                                <span>Direcciones técnicas</span>
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
+                                </svg>
+                            </button>
+                            <div id="mobile-direcciones" class="hidden pl-3">
+                                <a href="#" class="block py-1 text-sm">Museo de Memoria de Colombia</a>
+                                <a href="#" class="block py-1 text-sm">Archivo de los Derechos Humanos</a>
+                                <a href="#" class="block py-1 text-sm">Acuerdos de la Verdad</a>
+                                <a href="#" class="block py-1 text-sm">Construcción de la Memoria</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li><a href="#agenda" class="block py-2">Agenda</a></li>
+                    <li><a href="#noticias" class="block py-2">Noticias</a></li>
+                    <li><a href="#atencion" class="block py-2">Atención y Servicio a la Ciudadanía</a></li>
+                    <li><a href="#transparencia" class="block py-2">Transparencia</a></li>
+                    <li><a href="#participa" class="block py-2">Participa</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</header>

@@ -9,10 +9,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js" defer></script>
     @yield('css')
 </head>
 <body class="hold-transition sidebar-mini">
+@include('layouts.partials.header')
+
 <div class="wrapper">
+
     <nav class="main-header navbar navbar-expand navbar-white navbar-light">
         <ul class="navbar-nav">
             <li class="nav-item">
@@ -301,14 +306,30 @@
         </section>
     </div>
 
-    <footer class="main-footer">
-        <strong>Testimonios Lite</strong> - Sistema de Gestion de Entrevistas
-    </footer>
 </div>
+
+@include('layouts.partials.footer')
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script>
+    const navItems = document.querySelectorAll('[data-navitem]');
+
+    navItems.forEach((item) => {
+        item.addEventListener('click', (event) => {
+            event.preventDefault();
+
+            navItems.forEach((element) => {
+                element.classList.remove('border-[#1ca4d7]');
+                element.classList.add('border-transparent', 'border-b-4');
+            });
+
+            item.classList.remove('border-transparent');
+            item.classList.add('border-[#1ca4d7]', 'border-b-4');
+        });
+    });
+</script>
 @yield('scripts')
 @yield('js')
 </body>

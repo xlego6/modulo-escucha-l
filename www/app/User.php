@@ -11,11 +11,15 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'is_login_directory_active',
     ];
 
     protected $hidden = [
         'password', 'remember_token',
+    ];
+
+    protected $casts = [
+        'is_login_directory_active' => 'boolean',
     ];
 
     public function rel_entrevistador() {
