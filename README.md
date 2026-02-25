@@ -144,6 +144,10 @@ docker exec -it mel-app php artisan
 
 #migrar artisan (para cambios en bases de datos)
 docker exec mel-app php artisan migrate
+docker exec mel-app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chmod -R 777 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app php artisan view:clear
 
 # Reiniciar BD (elimina datos)
 docker-compose down -v
