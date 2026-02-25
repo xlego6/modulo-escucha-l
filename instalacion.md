@@ -71,7 +71,7 @@ DB_PASSWORD=sql
 
 ```bash
 cd modulo-escucha-lite
-docker-compose up -d
+docker compose up -d --build
 ```
 
 Esto iniciara 3 contenedores:
@@ -192,7 +192,7 @@ web:
 
 ```bash
 cd modulo-escucha-lite
-docker compose up -d
+docker compose up -d --build
 docker exec -it mel-app composer install --no-dev --optimize-autoloader
 
 # Crear directorios de storage y permisos
@@ -350,7 +350,7 @@ DB_PASSWORD=CAMBIA_ESTA_PASSWORD_SEGURA
 cd C:\Apps\modulo-escucha-lite
 
 # Iniciar contenedores
-docker compose up -d
+docker compose up -d --build
 
 # Verificar que estan corriendo
 docker compose ps
@@ -398,7 +398,7 @@ Crear tarea programada para iniciar Docker y la aplicacion:
 $script = @"
 Start-Sleep -Seconds 30
 cd C:\Apps\modulo-escucha-lite
-docker-compose up -d
+docker compose up -d
 "@
 
 $script | Out-File -FilePath "C:\Apps\start-testimonios.ps1" -Encoding UTF8
@@ -618,7 +618,7 @@ Get-EventLog -LogName Application -Source Docker -Newest 20
 # Recrear redes de Docker
 docker network prune -f
 docker-compose down
-docker-compose up -d
+docker compose up -d --build
 ```
 
 #### Error: Permisos en volumenes
@@ -650,7 +650,7 @@ Get-Service Docker
 
 # Iniciar contenedores manualmente
 cd C:\Apps\modulo-escucha-lite
-docker-compose up -d
+docker compose up -d --build
 
 # Verificar tarea programada
 Get-ScheduledTask -TaskName "Iniciar Modulo Escucha"
@@ -813,7 +813,7 @@ DB_PASSWORD=nueva_password
 ```bash
 docker-compose down
 rm -rf postgres-data  # CUIDADO: Esto borra la base de datos
-docker-compose up -d
+docker compose up -d --build
 ```
 
 ### Backup de base de datos
@@ -883,7 +883,7 @@ docker logs mel-db
 # Reiniciar BD (esto borra datos)
 docker-compose down
 rm -rf postgres-data
-docker-compose up -d
+docker compose up -d --build
 ```
 
 ### Error: "Class not found" despues de instalar paquetes
@@ -944,7 +944,7 @@ Para archivos grandes, aumentar memoria disponible o usar CPU en lugar de GPU:
 
 ```bash
 # Iniciar contenedores
-docker-compose up -d
+docker compose up -d --build
 
 # Detener contenedores
 docker-compose down

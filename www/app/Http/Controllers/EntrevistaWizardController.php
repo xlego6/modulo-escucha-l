@@ -50,6 +50,7 @@ class EntrevistaWizardController extends Controller
             'rel_formatos',
             'rel_modalidades',
             'rel_necesidades_reparacion',
+            'rel_idiomas',
             'rel_personas_entrevistadas.rel_persona.rel_poblaciones',
             'rel_personas_entrevistadas.rel_persona.rel_ocupaciones',
             'rel_personas_entrevistadas.rel_consentimiento',
@@ -63,6 +64,7 @@ class EntrevistaWizardController extends Controller
             'rel_contenido.rel_discapacidades',
             'rel_contenido.rel_hechos_victimizantes',
             'rel_contenido.rel_responsables',
+            'rel_contenido.rel_practicas_resistencia',
         ])->findOrFail($id);
 
         $user = Auth::user();
@@ -94,7 +96,7 @@ class EntrevistaWizardController extends Controller
             'modalidades' => 'required|array|min:1',
             'fecha_toma_inicial' => 'required|date',
             'fecha_toma_final' => 'required|date|after_or_equal:fecha_toma_inicial',
-            'id_idioma' => 'required|integer',
+            'idiomas' => 'nullable|array',
             'tiene_anexos' => 'required|in:0,1',
         ]);
 
@@ -138,6 +140,7 @@ class EntrevistaWizardController extends Controller
             $this->syncModalidades($entrevista, $request->modalidades);
             $this->syncNecesidadesReparacion($entrevista, $request->necesidades_reparacion ?? []);
             $this->syncAreasCompatibles($entrevista, $request->areas_compatibles ?? []);
+            $this->syncIdiomas($entrevista, $request->idiomas ?? []);
 
             // Registrar traza
             TrazaActividad::create([
@@ -297,8 +300,8 @@ class EntrevistaWizardController extends Controller
     {
         $request->validate([
             'id_e_ind_fvt' => 'required|integer',
-            'fecha_hechos_inicial' => 'required|date',
-            'fecha_hechos_final' => 'required|date|after_or_equal:fecha_hechos_inicial',
+            'fecha_hechos_inicial' => 'nullable|date',
+            'fecha_hechos_final' => 'nullable|date|after_or_equal:fecha_hechos_inicial',
             'temas_abordados' => 'required|string',
         ]);
 
@@ -327,6 +330,11 @@ class EntrevistaWizardController extends Controller
                     'fecha_hechos_final' => $request->fecha_hechos_final,
                     'responsables_individuales' => $request->responsables_individuales,
                     'temas_abordados' => $request->temas_abordados,
+                    'otras_poblaciones_mencionadas' => $request->otras_poblaciones_mencionadas,
+                    'otras_ocupaciones_mencionadas' => $request->otras_ocupaciones_mencionadas,
+                    'detalle_grupos_etnicos' => $request->detalle_grupos_etnicos,
+                    'otros_hechos_victimizantes' => $request->otros_hechos_victimizantes,
+                    'detalle_resistencias' => $request->detalle_resistencias,
                 ]
             );
 
@@ -376,7 +384,8 @@ class EntrevistaWizardController extends Controller
             'fecha_toma_inicial' => $request->fecha_toma_inicial,
             'fecha_toma_final' => $request->fecha_toma_final,
             'entrevista_fecha' => $request->fecha_toma_inicial,
-            'id_idioma' => $request->id_idioma,
+            'id_idioma' => $request->idiomas[0] ?? null,
+            'detalle_idiomas' => $request->detalle_idiomas,
             'tiene_anexos' => $request->tiene_anexos,
             'descripcion_anexos' => $request->descripcion_anexos,
             'observaciones_toma' => $request->observaciones_toma,
@@ -456,6 +465,24 @@ class EntrevistaWizardController extends Controller
     }
 
     /**
+     * Sync idiomas
+     */
+    private function syncIdiomas($entrevista, $idiomas)
+    {
+        DB::table('esclarecimiento.entrevista_idioma')
+            ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+            ->delete();
+
+        foreach ($idiomas as $id_idioma) {
+            DB::table('esclarecimiento.entrevista_idioma')->insert([
+                'id_e_ind_fvt' => $entrevista->id_e_ind_fvt,
+                'id_idioma' => $id_idioma,
+                'created_at' => now(),
+            ]);
+        }
+    }
+
+    /**
      * Sync poblaciones de persona
      */
     private function syncPersonaPoblaciones($persona, $poblaciones)
@@ -507,6 +534,7 @@ class EntrevistaWizardController extends Controller
             'contenido_discapacidad' => ['id_discapacidad', $request->contenido_discapacidades ?? []],
             'contenido_hecho_victimizante' => ['id_hecho', $request->contenido_hechos ?? []],
             'contenido_responsable' => ['id_responsable', $request->contenido_responsables ?? []],
+            'contenido_practica_resistencia' => ['id_practica', $request->contenido_practicas_resistencia ?? []],
         ];
 
         foreach ($tablas as $tabla => [$campo, $valores]) {
@@ -603,6 +631,7 @@ class EntrevistaWizardController extends Controller
             'discapacidades' => CatItem::where('id_cat', 15)->orderBy('orden')->pluck('descripcion', 'id_item'),
             'necesidades_reparacion' => CatItem::where('id_cat', 16)->orderBy('orden')->pluck('descripcion', 'id_item'),
             'responsables_colectivos' => CatItem::where('id_cat', 17)->orderBy('orden')->pluck('descripcion', 'id_item'),
+            'practicas_resistencia' => CatItem::where('id_cat', 20)->orderBy('orden')->pluck('descripcion', 'id_item'),
             'sexos' => CatItem::where('id_cat', 1)->orderBy('orden')->pluck('descripcion', 'id_item'),
             'etnias' => CatItem::where('id_cat', 3)->orderBy('orden')->pluck('descripcion', 'id_item'),
             'departamentos' => Geo::where('nivel', 2)->orderBy('descripcion')->pluck('descripcion', 'id_geo'),

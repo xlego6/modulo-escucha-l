@@ -97,6 +97,7 @@ $(document).ready(function() {
         formatos: {!! json_encode($entrevista->rel_formatos->pluck('id_item')->toArray()) !!},
         modalidades: {!! json_encode($entrevista->rel_modalidades->pluck('id_item')->toArray()) !!},
         necesidades: {!! json_encode($entrevista->rel_necesidades_reparacion->pluck('id_item')->toArray()) !!},
+        idiomas: {!! json_encode($entrevista->rel_idiomas->pluck('id_item')->toArray()) !!},
         personas: {!! json_encode($entrevista->rel_personas_entrevistadas->map(function($pe) {
             return [
                 'id_persona' => $pe->id_persona,
@@ -143,7 +144,13 @@ $(document).ready(function() {
             'hechos' => $entrevista->rel_contenido->rel_hechos_victimizantes->pluck('id_item')->toArray() ?? [],
             'responsables' => $entrevista->rel_contenido->rel_responsables->pluck('id_item')->toArray() ?? [],
             'responsables_individuales' => $entrevista->rel_contenido->responsables_individuales ?? '',
-            'temas_abordados' => $entrevista->rel_contenido->temas_abordados ?? ''
+            'temas_abordados' => $entrevista->rel_contenido->temas_abordados ?? '',
+            'otras_poblaciones_mencionadas' => $entrevista->rel_contenido->otras_poblaciones_mencionadas ?? '',
+            'otras_ocupaciones_mencionadas' => $entrevista->rel_contenido->otras_ocupaciones_mencionadas ?? '',
+            'detalle_grupos_etnicos' => $entrevista->rel_contenido->detalle_grupos_etnicos ?? '',
+            'otros_hechos_victimizantes' => $entrevista->rel_contenido->otros_hechos_victimizantes ?? '',
+            'practicas_resistencia' => $entrevista->rel_contenido->rel_practicas_resistencia->pluck('id_item')->toArray() ?? [],
+            'detalle_resistencias' => $entrevista->rel_contenido->detalle_resistencias ?? ''
         ] : null) !!},
         lugares_mencionados: {!! json_encode(
             \Illuminate\Support\Facades\DB::table('esclarecimiento.contenido_lugar')
@@ -174,6 +181,27 @@ $(document).ready(function() {
     entrevistaData.necesidades.forEach(function(id) {
         $('input[name="necesidades_reparacion[]"][value="' + id + '"]').prop('checked', true);
     });
+
+    // Pre-cargar idiomas
+    if (entrevistaData.idiomas.length > 0) {
+        $('#id_idioma').val(entrevistaData.idiomas).trigger('change');
+    }
+
+    // Mostrar/ocultar detalle idiomas cuando se selecciona "Otro(s)"
+    const ID_IDIOMA_OTROS = '325';
+    function actualizarDetalleIdiomas() {
+        var selected = $('#id_idioma').val() || [];
+        if (selected.indexOf(ID_IDIOMA_OTROS) !== -1 || selected.indexOf(325) !== -1) {
+            $('#detalle_idiomas_container').show();
+        } else {
+            $('#detalle_idiomas_container').hide();
+        }
+    }
+    $('#id_idioma').on('change', function() {
+        actualizarDetalleIdiomas();
+    });
+    // Ejecutar al inicio por si ya tiene "Otro(s)" seleccionado
+    actualizarDetalleIdiomas();
 
     // Navegacion entre pasos
     function showStep(step) {
@@ -222,6 +250,12 @@ $(document).ready(function() {
                 $('#contenido_responsables').val(entrevistaData.contenido.responsables).trigger('change');
                 $('#responsables_individuales').val(entrevistaData.contenido.responsables_individuales);
                 $('#temas_abordados').val(entrevistaData.contenido.temas_abordados);
+                $('#otras_poblaciones_mencionadas').val(entrevistaData.contenido.otras_poblaciones_mencionadas);
+                $('#otras_ocupaciones_mencionadas').val(entrevistaData.contenido.otras_ocupaciones_mencionadas);
+                $('#detalle_grupos_etnicos').val(entrevistaData.contenido.detalle_grupos_etnicos);
+                $('#otros_hechos_victimizantes').val(entrevistaData.contenido.otros_hechos_victimizantes);
+                $('#contenido_practicas_resistencia').val(entrevistaData.contenido.practicas_resistencia).trigger('change');
+                $('#detalle_resistencias').val(entrevistaData.contenido.detalle_resistencias);
             }
 
             // Cargar lugares mencionados existentes
@@ -396,7 +430,8 @@ $(document).ready(function() {
             modalidades: modalidades,
             fecha_toma_inicial: $('#fecha_toma_inicial').val(),
             fecha_toma_final: $('#fecha_toma_final').val(),
-            id_idioma: $('#id_idioma').val(),
+            idiomas: $('#id_idioma').val() || [],
+            detalle_idiomas: $('#detalle_idiomas').val(),
             necesidades_reparacion: necesidades,
             areas_compatibles: $('#areas_compatibles').val() || [],
             observaciones_toma: $('#observaciones_toma').val(),
@@ -480,7 +515,13 @@ $(document).ready(function() {
             contenido_responsables: $('#contenido_responsables').val() || [],
             contenido_lugares: lugares,
             responsables_individuales: $('#responsables_individuales').val(),
-            temas_abordados: $('#temas_abordados').val()
+            temas_abordados: $('#temas_abordados').val(),
+            otras_poblaciones_mencionadas: $('#otras_poblaciones_mencionadas').val(),
+            otras_ocupaciones_mencionadas: $('#otras_ocupaciones_mencionadas').val(),
+            detalle_grupos_etnicos: $('#detalle_grupos_etnicos').val(),
+            otros_hechos_victimizantes: $('#otros_hechos_victimizantes').val(),
+            contenido_practicas_resistencia: $('#contenido_practicas_resistencia').val() || [],
+            detalle_resistencias: $('#detalle_resistencias').val()
         };
     }
 

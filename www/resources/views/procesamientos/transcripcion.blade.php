@@ -421,9 +421,19 @@ $(document).ready(function() {
                     $('#resultado-exito').show();
                     $('#res-codigo').text(codigo);
                     $('#res-caracteres').text(response.text_length ? response.text_length.toLocaleString() : '0');
-                    $('#res-hablantes').text(response.speakers || 'N/A');
+                    $('#res-hablantes').text(response.speakers !== undefined ? response.speakers : 'N/A');
                     $('#res-texto').val(response.text || 'Sin texto');
                     $('#btn-editar-transcripcion').attr('href', '{{ url("procesamientos/edicion") }}/' + id);
+
+                    // Mostrar advertencia de diarizacion si hubo error
+                    if (response.diarization_error) {
+                        $('#resultado-exito').after(
+                            '<div class="alert alert-warning mt-2" id="diarization-warning">' +
+                            '<i class="fas fa-exclamation-triangle mr-1"></i> ' +
+                            '<strong>Diarizacion:</strong> ' + response.diarization_error +
+                            '</div>'
+                        );
+                    }
 
                     // Marcar fila como completada
                     btn.removeClass('btn-primary').addClass('btn-success')

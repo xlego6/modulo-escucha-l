@@ -90,11 +90,17 @@ class HomeController extends Controller
     }
 
     /**
-     * Cambiar contraseña
+     * Cambiar contraseña (solo Admin — perfiles de directorio activo gestionan
+     * su contraseña desde fuera del sistema)
      */
     public function cambiarPassword(Request $request)
     {
         $user = Auth::user();
+
+        if ($user->id_nivel != 1) {
+            flash('El cambio de contraseña no está disponible para su perfil. Gestione su contraseña desde el directorio activo.')->warning();
+            return redirect()->route('perfil');
+        }
 
         $request->validate([
             'password_actual' => 'required',

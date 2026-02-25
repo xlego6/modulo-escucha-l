@@ -84,6 +84,16 @@
     </div>
     @endif
 
+    {{-- Grupo: Insertar --}}
+    <div class="btn-group btn-group-sm mr-2" role="group" title="Insertar">
+        <button type="button" class="btn btn-outline-secondary" onclick="editorAction('paragraph', '{{ $targetId }}')" title="Salto de parrafo (Enter doble)">
+            <i class="fas fa-paragraph"></i>
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="editorAction('brackets', '{{ $targetId }}')" title="Insertar corchetes []">
+            <i class="fas fa-brackets-curly" style="font-family: monospace; font-style: normal; font-weight: bold;">[ ]</i>
+        </button>
+    </div>
+
     {{-- Grupo: Herramientas --}}
     <div class="btn-group btn-group-sm mr-2" role="group" title="Herramientas">
         <button type="button" class="btn btn-outline-secondary" onclick="editorAction('find', '{{ $targetId }}')" title="Buscar y reemplazar (Ctrl+H)">

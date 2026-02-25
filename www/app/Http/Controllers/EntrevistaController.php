@@ -224,6 +224,7 @@ class EntrevistaController extends Controller
             'rel_dependencia_origen',
             'rel_tipo_testimonio',
             'rel_idioma',
+            'rel_idiomas',
             'rel_formatos',
             'rel_modalidades',
             'rel_necesidades_reparacion',
@@ -238,6 +239,7 @@ class EntrevistaController extends Controller
             'rel_contenido.rel_discapacidades',
             'rel_contenido.rel_hechos_victimizantes',
             'rel_contenido.rel_responsables',
+            'rel_contenido.rel_practicas_resistencia',
         ])->findOrFail($id);
 
         // Verificar permisos de visualización

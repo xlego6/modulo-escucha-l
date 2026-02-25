@@ -18,6 +18,7 @@ use App\Http\Controllers\TrazaActividadController;
 use App\Http\Controllers\MapaController;
 use App\Http\Controllers\ProcesamientoController;
 use App\Http\Controllers\AyudaController;
+use App\Http\Controllers\RolController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -48,20 +49,20 @@ Route::middleware(['auth'])->group(function () {
     // RUTAS CON CONTROL DE NIVEL DE ACCESO
     // =============================================
 
-    // Mapa: Admin(1), Líder(2)
+    // Mapa: Admin(1), Entrevistador(3), Gestor de Conocimiento(5)
     Route::middleware(['nivel:mapa'])->group(function () {
         Route::get('mapa', [MapaController::class, 'index'])->name('mapa.index');
         Route::get('mapa/datos', [MapaController::class, 'datos'])->name('mapa.datos');
         Route::get('mapa/departamento/{id}', [MapaController::class, 'detalleDepartamento'])->name('mapa.departamento');
     });
 
-    // Estadísticas: Admin(1), Líder(2)
+    // Estadísticas: Todos
     Route::middleware(['nivel:estadisticas'])->group(function () {
         Route::get('estadisticas', [EstadisticaController::class, 'index'])->name('estadisticas.index');
         Route::get('estadisticas/datos', [EstadisticaController::class, 'datos'])->name('estadisticas.datos');
     });
 
-    // Exportar Excel: Admin(1), Líder(2)
+    // Exportar Excel: Solo Admin(1)
     Route::middleware(['nivel:exportar'])->group(function () {
         Route::get('exportar', [ExportController::class, 'index'])->name('exportar.index');
         Route::post('exportar/entrevistas', [ExportController::class, 'entrevistas'])->name('exportar.entrevistas');
@@ -73,7 +74,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('usuarios', UsuarioController::class);
     });
 
-    // Catálogos: Admin(1), Líder(2)
+    // Catálogos: Solo Admin(1)
     Route::middleware(['nivel:catalogos'])->group(function () {
         Route::get('catalogos', [CatalogoController::class, 'index'])->name('catalogos.index');
         Route::get('catalogos/create', [CatalogoController::class, 'create'])->name('catalogos.create');
@@ -89,7 +90,17 @@ Route::middleware(['auth'])->group(function () {
         Route::post('catalogos/{id_cat}/items/reorder', [CatalogoController::class, 'reorderItems'])->name('catalogos.items.reorder');
     });
 
-    // Traza de actividad: Admin(1), Líder(2)
+    // Roles: Solo Admin(1)
+    Route::middleware(['nivel:roles'])->group(function () {
+        Route::get('roles', [RolController::class, 'index'])->name('roles.index');
+        Route::get('roles/create', [RolController::class, 'create'])->name('roles.create');
+        Route::post('roles', [RolController::class, 'store'])->name('roles.store');
+        Route::get('roles/{nivel}/edit', [RolController::class, 'edit'])->name('roles.edit');
+        Route::put('roles/{nivel}', [RolController::class, 'update'])->name('roles.update');
+        Route::delete('roles/{nivel}', [RolController::class, 'destroy'])->name('roles.destroy');
+    });
+
+    // Traza de actividad: Solo Admin(1)
     Route::middleware(['nivel:traza'])->group(function () {
         Route::get('traza', [TrazaActividadController::class, 'index'])->name('traza.index');
         Route::get('traza/estadisticas', [TrazaActividadController::class, 'estadisticas'])->name('traza.estadisticas');
@@ -97,7 +108,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('traza/{id}', [TrazaActividadController::class, 'show'])->name('traza.show');
     });
 
-    // Permisos: Admin(1), Líder(2)
+    // Permisos: Admin(1), Entrevistador(3), Gestor de Conocimiento(5)
     Route::middleware(['nivel:permisos'])->group(function () {
         Route::get('permisos', [PermisoController::class, 'index'])->name('permisos.index');
         Route::get('permisos/create', [PermisoController::class, 'create'])->name('permisos.create');
@@ -106,18 +117,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('permisos/usuario/{id}', [PermisoController::class, 'porUsuario'])->name('permisos.por_usuario');
         Route::get('permisos/{id}', [PermisoController::class, 'show'])->name('permisos.show');
         Route::delete('permisos/{id}', [PermisoController::class, 'destroy'])->name('permisos.destroy');
-        Route::get('accesos-otorgados', [PermisoController::class, 'accesosOtorgados'])->name('permisos.accesos_otorgados');
         Route::get('permisos/{id}/soporte', [PermisoController::class, 'descargarSoporte'])->name('permisos.descargar_soporte');
     });
 
-    // Desclasificación: Solo Admin(1)
-    Route::middleware(['nivel:desclasificacion'])->group(function () {
-        Route::get('desclasificacion', [PermisoController::class, 'desclasificar'])->name('permisos.desclasificar');
-        Route::post('desclasificacion', [PermisoController::class, 'storeDesclasificacion'])->name('permisos.store_desclasificacion');
-    });
-
     // =============================================
-    // ADJUNTOS: Ver/reproducir (accesible para transcriptores)
+    // ADJUNTOS: Ver/reproducir (accesible para todos los autenticados)
     // =============================================
     Route::get('adjuntos/ver/{id}', [AdjuntoController::class, 'ver'])->name('adjuntos.ver');
 
@@ -126,7 +130,7 @@ Route::middleware(['auth'])->group(function () {
     // =============================================
     Route::middleware(['compromiso.reserva'])->group(function () {
 
-        // Entrevistas: Admin(1), Líder(2), Entrevistador(3)
+        // Entrevistas: Admin(1), Líder(2), Entrevistador(3), Gestor de Conocimiento(5)
         Route::middleware(['nivel:entrevistas'])->group(function () {
             Route::resource('entrevistas', EntrevistaController::class);
             Route::get('entrevistas-wizard/create', [EntrevistaWizardController::class, 'create'])->name('entrevistas.wizard.create');
@@ -134,8 +138,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('entrevistas-wizard/paso1', [EntrevistaWizardController::class, 'storePaso1'])->name('entrevistas.wizard.paso1');
             Route::post('entrevistas-wizard/paso2', [EntrevistaWizardController::class, 'storePaso2'])->name('entrevistas.wizard.paso2');
             Route::post('entrevistas-wizard/paso3', [EntrevistaWizardController::class, 'storePaso3'])->name('entrevistas.wizard.paso3');
+        });
 
-            // Adjuntos (asociados a entrevistas)
+        // Adjuntos: Todos (Admin, Líder, Entrevistador, Transcriptor, Gestor de Conocimiento)
+        Route::middleware(['nivel:adjuntos'])->group(function () {
             Route::get('adjuntos', [AdjuntoController::class, 'index'])->name('adjuntos.index');
             Route::get('adjuntos/gestionar/{id}', [AdjuntoController::class, 'gestionar'])->name('adjuntos.gestionar');
             Route::post('adjuntos/subir/{id}', [AdjuntoController::class, 'subir'])->name('adjuntos.subir');
@@ -143,12 +149,12 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('adjuntos/eliminar/{id}', [AdjuntoController::class, 'eliminar'])->name('adjuntos.eliminar');
         });
 
-        // Personas: Admin(1), Entrevistador(3)
+        // Personas: Solo Admin(1)
         Route::middleware(['nivel:personas'])->group(function () {
             Route::resource('personas', PersonaController::class);
         });
 
-        // Buscador: Admin(1), Líder(2), Entrevistador(3)
+        // Buscador: Admin(1), Entrevistador(3), Gestor de Conocimiento(5)
         Route::middleware(['nivel:buscador'])->group(function () {
             Route::get('buscador', [BuscadorController::class, 'index'])->name('buscador.index');
             Route::get('buscador/rapida', [BuscadorController::class, 'rapida'])->name('buscador.rapida');

@@ -15,6 +15,11 @@ class ContenidoTestimonio extends Model
         'fecha_hechos_final',
         'responsables_individuales',
         'temas_abordados',
+        'otras_poblaciones_mencionadas',
+        'otras_ocupaciones_mencionadas',
+        'detalle_grupos_etnicos',
+        'otros_hechos_victimizantes',
+        'detalle_resistencias',
     ];
 
     public function rel_entrevista()
@@ -71,5 +76,10 @@ class ContenidoTestimonio extends Model
     public function rel_responsables()
     {
         return $this->belongsToMany(CatItem::class, 'esclarecimiento.contenido_responsable', 'id_e_ind_fvt', 'id_responsable', 'id_e_ind_fvt', 'id_item');
+    }
+
+    public function rel_practicas_resistencia()
+    {
+        return $this->belongsToMany(CatItem::class, 'esclarecimiento.contenido_practica_resistencia', 'id_e_ind_fvt', 'id_practica', 'id_e_ind_fvt', 'id_item');
     }
 }

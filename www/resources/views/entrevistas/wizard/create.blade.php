@@ -95,6 +95,18 @@ $(document).ready(function() {
         width: '100%'
     });
 
+    // Mostrar/ocultar detalle idiomas cuando se selecciona "Otro(s)"
+    const ID_IDIOMA_OTROS = '325';
+    $('#id_idioma').on('change', function() {
+        var selected = $(this).val() || [];
+        if (selected.indexOf(ID_IDIOMA_OTROS) !== -1) {
+            $('#detalle_idiomas_container').show();
+        } else {
+            $('#detalle_idiomas_container').hide();
+            $('#detalle_idiomas').val('');
+        }
+    });
+
     // Navegacion entre pasos
     function showStep(step) {
         $('.step-content').removeClass('active');
@@ -287,7 +299,8 @@ $(document).ready(function() {
             modalidades: modalidades,
             fecha_toma_inicial: $('#fecha_toma_inicial').val(),
             fecha_toma_final: $('#fecha_toma_final').val(),
-            id_idioma: $('#id_idioma').val(),
+            idiomas: $('#id_idioma').val() || [],
+            detalle_idiomas: $('#detalle_idiomas').val(),
             necesidades_reparacion: necesidades,
             areas_compatibles: $('#areas_compatibles').val() || [],
             observaciones_toma: $('#observaciones_toma').val(),
@@ -371,7 +384,13 @@ $(document).ready(function() {
             contenido_responsables: $('#contenido_responsables').val() || [],
             contenido_lugares: lugares,
             responsables_individuales: $('#responsables_individuales').val(),
-            temas_abordados: $('#temas_abordados').val()
+            temas_abordados: $('#temas_abordados').val(),
+            otras_poblaciones_mencionadas: $('#otras_poblaciones_mencionadas').val(),
+            otras_ocupaciones_mencionadas: $('#otras_ocupaciones_mencionadas').val(),
+            detalle_grupos_etnicos: $('#detalle_grupos_etnicos').val(),
+            otros_hechos_victimizantes: $('#otros_hechos_victimizantes').val(),
+            contenido_practicas_resistencia: $('#contenido_practicas_resistencia').val() || [],
+            detalle_resistencias: $('#detalle_resistencias').val()
         };
     }
 

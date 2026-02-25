@@ -140,12 +140,26 @@ docker-compose logs -f
 docker exec -it mel-app bash
 
 # Ejecutar artisan
-docker exec -it mel-app php artisan [comando]
+docker exec -it mel-app php artisan
+
+#migrar artisan (para cambios en bases de datos)
+docker exec mel-app php artisan migrate
+docker exec mel-app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app chmod -R 777 /var/www/storage /var/www/bootstrap/cache
+docker exec mel-app php artisan view:clear
 
 # Reiniciar BD (elimina datos)
 docker-compose down -v
 rm -rf postgres-data
 docker-compose up -d
 ```
-# Si la imagen del Docker no tiene el modelo NER correcto o no detecta entidades
+### Si la imagen del Docker no tiene el modelo NER correcto o no detecta entidades
 docker compose build --no-cache ner && docker compose up -d ner 
+
+### Para actualizar a nueva versión de separación de hablantes
+```
+git pull
+docker compose build --no-cache transcription
+docker compose up -d transcription
+```

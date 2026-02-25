@@ -95,7 +95,7 @@ CREATE TABLE esclarecimiento.entrevistador (
     id_grupo INTEGER REFERENCES catalogos.criterio_fijo(id_opcion),
     id_nivel INTEGER REFERENCES catalogos.criterio_fijo(id_opcion),
     solo_lectura INTEGER DEFAULT 0,
-    compromiso_reserva INTEGER DEFAULT 0,
+    compromiso_reserva TIMESTAMP DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -2128,7 +2128,7 @@ INSERT INTO users (id, name, email, password, created_at, updated_at) VALUES
 (1, 'Administrador', 'admin@testimonios.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO esclarecimiento.entrevistador (id_entrevistador, id_usuario, id_nivel, solo_lectura, compromiso_reserva) VALUES
-(1, 1, 1, 0, 1);
+(1, 1, 1, 0, NOW());
 
 -- Resetear secuencias
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));

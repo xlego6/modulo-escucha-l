@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\TrazaActividad;
 
 class ProcesamientoController extends Controller
 {
@@ -172,7 +173,8 @@ class ProcesamientoController extends Controller
                     'archivo' => $audio->nombre_original,
                     'texto' => $texto,
                     'caracteres' => strlen($texto),
-                    'hablantes' => $result['speakers_count'] ?? 0
+                    'hablantes' => $result['speakers_count'] ?? 0,
+                    'diarization_error' => $result['diarization_error'] ?? null
                 ];
 
                 $totalCaracteres += strlen($texto);
@@ -201,6 +203,21 @@ class ProcesamientoController extends Controller
         // Guardar como adjunto de tipo "Transcripción Automatizada"
         $entrevista->guardarTranscripcionAutomatizada(trim($textoCompleto));
 
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => Auth::id(),
+            'accion' => 'iniciar_transcripcion',
+            'objeto' => 'entrevista',
+            'id_registro' => $entrevista->id_e_ind_fvt,
+            'codigo' => $entrevista->entrevista_codigo,
+            'referencia' => 'Transcripción automática: ' . count($transcripcionesCompletas) . ' de ' . $audios->count() . ' archivos',
+            'ip' => $request->ip(),
+        ]);
+
+        // Recopilar errores de diarizacion
+        $diarizacionErrors = array_filter(array_column($transcripcionesCompletas, 'diarization_error'));
+        $diarizacionError = !empty($diarizacionErrors) ? $diarizacionErrors[0] : null;
+
         return response()->json([
             'success' => true,
             'message' => 'Transcripcion completada',
@@ -210,7 +227,8 @@ class ProcesamientoController extends Controller
             'text_length' => $totalCaracteres,
             'text' => $textoCompleto,
             'speakers' => $totalHablantes,
-            'errores' => $errores
+            'errores' => $errores,
+            'diarization_error' => $diarizacionError
         ]);
     }
 
@@ -594,6 +612,17 @@ class ProcesamientoController extends Controller
             flash('Transcripcion guardada correctamente')->success();
         }
 
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => Auth::id(),
+            'accion' => 'editar_transcripcion',
+            'objeto' => 'entrevista',
+            'id_registro' => $entrevista->id_e_ind_fvt,
+            'codigo' => $entrevista->entrevista_codigo,
+            'referencia' => 'Edición directa de transcripción',
+            'ip' => $request->ip(),
+        ]);
+
         return redirect()->back();
     }
 
@@ -655,6 +684,17 @@ class ProcesamientoController extends Controller
         $entrevista->transcripcion_aprobada_at = now();
         $entrevista->transcripcion_aprobada_por = $user->id;
         $entrevista->save();
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'aprobar_transcripcion',
+            'objeto' => 'entrevista',
+            'id_registro' => $entrevista->id_e_ind_fvt,
+            'codigo' => $entrevista->entrevista_codigo,
+            'referencia' => 'Aprobación directa de transcripción',
+            'ip' => request()->ip(),
+        ]);
 
         flash('Transcripción aprobada y guardada como Transcripción Final.')->success();
         return redirect()->route('procesamientos.edicion');
@@ -1119,6 +1159,16 @@ class ProcesamientoController extends Controller
             'fecha_asignacion' => now(),
         ]);
 
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'asignar_transcripcion',
+            'objeto' => 'transcripcion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Asignación de transcripción para entrevista #' . $request->id_e_ind_fvt,
+            'ip' => $request->ip(),
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Transcripción asignada correctamente',
@@ -1181,6 +1231,16 @@ class ProcesamientoController extends Controller
         $asignacion->updated_at = now();
         $asignacion->save();
 
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'editar_transcripcion',
+            'objeto' => 'transcripcion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Edición de transcripción asignada (entrevista #' . $asignacion->id_e_ind_fvt . ')',
+            'ip' => $request->ip(),
+        ]);
+
         flash('Transcripción guardada correctamente.')->success();
         return redirect()->back();
     }
@@ -1208,6 +1268,16 @@ class ProcesamientoController extends Controller
         $asignacion->estado = AsignacionTranscripcion::ESTADO_ENVIADA_REVISION;
         $asignacion->fecha_envio_revision = now();
         $asignacion->save();
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'enviar_revision',
+            'objeto' => 'transcripcion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Envío a revisión de transcripción (entrevista #' . $asignacion->id_e_ind_fvt . ')',
+            'ip' => request()->ip(),
+        ]);
 
         flash('Transcripción enviada a revisión.')->success();
         return redirect()->route('procesamientos.edicion');
@@ -1270,6 +1340,16 @@ class ProcesamientoController extends Controller
         $asignacion->comentario_revision = $request->comentario;
         $asignacion->save();
 
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'aprobar_transcripcion',
+            'objeto' => 'transcripcion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Aprobación de transcripción asignada (entrevista #' . $asignacion->id_e_ind_fvt . ')',
+            'ip' => $request->ip(),
+        ]);
+
         flash('Transcripción aprobada y guardada como adjunto de Transcripción Final.')->success();
         return redirect()->route('procesamientos.edicion');
     }
@@ -1301,6 +1381,16 @@ class ProcesamientoController extends Controller
         $asignacion->id_revisor = $user->id;
         $asignacion->comentario_revision = $request->comentario;
         $asignacion->save();
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'rechazar_transcripcion',
+            'objeto' => 'transcripcion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Rechazo de transcripción: ' . $request->comentario,
+            'ip' => $request->ip(),
+        ]);
 
         flash('Transcripción rechazada. El transcriptor ha sido notificado.')->warning();
         return redirect()->route('procesamientos.edicion');
@@ -1375,6 +1465,16 @@ class ProcesamientoController extends Controller
             'fecha_asignacion' => now(),
             'tipos_anonimizar' => $request->tipos_anonimizar ?? 'PER,LOC',
             'formato_reemplazo' => $request->formato_reemplazo ?? 'brackets',
+        ]);
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'asignar_anonimizacion',
+            'objeto' => 'anonimizacion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Asignación de anonimización para entrevista #' . $request->id_e_ind_fvt,
+            'ip' => $request->ip(),
         ]);
 
         return response()->json([
@@ -1498,11 +1598,17 @@ class ProcesamientoController extends Controller
                 $idEntrevista = $asignacion->id_e_ind_fvt;
 
                 foreach ($estadoEntidades as $ent) {
-                    // Buscar entidad por texto y posicion
-                    $entidadDB = EntidadDetectada::where('id_e_ind_fvt', $idEntrevista)
-                        ->where('texto', $ent['text'])
-                        ->where('posicion_inicio', $ent['start'])
-                        ->first();
+                    // Buscar entidad preferentemente por id_entidad (más confiable)
+                    if (!empty($ent['db_id'])) {
+                        $entidadDB = EntidadDetectada::where('id_entidad', $ent['db_id'])
+                            ->where('id_e_ind_fvt', $idEntrevista)
+                            ->first();
+                    } else {
+                        $entidadDB = EntidadDetectada::where('id_e_ind_fvt', $idEntrevista)
+                            ->where('texto', $ent['text'])
+                            ->where('posicion_inicio', $ent['start'])
+                            ->first();
+                    }
 
                     if ($entidadDB) {
                         // excluir_anonimizacion = true significa que NO se cubre (descubierta)
@@ -1512,6 +1618,37 @@ class ProcesamientoController extends Controller
                 }
             }
         }
+
+        // Eliminar del BD las entidades cuya etiqueta fue removida por el usuario
+        if ($request->has('entidades_eliminadas')) {
+            $eliminadas = json_decode($request->entidades_eliminadas, true);
+            if (is_array($eliminadas) && count($eliminadas) > 0) {
+                $idEntrevista = $asignacion->id_e_ind_fvt;
+                foreach ($eliminadas as $ent) {
+                    if (!empty($ent['id'])) {
+                        // ent.id en entidades[] es el id_entidad de la BD
+                        EntidadDetectada::where('id_entidad', $ent['id'])
+                            ->where('id_e_ind_fvt', $idEntrevista)
+                            ->delete();
+                    } else {
+                        EntidadDetectada::where('id_e_ind_fvt', $idEntrevista)
+                            ->where('texto', $ent['text'])
+                            ->where('posicion_inicio', $ent['start'])
+                            ->delete();
+                    }
+                }
+            }
+        }
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'editar_anonimizacion',
+            'objeto' => 'anonimizacion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Edición de anonimización asignada (entrevista #' . $asignacion->id_e_ind_fvt . ')',
+            'ip' => $request->ip(),
+        ]);
 
         flash('Anonimizacion guardada correctamente.')->success();
         return redirect()->back();
@@ -1540,6 +1677,16 @@ class ProcesamientoController extends Controller
         $asignacion->estado = AsignacionAnonimizacion::ESTADO_ENVIADA_REVISION;
         $asignacion->fecha_envio_revision = now();
         $asignacion->save();
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'enviar_revision',
+            'objeto' => 'anonimizacion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Envío a revisión de anonimización (entrevista #' . $asignacion->id_e_ind_fvt . ')',
+            'ip' => request()->ip(),
+        ]);
 
         flash('Anonimizacion enviada a revision.')->success();
         return redirect()->route('procesamientos.anonimizacion');
@@ -1608,12 +1755,25 @@ class ProcesamientoController extends Controller
         $entrevista->anonimizacion_final_por = $user->id;
         $entrevista->save();
 
+        // Guardar como adjunto público anonimizado en el expediente
+        $entrevista->guardarTranscripcionAnonimizada($asignacion->texto_anonimizado, $user->id);
+
         // Actualizar asignacion
         $asignacion->estado = AsignacionAnonimizacion::ESTADO_APROBADA;
         $asignacion->fecha_revision = now();
         $asignacion->id_revisor = $user->id;
         $asignacion->comentario_revision = $request->comentario;
         $asignacion->save();
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'aprobar_anonimizacion',
+            'objeto' => 'anonimizacion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Aprobación de anonimización (entrevista #' . $asignacion->id_e_ind_fvt . ')',
+            'ip' => $request->ip(),
+        ]);
 
         flash('Anonimizacion aprobada y guardada como version final.')->success();
         return redirect()->route('procesamientos.anonimizacion');
@@ -1652,6 +1812,16 @@ class ProcesamientoController extends Controller
         $asignacion->save();
 
         \Log::info('Estado nuevo', ['estado' => $asignacion->estado]);
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'rechazar_anonimizacion',
+            'objeto' => 'anonimizacion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => 'Rechazo de anonimización: ' . $request->comentario,
+            'ip' => $request->ip(),
+        ]);
 
         flash('Anonimizacion rechazada. El anonimizador ha sido notificado.')->warning();
         return redirect()->route('procesamientos.anonimizacion');
