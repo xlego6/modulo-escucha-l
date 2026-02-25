@@ -74,6 +74,7 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     email_verified_at TIMESTAMP,
     password VARCHAR(255) NOT NULL,
+    is_login_directory_active BOOLEAN DEFAULT FALSE,
     remember_token VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

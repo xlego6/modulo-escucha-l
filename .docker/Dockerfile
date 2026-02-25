@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
         libjpeg62-turbo-dev \
         libpng-dev \
         libicu-dev \
+    libldap2-dev \
         libpq-dev \
         libzip-dev \
         unzip \
@@ -17,7 +18,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) zip \
     && docker-php-ext-install -j$(nproc) pgsql \
     && docker-php-ext-install -j$(nproc) pdo_pgsql \
-    && docker-php-ext-install -j$(nproc) exif
+    && docker-php-ext-install -j$(nproc) exif \
+    && docker-php-ext-configure ldap \
+    && docker-php-ext-install -j$(nproc) ldap
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer

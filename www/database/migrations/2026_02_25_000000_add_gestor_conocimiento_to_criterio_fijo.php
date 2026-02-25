@@ -12,9 +12,13 @@ class AddGestorConocimientoToCriterioFijo extends Migration
     public function up()
     {
         DB::statement("
-            INSERT INTO catalogos.criterio_fijo (id_grupo, id_opcion, descripcion, habilitado, orden)
-            VALUES (1, 5, 'Gestor de Conocimiento', 1, 5)
-            ON CONFLICT (id_grupo, id_opcion) DO NOTHING
+              INSERT INTO catalogos.criterio_fijo (id_opcion, id_grupo, descripcion, habilitado, orden)
+              SELECT 5, 1, 'Gestor de Conocimiento', 1, 5
+              WHERE NOT EXISTS (
+                 SELECT 1
+                 FROM catalogos.criterio_fijo
+                 WHERE id_grupo = 1 AND id_opcion = 5
+              )
         ");
     }
 

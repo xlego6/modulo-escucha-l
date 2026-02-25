@@ -70,6 +70,7 @@ class UsuarioController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_login_directory_active' => false,
         ]);
 
         // Crear perfil de entrevistador
