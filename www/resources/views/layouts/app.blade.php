@@ -64,8 +64,8 @@
                         </a>
                     </li>
 
-                    {{-- Entrevistas: Admin(1), Líder(2), Entrevistador(3) --}}
-                    @if(in_array($nivel, [1, 2, 3]))
+                    {{-- Entrevistas --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'entrevistas'))
                     <li class="nav-item">
                         <a href="{{ route('entrevistas.index') }}" class="nav-link {{ request()->routeIs('entrevistas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-microphone"></i>
@@ -74,8 +74,18 @@
                     </li>
                     @endif
 
-                    {{-- Personas: Admin(1), Entrevistador(3) --}}
-                    @if(in_array($nivel, [1, 3]))
+                    {{-- Adjuntos --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'adjuntos'))
+                    <li class="nav-item">
+                        <a href="{{ route('adjuntos.index') }}" class="nav-link {{ request()->routeIs('adjuntos.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-paperclip"></i>
+                            <p>Adjuntos</p>
+                        </a>
+                    </li>
+                    @endif
+
+                    {{-- Personas --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'personas'))
                     <li class="nav-item">
                         <a href="{{ route('personas.index') }}" class="nav-link {{ request()->routeIs('personas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
@@ -84,8 +94,8 @@
                     </li>
                     @endif
 
-                    {{-- Buscadora: Admin(1), Líder(2), Entrevistador(3) --}}
-                    @if(in_array($nivel, [1, 2, 3]))
+                    {{-- Buscadora --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'buscador'))
                     <li class="nav-item">
                         <a href="{{ route('buscador.index') }}" class="nav-link {{ request()->routeIs('buscador.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-search"></i>
@@ -94,8 +104,8 @@
                     </li>
                     @endif
 
-                    {{-- Estadísticas: Admin(1), Líder(2) --}}
-                    @if(in_array($nivel, [1, 2]))
+                    {{-- Estadísticas --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'estadisticas'))
                     <li class="nav-item">
                         <a href="{{ route('estadisticas.index') }}" class="nav-link {{ request()->routeIs('estadisticas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-chart-bar"></i>
@@ -104,8 +114,8 @@
                     </li>
                     @endif
 
-                    {{-- Mapa: Admin(1), Líder(2) --}}
-                    @if(in_array($nivel, [1, 2]))
+                    {{-- Mapa --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'mapa'))
                     <li class="nav-item">
                         <a href="{{ route('mapa.index') }}" class="nav-link {{ request()->routeIs('mapa.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-map-marked-alt"></i>
@@ -114,8 +124,8 @@
                     </li>
                     @endif
 
-                    {{-- Exportar Excel: Admin(1), Líder(2) --}}
-                    @if(in_array($nivel, [1, 2]))
+                    {{-- Exportar Excel --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'exportar'))
                     <li class="nav-item">
                         <a href="{{ route('exportar.index') }}" class="nav-link {{ request()->routeIs('exportar.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-excel"></i>
@@ -124,8 +134,8 @@
                     </li>
                     @endif
 
-                    {{-- Procesamientos: Admin(1), Líder(2), Transcriptor(4) --}}
-                    @if(in_array($nivel, [1, 2, 4]))
+                    {{-- Procesamientos --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos'))
                     <li class="nav-item has-treeview {{ request()->routeIs('procesamientos.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('procesamientos.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-cogs"></i>
@@ -155,7 +165,7 @@
                             </li>
                             @endif
 
-                            {{-- Edición: Admin(1), Líder(2), Transcriptor(4) --}}
+                            {{-- Edición --}}
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.edicion') }}" class="nav-link {{ request()->routeIs('procesamientos.edicion') || request()->routeIs('procesamientos.editar-transcripcion') ? 'active' : '' }}">
                                     <i class="fas fa-edit nav-icon"></i>
@@ -173,7 +183,7 @@
                             </li>
                             @endif
 
-                            {{-- Anonimización: Admin(1), Líder(2), Transcriptor(4) --}}
+                            {{-- Anonimización --}}
                             @if(in_array($nivel, [1, 2, 4]))
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.anonimizacion') }}" class="nav-link {{ request()->routeIs('procesamientos.anonimizacion') || request()->routeIs('procesamientos.previsualizar-anonimizacion') || request()->routeIs('procesamientos.editar-anonimizacion-asignada') ? 'active' : '' }}">
@@ -186,10 +196,20 @@
                     </li>
                     @endif
 
-                    {{-- Administración: Admin(1), Líder(2) --}}
-                    @if(in_array($nivel, [1, 2]))
-                    <li class="nav-item has-treeview {{ request()->routeIs('usuarios.*') || request()->routeIs('permisos.*') || request()->routeIs('catalogos.*') || request()->routeIs('traza.*') ? 'menu-open' : '' }}">
-                        <a href="#" class="nav-link {{ request()->routeIs('usuarios.*') || request()->routeIs('permisos.*') || request()->routeIs('catalogos.*') || request()->routeIs('traza.*') ? 'active' : '' }}">
+                    {{-- Administración --}}
+                    @php
+                        $enAdmin = request()->routeIs('usuarios.*') || request()->routeIs('permisos.*')
+                            || request()->routeIs('catalogos.*') || request()->routeIs('traza.*')
+                            || request()->routeIs('roles.*');
+                        $verAdmin = \App\Models\RolModuloPermiso::puedeVer($nivel, 'usuarios')
+                            || \App\Models\RolModuloPermiso::puedeVer($nivel, 'permisos')
+                            || \App\Models\RolModuloPermiso::puedeVer($nivel, 'catalogos')
+                            || \App\Models\RolModuloPermiso::puedeVer($nivel, 'traza')
+                            || \App\Models\RolModuloPermiso::puedeVer($nivel, 'roles');
+                    @endphp
+                    @if($verAdmin)
+                    <li class="nav-item has-treeview {{ $enAdmin ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ $enAdmin ? 'active' : '' }}">
                             <i class="nav-icon fas fa-tools"></i>
                             <p>
                                 Administracion
@@ -197,8 +217,8 @@
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            {{-- Usuarios: Solo Admin(1) --}}
-                            @if($nivel == 1)
+                            {{-- Usuarios --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'usuarios'))
                             <li class="nav-item">
                                 <a href="{{ route('usuarios.index') }}" class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}">
                                     <i class="fas fa-users-cog nav-icon"></i>
@@ -207,47 +227,45 @@
                             </li>
                             @endif
 
-                            {{-- Permisos: Admin(1), Líder(2) --}}
+                            {{-- Roles --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'roles'))
+                            <li class="nav-item">
+                                <a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                                    <i class="fas fa-user-shield nav-icon"></i>
+                                    <p>Roles</p>
+                                </a>
+                            </li>
+                            @endif
+
+                            {{-- Permisos --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'permisos'))
                             <li class="nav-item">
                                 <a href="{{ route('permisos.index') }}" class="nav-link {{ request()->routeIs('permisos.index') || request()->routeIs('permisos.create') || request()->routeIs('permisos.show') ? 'active' : '' }}">
                                     <i class="fas fa-key nav-icon"></i>
                                     <p>Permisos</p>
                                 </a>
                             </li>
-
-                            {{-- Desclasificación: Solo Admin(1) --}}
-                            @if($nivel == 1)
-                            <li class="nav-item">
-                                <a href="{{ route('permisos.desclasificar') }}" class="nav-link {{ request()->routeIs('permisos.desclasificar') ? 'active' : '' }}">
-                                    <i class="fas fa-unlock-alt nav-icon"></i>
-                                    <p>Desclasificacion</p>
-                                </a>
-                            </li>
                             @endif
 
-                            {{-- Accesos Otorgados: Admin(1), Líder(2) --}}
-                            <li class="nav-item">
-                                <a href="{{ route('permisos.accesos_otorgados') }}" class="nav-link {{ request()->routeIs('permisos.accesos_otorgados') ? 'active' : '' }}">
-                                    <i class="fas fa-check-circle nav-icon"></i>
-                                    <p>Accesos Otorgados</p>
-                                </a>
-                            </li>
-
-                            {{-- Catálogos: Admin(1), Líder(2) --}}
+                            {{-- Catálogos --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'catalogos'))
                             <li class="nav-item">
                                 <a href="{{ route('catalogos.index') }}" class="nav-link {{ request()->routeIs('catalogos.*') ? 'active' : '' }}">
                                     <i class="fas fa-list-alt nav-icon"></i>
                                     <p>Catalogos</p>
                                 </a>
                             </li>
+                            @endif
 
-                            {{-- Traza: Admin(1), Líder(2) --}}
+                            {{-- Traza --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'traza'))
                             <li class="nav-item">
                                 <a href="{{ route('traza.index') }}" class="nav-link {{ request()->routeIs('traza.*') ? 'active' : '' }}">
                                     <i class="fas fa-history nav-icon"></i>
                                     <p>Traza de Actividad</p>
                                 </a>
                             </li>
+                            @endif
                         </ul>
                     </li>
                     @endif

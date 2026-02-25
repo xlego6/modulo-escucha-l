@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\RolModuloPermiso;
 
 class CheckNivelAcceso
 {
@@ -14,30 +15,10 @@ class CheckNivelAcceso
      * 2 = Líder
      * 3 = Entrevistador
      * 4 = Transcriptor
+     * 5 = Gestor de Conocimiento
      * 99 = Deshabilitado
+     * >= 10 = Roles personalizados
      */
-
-    /**
-     * Permisos por módulo según nivel
-     */
-    protected $permisos = [
-        'entrevistas' => [1, 2, 3],      // Admin, Líder, Entrevistador
-        'personas' => [1, 3],             // Admin, Entrevistador
-        'buscador' => [1, 2, 3],          // Admin, Líder, Entrevistador
-        'estadisticas' => [1, 2],         // Admin, Líder
-        'mapa' => [1, 2],                 // Admin, Líder
-        'exportar' => [1, 2],             // Admin, Líder
-        'procesamientos' => [1, 2, 4],    // Admin, Líder, Transcriptor
-        'procesamientos.edicion' => [1, 2, 4],  // Admin, Líder, Transcriptor
-        'procesamientos.transcripcion' => [1, 2],  // Admin, Líder (iniciar transcripción)
-        'procesamientos.entidades' => [1, 2],      // Admin, Líder
-        'procesamientos.anonimizacion' => [1, 2, 4],  // Admin, Líder, Transcriptor
-        'usuarios' => [1],                // Solo Admin
-        'permisos' => [1, 2],             // Admin, Líder
-        'desclasificacion' => [1],        // Solo Admin
-        'catalogos' => [1, 2],            // Admin, Líder
-        'traza' => [1, 2],                // Admin, Líder
-    ];
 
     /**
      * Handle an incoming request.
@@ -66,7 +47,7 @@ class CheckNivelAcceso
 
         // Verificar si tiene permiso para el módulo
         if (!$this->tienePermiso($modulo, $nivelUsuario)) {
-            flash('No tiene permisos para acceder a este módulo.')->error();
+            flash('No tiene permisos para acceder a este modulo.')->error();
             return redirect()->route('home');
         }
 
@@ -74,48 +55,19 @@ class CheckNivelAcceso
     }
 
     /**
-     * Verificar si un nivel tiene permiso para un módulo
+     * Verificar si un nivel tiene permiso para un módulo (DB-driven)
      */
     protected function tienePermiso($modulo, $nivel)
     {
-        if (!isset($this->permisos[$modulo])) {
-            // Si no está definido, solo Admin
-            return $nivel == 1;
-        }
-
-        return in_array($nivel, $this->permisos[$modulo]);
+        return RolModuloPermiso::puedeVer((int) $nivel, $modulo);
     }
 
     /**
-     * Método estático para usar en vistas
+     * Método estático para usar en vistas y controladores
      */
     public static function puedeAcceder($modulo, $nivel = null)
     {
-        $nivel = $nivel ?? Auth::user()->id_nivel ?? 99;
-
-        $permisos = [
-            'entrevistas' => [1, 2, 3],
-            'personas' => [1, 3],
-            'buscador' => [1, 2, 3],
-            'estadisticas' => [1, 2],
-            'mapa' => [1, 2],
-            'exportar' => [1, 2],
-            'procesamientos' => [1, 2, 4],
-            'procesamientos.edicion' => [1, 2, 4],
-            'procesamientos.transcripcion' => [1, 2],
-            'procesamientos.entidades' => [1, 2],
-            'procesamientos.anonimizacion' => [1, 2, 4],
-            'usuarios' => [1],
-            'permisos' => [1, 2],
-            'desclasificacion' => [1],
-            'catalogos' => [1, 2],
-            'traza' => [1, 2],
-        ];
-
-        if (!isset($permisos[$modulo])) {
-            return $nivel == 1;
-        }
-
-        return in_array($nivel, $permisos[$modulo]);
+        $nivel = $nivel ?? (Auth::user()->id_nivel ?? 99);
+        return RolModuloPermiso::puedeVer((int) $nivel, $modulo);
     }
 }

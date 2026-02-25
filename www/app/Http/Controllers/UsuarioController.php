@@ -7,6 +7,7 @@ use App\Models\Entrevistador;
 use App\Models\CriterioFijo;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -150,6 +151,10 @@ class UsuarioController extends Controller
         // Actualizar o crear perfil
         $perfil = Entrevistador::where('id_usuario', $id)->first();
         if ($perfil) {
+            // Invalidar caché de permisos si cambia el nivel
+            if ($perfil->id_nivel != $request->id_nivel) {
+                RolModuloPermiso::clearCache((int) $request->id_nivel);
+            }
             $perfil->update([
                 'id_dependencia_origen' => $request->id_dependencia_origen ?: null,
                 'id_nivel' => $request->id_nivel,
