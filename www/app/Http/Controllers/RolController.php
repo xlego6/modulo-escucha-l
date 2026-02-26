@@ -100,7 +100,9 @@ class RolController extends Controller
             ->get()
             ->keyBy('modulo');
 
-        return view('roles.edit', compact('rol', 'modulos', 'permisos'));
+        $submodulos = RolModuloPermiso::SUBMODULOS();
+
+        return view('roles.edit', compact('rol', 'modulos', 'permisos', 'submodulos'));
     }
 
     /**
@@ -111,9 +113,22 @@ class RolController extends Controller
         $rol        = Rol::findOrFail($nivel);
         $modulosData = $request->input('modulos', []);
 
+        // Determinar qué módulos padre tienen "ver" activo
+        $padresActivos = [];
+        foreach (array_keys(RolModuloPermiso::SUBMODULOS()) as $padre) {
+            $datosPadre = $modulosData[$padre] ?? [];
+            $padresActivos[$padre] = isset($datosPadre['puede_ver']);
+        }
+
         foreach (array_keys(RolModuloPermiso::MODULOS()) as $modulo) {
             $datos   = $modulosData[$modulo] ?? [];
             $puedeVer = isset($datos['puede_ver']);
+
+            // Si es submódulo, forzar desactivado si el padre no tiene "ver"
+            $padre = RolModuloPermiso::getPadre($modulo);
+            if ($padre && !($padresActivos[$padre] ?? false)) {
+                $puedeVer = false;
+            }
 
             // Admin no puede quedar sin acceso al módulo roles
             if ($nivel == 1 && $modulo === 'roles') {

@@ -120,7 +120,9 @@ docker-compose.override.yml
 redis-data/
 
 # ----------------
-# Archivos de configuracion local
+# Archivos de configuracion local y otros
 # ----------------
 .claude/
 *.local
+Claude.md
+urls_roles_acciones.csv
