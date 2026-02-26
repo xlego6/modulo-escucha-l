@@ -150,8 +150,8 @@
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            {{-- Centro de Control: Admin(1), Líder(2) --}}
-                            @if(in_array($nivel, [1, 2]))
+                            {{-- Centro de Control: usa permiso de transcripcion --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.transcripcion'))
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.index') }}" class="nav-link {{ request()->routeIs('procesamientos.index') ? 'active' : '' }}">
                                     <i class="fas fa-tachometer-alt nav-icon"></i>
@@ -160,8 +160,8 @@
                             </li>
                             @endif
 
-                            {{-- Transcripción: Admin(1), Líder(2) --}}
-                            @if(in_array($nivel, [1, 2]))
+                            {{-- Transcripción --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.transcripcion'))
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.transcripcion') }}" class="nav-link {{ request()->routeIs('procesamientos.transcripcion') ? 'active' : '' }}">
                                     <i class="fas fa-microphone nav-icon"></i>
@@ -171,15 +171,17 @@
                             @endif
 
                             {{-- Edición --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.edicion'))
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.edicion') }}" class="nav-link {{ request()->routeIs('procesamientos.edicion') || request()->routeIs('procesamientos.editar-transcripcion') ? 'active' : '' }}">
                                     <i class="fas fa-edit nav-icon"></i>
                                     <p>Edicion</p>
                                 </a>
                             </li>
+                            @endif
 
-                            {{-- Entidades: Admin(1), Líder(2) --}}
-                            @if(in_array($nivel, [1, 2]))
+                            {{-- Entidades --}}
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.entidades'))
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.entidades') }}" class="nav-link {{ request()->routeIs('procesamientos.entidades') || request()->routeIs('procesamientos.ver-entidades') ? 'active' : '' }}">
                                     <i class="fas fa-tags nav-icon"></i>
@@ -189,7 +191,7 @@
                             @endif
 
                             {{-- Anonimización --}}
-                            @if(in_array($nivel, [1, 2, 4]))
+                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.anonimizacion'))
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.anonimizacion') }}" class="nav-link {{ request()->routeIs('procesamientos.anonimizacion') || request()->routeIs('procesamientos.previsualizar-anonimizacion') || request()->routeIs('procesamientos.editar-anonimizacion-asignada') ? 'active' : '' }}">
                                     <i class="fas fa-user-secret nav-icon"></i>

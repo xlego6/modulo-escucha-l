@@ -71,24 +71,56 @@ class RolModuloPermiso extends Model
     }
 
     /**
-     * Lista de los 13 módulos del sistema
+     * Lista de módulos del sistema (incluye submenús)
      */
     public static function MODULOS(): array
     {
         return [
-            'entrevistas'    => 'Entrevistas',
-            'adjuntos'       => 'Adjuntos',
-            'personas'       => 'Personas',
-            'buscador'       => 'Buscadora',
-            'estadisticas'   => 'Estadisticas',
-            'mapa'           => 'Mapa',
-            'exportar'       => 'Exportar Excel',
-            'procesamientos' => 'Procesamientos',
-            'permisos'       => 'Permisos',
-            'usuarios'       => 'Usuarios',
-            'catalogos'      => 'Catalogos',
-            'traza'          => 'Traza de Actividad',
-            'roles'          => 'Roles',
+            'entrevistas'                  => 'Entrevistas',
+            'adjuntos'                     => 'Adjuntos',
+            'personas'                     => 'Personas',
+            'buscador'                     => 'Buscadora',
+            'estadisticas'                 => 'Estadisticas',
+            'mapa'                         => 'Mapa',
+            'exportar'                     => 'Exportar Excel',
+            'procesamientos'               => 'Procesamientos',
+            'procesamientos.transcripcion' => 'Transcripcion',
+            'procesamientos.edicion'       => 'Edicion',
+            'procesamientos.entidades'     => 'Entidades',
+            'procesamientos.anonimizacion' => 'Anonimizacion',
+            'permisos'                     => 'Permisos',
+            'usuarios'                     => 'Usuarios',
+            'catalogos'                    => 'Catalogos',
+            'traza'                        => 'Traza de Actividad',
+            'roles'                        => 'Roles',
         ];
+    }
+
+    /**
+     * Estructura jerárquica: padre => [hijos]
+     */
+    public static function SUBMODULOS(): array
+    {
+        return [
+            'procesamientos' => [
+                'procesamientos.transcripcion',
+                'procesamientos.edicion',
+                'procesamientos.entidades',
+                'procesamientos.anonimizacion',
+            ],
+        ];
+    }
+
+    /**
+     * Retorna el padre de un submódulo, o null si es módulo raíz
+     */
+    public static function getPadre(string $modulo): ?string
+    {
+        foreach (self::SUBMODULOS() as $padre => $hijos) {
+            if (in_array($modulo, $hijos)) {
+                return $padre;
+            }
+        }
+        return null;
     }
 }
