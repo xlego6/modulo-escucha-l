@@ -92,15 +92,19 @@ class ProcesamientoController extends Controller
      */
     public function transcripcion()
     {
-        // Entrevistas con audio o video
+        // Entrevistas con audio o video (excluir adjuntos anonimizados)
         $entrevistas = Entrevista::where('id_activo', 1)
             ->whereHas('rel_adjuntos', function($q) {
-                $q->where('tipo_mime', 'like', '%audio%')
-                  ->orWhere('tipo_mime', 'like', '%video%');
+                $q->where(function($inner) {
+                    $inner->where('tipo_mime', 'like', '%audio%')
+                          ->orWhere('tipo_mime', 'like', '%video%');
+                })->where('nombre_original', 'not like', '%[Anonimizado]%');
             })
             ->with(['rel_adjuntos' => function($q) {
-                $q->where('tipo_mime', 'like', '%audio%')
-                  ->orWhere('tipo_mime', 'like', '%video%');
+                $q->where(function($inner) {
+                    $inner->where('tipo_mime', 'like', '%audio%')
+                          ->orWhere('tipo_mime', 'like', '%video%');
+                })->where('nombre_original', 'not like', '%[Anonimizado]%');
             }])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -120,12 +124,13 @@ class ProcesamientoController extends Controller
     {
         $entrevista = Entrevista::findOrFail($id);
 
-        // Obtener archivos de audio o video
+        // Obtener archivos de audio o video (excluir anonimizados)
         $audios = Adjunto::where('id_e_ind_fvt', $id)
             ->where(function($q) {
                 $q->where('tipo_mime', 'like', '%audio%')
                   ->orWhere('tipo_mime', 'like', '%video%');
             })
+            ->where('nombre_original', 'not like', '%[Anonimizado]%')
             ->orderBy('id_adjunto')
             ->get();
 
@@ -482,8 +487,10 @@ class ProcesamientoController extends Controller
             // Incluir aprobadas para que vea su trabajo finalizado
             $asignaciones = AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
                 ->with(['rel_entrevista', 'rel_entrevista.rel_adjuntos' => function($q) {
-                    $q->where('tipo_mime', 'like', '%audio%')
-                      ->orWhere('tipo_mime', 'like', '%video%');
+                    $q->where(function($inner) {
+                        $inner->where('tipo_mime', 'like', '%audio%')
+                              ->orWhere('tipo_mime', 'like', '%video%');
+                    })->where('nombre_original', 'not like', '%[Anonimizado]%');
                 }])
                 ->orderByRaw("CASE estado
                     WHEN 'rechazada' THEN 1
@@ -511,15 +518,19 @@ class ProcesamientoController extends Controller
             return view('procesamientos.edicion-transcriptor', compact('asignaciones', 'stats'));
         }
 
-        // Admin/Líder: ve todas las entrevistas y asignaciones
+        // Admin/Líder: ve todas las entrevistas y asignaciones (excluir anonimizados)
         $pendientes = Entrevista::where('id_activo', 1)
             ->whereHas('rel_adjuntos', function($q) {
-                $q->where('tipo_mime', 'like', '%audio%')
-                  ->orWhere('tipo_mime', 'like', '%video%');
+                $q->where(function($inner) {
+                    $inner->where('tipo_mime', 'like', '%audio%')
+                          ->orWhere('tipo_mime', 'like', '%video%');
+                })->where('nombre_original', 'not like', '%[Anonimizado]%');
             })
             ->with(['rel_adjuntos' => function($q) {
-                $q->where('tipo_mime', 'like', '%audio%')
-                  ->orWhere('tipo_mime', 'like', '%video%');
+                $q->where(function($inner) {
+                    $inner->where('tipo_mime', 'like', '%audio%')
+                          ->orWhere('tipo_mime', 'like', '%video%');
+                })->where('nombre_original', 'not like', '%[Anonimizado]%');
             }])
             ->orderBy('updated_at', 'desc')
             ->paginate(20);
@@ -530,8 +541,8 @@ class ProcesamientoController extends Controller
             ->orderBy('fecha_envio_revision', 'asc')
             ->get();
 
-        // Transcriptores disponibles para asignar (nivel 4)
-        $transcriptores = Entrevistador::where('id_nivel', 4)
+        // Transcriptores y Líderes disponibles para asignar (nivel 2 y 4)
+        $transcriptores = Entrevistador::whereIn('id_nivel', [2, 4])
             ->with('rel_usuario')
             ->get();
 
@@ -1151,12 +1162,19 @@ class ProcesamientoController extends Controller
             ], 400);
         }
 
+        // Si hay una asignación aprobada previa, copiar su transcripcion_editada
+        $transcripcionPrevia = AsignacionTranscripcion::where('id_e_ind_fvt', $request->id_e_ind_fvt)
+            ->where('estado', AsignacionTranscripcion::ESTADO_APROBADA)
+            ->orderBy('fecha_revision', 'desc')
+            ->first();
+
         $asignacion = AsignacionTranscripcion::create([
             'id_e_ind_fvt' => $request->id_e_ind_fvt,
             'id_transcriptor' => $request->id_transcriptor,
             'id_asignado_por' => $user->id,
             'estado' => AsignacionTranscripcion::ESTADO_ASIGNADA,
             'fecha_asignacion' => now(),
+            'transcripcion_editada' => $transcripcionPrevia ? $transcripcionPrevia->transcripcion_editada : null,
         ]);
 
         TrazaActividad::create([
@@ -1457,6 +1475,12 @@ class ProcesamientoController extends Controller
             ], 400);
         }
 
+        // Si hay una asignación aprobada previa, copiar su texto_anonimizado
+        $anonimizacionPrevia = AsignacionAnonimizacion::where('id_e_ind_fvt', $request->id_e_ind_fvt)
+            ->where('estado', AsignacionAnonimizacion::ESTADO_APROBADA)
+            ->orderBy('fecha_revision', 'desc')
+            ->first();
+
         $asignacion = AsignacionAnonimizacion::create([
             'id_e_ind_fvt' => $request->id_e_ind_fvt,
             'id_anonimizador' => $request->id_anonimizador,
@@ -1465,6 +1489,7 @@ class ProcesamientoController extends Controller
             'fecha_asignacion' => now(),
             'tipos_anonimizar' => $request->tipos_anonimizar ?? 'PER,LOC',
             'formato_reemplazo' => $request->formato_reemplazo ?? 'brackets',
+            'texto_anonimizado' => $anonimizacionPrevia ? $anonimizacionPrevia->texto_anonimizado : null,
         ]);
 
         TrazaActividad::create([

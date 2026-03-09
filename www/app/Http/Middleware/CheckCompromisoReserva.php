@@ -45,6 +45,14 @@ class CheckCompromisoReserva
             return redirect()->route('perfil');
         }
 
+        if (!$entrevistador->compromiso_acceso) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'Debe aceptar el compromiso de acceso interno antes de continuar.', 'redirect' => route('perfil')], 403);
+            }
+            flash('Debe aceptar el compromiso de acceso interno para continuar.')->warning();
+            return redirect()->route('perfil');
+        }
+
         return $next($request);
     }
 }

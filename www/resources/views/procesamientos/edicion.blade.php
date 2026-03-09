@@ -167,10 +167,12 @@
                     </td>
                     <td>
                         <div class="btn-group">
+                            @if(Auth::user()->id_nivel == 1)
                             <a href="{{ route('procesamientos.editar-transcripcion', $entrevista->id_e_ind_fvt) }}"
                                class="btn btn-sm btn-primary" title="Editar directamente">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            @endif
                             @if(!$asignacion || $asignacion->estado === 'aprobada')
                             <button type="button" class="btn btn-sm {{ $asignacion && $asignacion->estado === 'aprobada' ? 'btn-outline-info' : 'btn-info' }}"
                                     onclick="abrirModalAsignar({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}')"
@@ -217,7 +219,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="id_transcriptor">Transcriptor <span class="text-danger">*</span></label>
+                        <label for="id_transcriptor">Transcriptor / Líder <span class="text-danger">*</span></label>
                         <select class="form-control" id="id_transcriptor" name="id_transcriptor" required>
                             <option value="">-- Seleccione --</option>
                             @foreach($transcriptores as $t)

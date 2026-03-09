@@ -101,7 +101,9 @@
                                 </div>
                                 <small class="form-text text-muted mt-2">
                                     <i class="fas fa-info-circle"></i>
-                                    Busca simultaneamente en: codigos y titulos de entrevistas, nombres de personas, y contenido de documentos (transcripciones, PDFs)
+                                    Busca en: codigos, titulos, personas, transcripciones y documentos.
+                                    <strong>Operadores:</strong> <code>AND</code>, <code>OR</code>, <code>NOT</code>, frases entre <code>"comillas"</code>.
+                                    Ej: <em>desplazamiento AND Cauca</em>
                                 </small>
                             </div>
                         </div>
@@ -111,6 +113,43 @@
                                 <i class="fas fa-times"></i> Limpiar
                             </a>
                             @endif
+                        </div>
+                    </div>
+                    {{-- Filtros avanzados --}}
+                    <div class="row mt-3 pt-3 border-top">
+                        <div class="col-md-3">
+                            <div class="form-group mb-0">
+                                <label class="small text-muted mb-1"><i class="fas fa-map-marker-alt"></i> Departamento (toma)</label>
+                                <input type="text" name="departamento" class="form-control form-control-sm"
+                                    placeholder="Ej: Antioquia" value="{{ request('departamento') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-0">
+                                <label class="small text-muted mb-1"><i class="fas fa-map-pin"></i> Municipio (toma)</label>
+                                <input type="text" name="municipio" class="form-control form-control-sm"
+                                    placeholder="Ej: Medellín" value="{{ request('municipio') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-0">
+                                <label class="small text-muted mb-1"><i class="fas fa-exclamation-triangle"></i> Hecho Victimizante</label>
+                                <select name="id_hecho_victimizante" class="form-control form-control-sm">
+                                    @foreach($hechos_victimizantes as $id => $nombre)
+                                    <option value="{{ $id }}" {{ request('id_hecho_victimizante') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-0">
+                                <label class="small text-muted mb-1"><i class="fas fa-hands-helping"></i> Práctica de Resistencia</label>
+                                <select name="id_resistencia" class="form-control form-control-sm">
+                                    @foreach($resistencias as $id => $nombre)
+                                    <option value="{{ $id }}" {{ request('id_resistencia') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -217,6 +256,16 @@
                                         <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-eye"></i> Ver
                                         </a>
+                                        @if(Auth::user()->id_nivel == 3 && !$permisosAprobados->contains($entrevista->id_e_ind_fvt) && (!$entrevista->rel_entrevistador || $entrevista->rel_entrevistador->id_usuario != Auth::id()))
+                                        <form action="{{ route('permisos.solicitar') }}" method="POST" style="display:inline">
+                                            @csrf
+                                            <input type="hidden" name="id_e_ind_fvt" value="{{ $entrevista->id_e_ind_fvt }}">
+                                            <input type="hidden" name="tipo_solicitud" value="acceso">
+                                            <button type="submit" class="btn btn-sm btn-outline-info mt-1" onclick="return confirm('¿Solicitar acceso a esta entrevista?')">
+                                                <i class="fas fa-key"></i> Solicitar Acceso
+                                            </button>
+                                        </form>
+                                        @endif
                                     </div>
                                 </div>
                             </div>

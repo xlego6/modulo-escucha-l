@@ -12,6 +12,7 @@ class Entrevistador extends Model
 
     protected $casts = [
         'compromiso_reserva' => 'datetime',
+        'compromiso_acceso' => 'datetime',
     ];
 
     protected $fillable = [
@@ -25,6 +26,7 @@ class Entrevistador extends Model
         'id_nivel',
         'solo_lectura',
         'compromiso_reserva',
+        'compromiso_acceso',
     ];
 
     public function rel_usuario() {

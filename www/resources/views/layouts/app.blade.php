@@ -246,10 +246,39 @@
 
                             {{-- Permisos --}}
                             @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'permisos'))
+                            @php
+                                $badgePermisos = 0;
+                                if ($nivel == 1) {
+                                    $badgePermisos = \App\Models\Permiso::solicitudesPendientes()->count();
+                                } elseif ($nivel == 5) {
+                                    $entrevistadorNav = \App\Models\Entrevistador::where('id_usuario', Auth::id())->first();
+                                    if ($entrevistadorNav) {
+                                        $badgePermisos = \App\Models\Permiso::solicitudesPendientes()
+                                            ->whereHas('rel_entrevista', function($q) use ($entrevistadorNav) {
+                                                $q->where('id_dependencia_origen', $entrevistadorNav->id_dependencia_origen);
+                                            })
+                                            ->where('tipo_solicitud', '!=', 'eliminacion')
+                                            ->count();
+                                    }
+                                } elseif ($nivel >= 3) {
+                                    $entrevistadorNav = \App\Models\Entrevistador::where('id_usuario', Auth::id())->first();
+                                    if ($entrevistadorNav) {
+                                        $badgePermisos = \App\Models\Permiso::where('id_entrevistador', $entrevistadorNav->id_entrevistador)
+                                            ->where('es_solicitud', true)
+                                            ->where('estado_solicitud', 'pendiente')
+                                            ->count();
+                                    }
+                                }
+                            @endphp
                             <li class="nav-item">
                                 <a href="{{ route('permisos.index') }}" class="nav-link {{ request()->routeIs('permisos.index') || request()->routeIs('permisos.create') || request()->routeIs('permisos.show') ? 'active' : '' }}">
                                     <i class="fas fa-key nav-icon"></i>
-                                    <p>Permisos</p>
+                                    <p>
+                                        Permisos
+                                        @if($badgePermisos > 0)
+                                        <span class="right badge badge-warning">{{ $badgePermisos }}</span>
+                                        @endif
+                                    </p>
                                 </a>
                             </li>
                             @endif

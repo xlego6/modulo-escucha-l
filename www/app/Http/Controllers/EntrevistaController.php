@@ -38,6 +38,14 @@ class EntrevistaController extends Controller
                       $subquery->select('id_e_ind_fvt')
                           ->from('esclarecimiento.permiso')
                           ->where('id_entrevistador', $user->id_entrevistador)
+                          ->where('id_estado', 1) // ESTADO_VIGENTE
+                          ->where(function($pq) {
+                              $pq->where('es_solicitud', false)
+                                 ->orWhere(function($pq2) {
+                                     $pq2->where('es_solicitud', true)
+                                         ->where('estado_solicitud', 'aprobado');
+                                 });
+                          })
                           ->where(function($pq) {
                               $pq->whereNull('fecha_vencimiento')
                                  ->orWhere('fecha_vencimiento', '>', now());
@@ -269,7 +277,29 @@ class EntrevistaController extends Controller
             )
             ->get();
 
-        return view('entrevistas.show', compact('entrevista', 'depto_toma', 'muni_toma', 'areas_compatibles', 'lugares_mencionados'));
+        $puedeEditar = $this->puedeEditar($user, $entrevista);
+        $esPropietario = $entrevista->rel_entrevistador && $entrevista->rel_entrevistador->id_usuario == $user->id;
+
+        // Check if user already has a pending solicitud for this entrevista
+        $entrevistadorActual = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
+        $solicitudEdicionPendiente = false;
+        $solicitudEliminacionPendiente = false;
+        if ($entrevistadorActual) {
+            $solicitudEdicionPendiente = Permiso::where('id_entrevistador', $entrevistadorActual->id_entrevistador)
+                ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+                ->where('es_solicitud', true)
+                ->where('tipo_solicitud', Permiso::SOLICITUD_EDICION)
+                ->whereIn('estado_solicitud', [Permiso::SOLICITUD_PENDIENTE, Permiso::SOLICITUD_APROBADA])
+                ->exists();
+            $solicitudEliminacionPendiente = Permiso::where('id_entrevistador', $entrevistadorActual->id_entrevistador)
+                ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+                ->where('es_solicitud', true)
+                ->where('tipo_solicitud', Permiso::SOLICITUD_ELIMINACION)
+                ->where('estado_solicitud', Permiso::SOLICITUD_PENDIENTE)
+                ->exists();
+        }
+
+        return view('entrevistas.show', compact('entrevista', 'depto_toma', 'muni_toma', 'areas_compatibles', 'lugares_mencionados', 'puedeEditar', 'esPropietario', 'solicitudEdicionPendiente', 'solicitudEliminacionPendiente'));
     }
 
     /**
@@ -421,7 +451,7 @@ class EntrevistaController extends Controller
      */
     private function puedeEditar($user, $entrevista)
     {
-        // Administradores y Esclarecimiento pueden editar todo
+        // Administradores y Líderes pueden editar todo
         if ($user->id_nivel <= 2) {
             return true;
         }
@@ -431,10 +461,18 @@ class EntrevistaController extends Controller
             return true;
         }
 
-        // Verificar si tiene permiso otorgado (tipo 2=Escritura o 3=Completo)
+        // Verificar si tiene permiso de escritura/completo vigente y aprobado
         $permiso = Permiso::where('id_entrevistador', $user->id_entrevistador)
             ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
             ->where('id_tipo', '>=', 2) // Escritura o Completo
+            ->where('id_estado', Permiso::ESTADO_VIGENTE)
+            ->where(function($q) {
+                $q->where('es_solicitud', false)
+                  ->orWhere(function($q2) {
+                      $q2->where('es_solicitud', true)
+                         ->where('estado_solicitud', Permiso::SOLICITUD_APROBADA);
+                  });
+            })
             ->where(function($q) {
                 $q->whereNull('fecha_vencimiento')
                   ->orWhere('fecha_vencimiento', '>', now());
@@ -449,7 +487,7 @@ class EntrevistaController extends Controller
      */
     private function puedeVer($user, $entrevista)
     {
-        // Administradores y Esclarecimiento pueden ver todo
+        // Administradores y Líderes pueden ver todo
         if ($user->id_nivel <= 2) {
             return true;
         }
@@ -459,9 +497,26 @@ class EntrevistaController extends Controller
             return true;
         }
 
-        // Verificar si tiene permiso otorgado (cualquier tipo)
+        // Gestor de Conocimiento (nivel 5): puede ver entrevistas de su propia dependencia
+        if ($user->id_nivel == 5) {
+            $entrevistadorGestor = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
+            if ($entrevistadorGestor && $entrevista->id_dependencia_origen &&
+                $entrevistadorGestor->id_dependencia_origen == $entrevista->id_dependencia_origen) {
+                return true;
+            }
+        }
+
+        // Verificar si tiene permiso otorgado vigente (no revocado, no solicitud pendiente)
         $permiso = Permiso::where('id_entrevistador', $user->id_entrevistador)
             ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+            ->where('id_estado', Permiso::ESTADO_VIGENTE)
+            ->where(function($q) {
+                $q->where('es_solicitud', false)
+                  ->orWhere(function($q2) {
+                      $q2->where('es_solicitud', true)
+                         ->where('estado_solicitud', Permiso::SOLICITUD_APROBADA);
+                  });
+            })
             ->where(function($q) {
                 $q->whereNull('fecha_vencimiento')
                   ->orWhere('fecha_vencimiento', '>', now());

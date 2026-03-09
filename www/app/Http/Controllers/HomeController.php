@@ -135,6 +135,43 @@ class HomeController extends Controller
     }
 
     /**
+     * Aceptar compromiso de acceso interno
+     */
+    public function aceptarCompromisoAcceso(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'acepto_compromiso_acceso' => 'required|accepted',
+        ], [
+            'acepto_compromiso_acceso.accepted' => 'Debe aceptar el compromiso de acceso',
+        ]);
+
+        $entrevistador = Entrevistador::where('id_usuario', $user->id)->first();
+
+        if ($entrevistador) {
+            $entrevistador->compromiso_acceso = now();
+            $entrevistador->save();
+
+            TrazaActividad::create([
+                'fecha_hora' => now(),
+                'id_usuario' => $user->id,
+                'accion' => 'aceptar_compromiso',
+                'objeto' => 'compromiso_acceso',
+                'id_registro' => $entrevistador->id_entrevistador,
+                'referencia' => 'Aceptacion del compromiso de acceso interno',
+                'ip' => $request->ip(),
+            ]);
+
+            flash('Compromiso de acceso aceptado correctamente.')->success();
+        } else {
+            flash('No se encontró el perfil de entrevistador.')->error();
+        }
+
+        return redirect()->route('perfil');
+    }
+
+    /**
      * Aceptar compromiso de reserva
      */
     public function aceptarCompromisoReserva(Request $request)

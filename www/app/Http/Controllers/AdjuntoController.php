@@ -25,7 +25,7 @@ class AdjuntoController extends Controller
      */
     public function gestionar($id_entrevista)
     {
-        $entrevista = Entrevista::with(['rel_adjuntos', 'rel_adjuntos.rel_tipo'])
+        $entrevista = Entrevista::with(['rel_adjuntos', 'rel_adjuntos.rel_tipo', 'rel_entrevistador'])
             ->findOrFail($id_entrevista);
 
         $tipos = CatItem::where('id_cat', 19)
@@ -36,7 +36,45 @@ class AdjuntoController extends Controller
         Adjunto::limpiarMarcasAntiguas();
         $marcaAgua = Adjunto::generarMarcaAgua();
 
-        return view('adjuntos.gestionar', compact('entrevista', 'tipos', 'marcaAgua'));
+        $user = Auth::user();
+        $entrevistadorActual = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
+
+        // Determine permissions
+        $esPropietario = $entrevista->rel_entrevistador &&
+            $entrevista->rel_entrevistador->id_usuario == $user->id;
+
+        // Can delete/upload/download: Admin or owner
+        $puedeGestionar = ($user->id_nivel == 1) || $esPropietario;
+
+        // Gestor of same dependencia: can view/play but not delete/download
+        $esGestorMismaDependencia = ($user->id_nivel == 5) && $entrevistadorActual &&
+            $entrevista->id_dependencia_origen &&
+            $entrevistadorActual->id_dependencia_origen == $entrevista->id_dependencia_origen;
+
+        // Has approved access permission
+        $tienePermisoAcceso = false;
+        if ($entrevistadorActual && !$puedeGestionar && !$esGestorMismaDependencia) {
+            $tienePermisoAcceso = \App\Models\Permiso::where('id_entrevistador', $entrevistadorActual->id_entrevistador)
+                ->where('id_e_ind_fvt', $id_entrevista)
+                ->where('id_estado', \App\Models\Permiso::ESTADO_VIGENTE)
+                ->where(function($q) {
+                    $q->where('es_solicitud', false)
+                      ->orWhere(function($q2) {
+                          $q2->where('es_solicitud', true)
+                             ->where('estado_solicitud', \App\Models\Permiso::SOLICITUD_APROBADA);
+                      });
+                })
+                ->where(function($q) {
+                    $q->whereNull('fecha_vencimiento')
+                      ->orWhere('fecha_vencimiento', '>', now());
+                })
+                ->exists();
+        }
+
+        // Can view/play: Admin, owner, Gestor same dep, or has approved permission
+        $puedeVer = $user->id_nivel <= 2 || $esPropietario || $esGestorMismaDependencia || $tienePermisoAcceso;
+
+        return view('adjuntos.gestionar', compact('entrevista', 'tipos', 'marcaAgua', 'puedeGestionar', 'puedeVer', 'esGestorMismaDependencia', 'tienePermisoAcceso'));
     }
 
     /**
