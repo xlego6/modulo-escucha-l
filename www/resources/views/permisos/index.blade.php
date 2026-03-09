@@ -34,11 +34,8 @@
                 </form>
             </div>
             <div class="col-md-3 text-right">
-                <a href="{{ route('permisos.create') }}" class="btn btn-sm btn-primary mr-1">
+                <a href="{{ route('permisos.create') }}" class="btn btn-sm btn-primary">
                     <i class="fas fa-plus mr-1"></i> Otorgar
-                </a>
-                <a href="{{ route('permisos.desclasificar') }}" class="btn btn-sm btn-warning">
-                    <i class="fas fa-unlock-alt mr-1"></i> Desclasificar
                 </a>
             </div>
         </div>

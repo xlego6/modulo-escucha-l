@@ -21,8 +21,8 @@ class CheckCompromisoReserva
             return redirect()->route('login');
         }
 
-        // Administradores y nivel Esclarecimiento tienen acceso directo
-        if ($user->id_nivel <= 2) {
+        // Solo administradores tienen acceso directo sin compromiso
+        if ($user->id_nivel == 1) {
             return $next($request);
         }
 
@@ -30,11 +30,17 @@ class CheckCompromisoReserva
         $entrevistador = Entrevistador::where('id_usuario', $user->id)->first();
 
         if (!$entrevistador) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'No tiene un perfil asignado. Contacte al administrador.'], 403);
+            }
             flash('No tiene un perfil de entrevistador asignado. Contacte al administrador.')->warning();
             return redirect()->route('home');
         }
 
         if (!$entrevistador->compromiso_reserva) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'Debe aceptar el compromiso de reserva antes de continuar.', 'redirect' => route('perfil')], 403);
+            }
             flash('Debe aceptar el compromiso de reserva y confidencialidad para acceder a las entrevistas.')->warning();
             return redirect()->route('perfil');
         }
