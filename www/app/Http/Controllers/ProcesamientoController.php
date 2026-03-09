@@ -135,7 +135,7 @@ class ProcesamientoController extends Controller
 
         // Opciones de transcripcion
         $withDiarization = $request->input('diarizar', true);
-        $hfToken = $request->input('hf_token', '');
+        $hfToken = (string) $request->input('hf_token', '');
 
         $transcripcionesCompletas = [];
         $totalCaracteres = 0;
@@ -305,7 +305,7 @@ class ProcesamientoController extends Controller
 
         $ids = $request->input('ids');
         $withDiarization = $request->input('diarizar', true);
-        $hfToken = $request->input('hf_token', '');
+        $hfToken = (string) $request->input('hf_token', '');
 
         return response()->stream(function() use ($ids, $withDiarization, $hfToken) {
             // Desactivar buffer de salida

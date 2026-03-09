@@ -47,6 +47,9 @@ class CheckNivelAcceso
 
         // Verificar si tiene permiso para el módulo
         if (!$this->tienePermiso($modulo, $nivelUsuario)) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'No tiene permisos para realizar esta accion.'], 403);
+            }
             flash('No tiene permisos para acceder a este modulo.')->error();
             return redirect()->route('home');
         }

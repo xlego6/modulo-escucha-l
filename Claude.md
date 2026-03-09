@@ -1,12 +1,12 @@
 NO ALTERAR las siguientes carpetas:
-D:\Dev\modulo-escucha (NO alterar, sólo lectura para desarrollo y aprendizaje)
-D:\Dev\modulo-de-captura (NO alterar, sólo lectura para desarrollo y aprendizaje)
+C:\mcl\modulo-escucha (NO alterar, sólo lectura para desarrollo y aprendizaje)
+C:\mcl\modulo-de-captura (NO alterar, sólo lectura para desarrollo y aprendizaje)
 
 
-Todo el desarrollo debe hacerse en D:\Dev\modulo-escucha-l
+Todo el desarrollo debe hacerse en C:\mcl\modulo-escucha-l
 
-modulo-escucha-l se basa en las aplicaciones modulo-escucha, modulo-de-captura y sus componentes. Es una aplicación muy sólida y completa, por lo cual es imperativo imitar lo más fielmente posible el estilo de escritura de código, su organización y estructura.
-D:\Dev\modulo-escucha es una versión dockerizada de modulo-de-captura. D:\Dev\modulo-de-captura contiene todo el código original, por si es necesario explorar en detalle cómo está compuesta alguna funcionalidad.
+modulo-escucha-l se basa en las aplicaciones modulo-escucha, modulo-de-captura y sus componentes. modulo-de-captura es una aplicación muy sólida y completa, por lo cual es imperativo imitar lo más fielmente posible el estilo de escritura de código, su organización y estructura.
+C:\mcl\modulo-escucha es una versión dockerizada de modulo-de-captura. C:\mcl\modulo-de-captura contiene todo el código original, por si es necesario explorar en detalle cómo está compuesta alguna funcionalidad.
 Es una aplicación compleja, así que es importante verificar la conexión entre módulos, vistas y base de datos para saber que todo funciona.
 
 El objetivo es crear una aplicación sencilla, ligera, pero que contenga todos los módulos, bases de datos y funcionalidades necesarias
@@ -31,7 +31,7 @@ traza de actividad
 mi perfil
 ayuda
 
-El proyecto actual está alojado en D:\Dev\modulo-escucha-l
+El proyecto actual está alojado en C:\mcl\modulo-escucha-l
 
   ---
 Fase 5: Estrategia de Migración de Código
