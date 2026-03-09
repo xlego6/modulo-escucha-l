@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/perfil/actualizar', [HomeController::class, 'actualizarPerfil'])->name('perfil.actualizar');
     Route::post('/perfil/password', [HomeController::class, 'cambiarPassword'])->name('perfil.password');
     Route::post('/perfil/compromiso', [HomeController::class, 'aceptarCompromisoReserva'])->name('perfil.compromiso');
+    Route::post('/perfil/compromiso-acceso', [HomeController::class, 'aceptarCompromisoAcceso'])->name('perfil.compromiso_acceso');
 
     // API endpoints (sin restriccion de compromiso ni nivel)
     Route::get('api/municipios', [ApiController::class, 'municipios'])->name('api.municipios');
@@ -113,6 +114,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('traza/{id}', [TrazaActividadController::class, 'show'])->name('traza.show');
         });
 
+        // Solicitar permiso (disponible para cualquier rol con compromiso)
+        Route::post('permisos/solicitar', [PermisoController::class, 'solicitar'])->name('permisos.solicitar');
+
         // Permisos: Admin(1), Entrevistador(3), Gestor de Conocimiento(5)
         Route::middleware(['nivel:permisos'])->group(function () {
             Route::get('permisos', [PermisoController::class, 'index'])->name('permisos.index');
@@ -122,6 +126,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('permisos/usuario/{id}', [PermisoController::class, 'porUsuario'])->name('permisos.por_usuario');
             Route::get('permisos/{id}', [PermisoController::class, 'show'])->name('permisos.show');
             Route::delete('permisos/{id}', [PermisoController::class, 'destroy'])->name('permisos.destroy');
+            Route::post('permisos/{id}/aprobar', [PermisoController::class, 'aprobar'])->name('permisos.aprobar');
+            Route::post('permisos/{id}/rechazar', [PermisoController::class, 'rechazar'])->name('permisos.rechazar');
             Route::get('permisos/{id}/soporte', [PermisoController::class, 'descargarSoporte'])->name('permisos.descargar_soporte');
         });
 

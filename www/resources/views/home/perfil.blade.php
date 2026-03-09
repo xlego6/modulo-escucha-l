@@ -15,7 +15,9 @@
                     </div>
                 </div>
                 <h3 class="profile-username text-center">{{ $user->name }}</h3>
-                <p class="text-muted text-center">{{ $user->fmt_privilegios }}</p>
+                <p class="text-center mb-1">
+                    <span class="badge badge-primary px-3 py-2" style="font-size: 0.95rem;">{{ $user->fmt_privilegios }}</span>
+                </p>
 
                 <ul class="list-group list-group-unbordered mb-3">
                     <li class="list-group-item">
@@ -50,6 +52,31 @@
                     </p>
                     <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#modalCompromiso">
                         <i class="fas fa-file-signature mr-2"></i>Aceptar Compromiso
+                    </button>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        <!-- Compromiso de Acceso Interno: para todos los roles -->
+        @if($entrevistador)
+        <div class="card card-{{ $entrevistador->compromiso_acceso ? 'success' : 'warning' }}">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-id-badge mr-2"></i>Compromiso de Acceso Interno</h3>
+            </div>
+            <div class="card-body">
+                @if($entrevistador->compromiso_acceso)
+                    <div class="text-center">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="mb-0"><strong>Compromiso aceptado</strong></p>
+                        <small class="text-muted">{{ $entrevistador->compromiso_acceso->format('d/m/Y H:i') }}</small>
+                    </div>
+                @else
+                    <p class="text-muted">
+                        Para acceder a los módulos del sistema, debe aceptar las condiciones de uso y acceso interno.
+                    </p>
+                    <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#modalCompromisoAcceso">
+                        <i class="fas fa-id-badge mr-2"></i>Aceptar Compromiso de Acceso
                     </button>
                 @endif
             </div>
@@ -220,6 +247,69 @@
                     </button>
                     <button type="submit" class="btn btn-warning">
                         <i class="fas fa-check mr-2"></i>Aceptar Compromiso
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Modal Compromiso de Acceso Interno -->
+@if($entrevistador && !$entrevistador->compromiso_acceso)
+<div class="modal fade" id="modalCompromisoAcceso" tabindex="-1" role="dialog" aria-labelledby="modalCompromisoAccesoLabel">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="modalCompromisoAccesoLabel">
+                    <i class="fas fa-id-badge mr-2"></i>Compromiso de Acceso Interno
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('perfil.compromiso_acceso') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Importante:</strong> Lea detenidamente las condiciones de acceso antes de aceptar.
+                    </div>
+
+                    <div class="card card-body bg-light" style="max-height: 350px; overflow-y: auto; font-size: 0.92rem;">
+                        <p>Yo, <strong>{{ $user->name }}</strong>, funcionario(a) del <strong>Centro Nacional de Memoria Histórica &ndash; CNMH</strong>
+                        @if($entrevistador->fmt_dependencia_origen !== 'Sin asignar')
+                            de la <strong>{{ $entrevistador->fmt_dependencia_origen }}</strong>
+                        @endif
+                        , acepto las condiciones para la consulta interna del sistema de gestión de entrevistas y testimonios.</p>
+
+                        <ul class="pl-3">
+                            <li class="mb-2">Acceder al sistema <strong>exclusivamente</strong> para el desarrollo de mis funciones institucionales asignadas.</li>
+                            <li class="mb-2">No compartir mis credenciales de acceso con ninguna otra persona.</li>
+                            <li class="mb-2">Mantener la confidencialidad de toda la información a la que acceda en el ejercicio de mis funciones.</li>
+                            <li class="mb-2">Reportar de inmediato cualquier acceso no autorizado o situación que comprometa la seguridad de la información.</li>
+                            <li class="mb-2">Cumplir con todas las políticas de seguridad de la información establecidas por la entidad.</li>
+                            <li class="mb-2">Reconocer que el incumplimiento puede dar lugar a consecuencias disciplinarias y/o legales.</li>
+                        </ul>
+
+                        <p class="mb-0"><strong>Declaro que he leído y acepto las condiciones de acceso al sistema.</strong></p>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="acepto_compromiso_acceso" name="acepto_compromiso_acceso" value="1" required>
+                            <label class="custom-control-label" for="acepto_compromiso_acceso">
+                                <strong>He leído y acepto las condiciones de acceso interno</strong>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-check mr-2"></i>Aceptar
                     </button>
                 </div>
             </form>

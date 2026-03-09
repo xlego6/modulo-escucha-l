@@ -25,6 +25,12 @@ class Permiso extends Model
         'id_revocado_por',
         'fecha_revocado',
         'codigo_entrevista',
+        'es_solicitud',
+        'tipo_solicitud',
+        'estado_solicitud',
+        'fecha_solicitud',
+        'fecha_respuesta',
+        'id_respondido_por',
     ];
 
     protected $casts = [
@@ -33,6 +39,9 @@ class Permiso extends Model
         'fecha_desde' => 'date',
         'fecha_hasta' => 'date',
         'fecha_revocado' => 'datetime',
+        'fecha_solicitud' => 'datetime',
+        'fecha_respuesta' => 'datetime',
+        'es_solicitud' => 'boolean',
     ];
 
     // Estados de permiso
@@ -43,6 +52,21 @@ class Permiso extends Model
     const TIPO_LECTURA = 1;
     const TIPO_ESCRITURA = 2;
     const TIPO_COMPLETO = 3;
+
+    // Tipos de solicitud
+    const SOLICITUD_ACCESO = 'acceso';
+    const SOLICITUD_EDICION = 'edicion';
+    const SOLICITUD_ELIMINACION = 'eliminacion';
+
+    // Estados de solicitud
+    const SOLICITUD_PENDIENTE = 'pendiente';
+    const SOLICITUD_APROBADA = 'aprobado';
+    const SOLICITUD_RECHAZADA = 'rechazado';
+
+    public function rel_respondido_por()
+    {
+        return $this->belongsTo(\App\User::class, 'id_respondido_por', 'id');
+    }
 
     public function rel_entrevistador()
     {
@@ -169,6 +193,14 @@ class Permiso extends Model
     {
         return $query->where('id_estado', self::ESTADO_VIGENTE)
             ->where(function ($q) {
+                // Not a solicitud, or solicitud that's been approved
+                $q->where('es_solicitud', false)
+                  ->orWhere(function($q2) {
+                      $q2->where('es_solicitud', true)
+                         ->where('estado_solicitud', self::SOLICITUD_APROBADA);
+                  });
+            })
+            ->where(function ($q) {
                 $q->whereNull('fecha_vencimiento')
                   ->orWhere('fecha_vencimiento', '>', now());
             })
@@ -235,5 +267,39 @@ class Permiso extends Model
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * Scope para solicitudes pendientes de aprobación
+     */
+    public function scopeSolicitudesPendientes($query)
+    {
+        return $query->where('es_solicitud', true)->where('estado_solicitud', self::SOLICITUD_PENDIENTE);
+    }
+
+    /**
+     * Accessor para estado de solicitud legible
+     */
+    public function getFmtEstadoSolicitudAttribute()
+    {
+        return match($this->estado_solicitud) {
+            self::SOLICITUD_PENDIENTE => 'Pendiente',
+            self::SOLICITUD_APROBADA => 'Aprobada',
+            self::SOLICITUD_RECHAZADA => 'Rechazada',
+            default => '-',
+        };
+    }
+
+    /**
+     * Accessor para tipo de solicitud legible
+     */
+    public function getFmtTipoSolicitudAttribute()
+    {
+        return match($this->tipo_solicitud) {
+            self::SOLICITUD_ACCESO => 'Acceso',
+            self::SOLICITUD_EDICION => 'Edición',
+            self::SOLICITUD_ELIMINACION => 'Eliminación',
+            default => '-',
+        };
     }
 }

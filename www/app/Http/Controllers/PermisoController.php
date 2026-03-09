@@ -25,45 +25,92 @@ class PermisoController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $entrevistadorActual = Entrevistador::where('id_usuario', $user->id)->first();
+
         $query = Permiso::with([
             'rel_entrevistador.rel_usuario',
             'rel_entrevista',
             'rel_otorgado_por.rel_usuario',
-            'rel_adjunto'
+            'rel_adjunto',
+            'rel_respondido_por',
         ]);
 
-        if ($request->filled('id_entrevistador')) {
-            $query->where('id_entrevistador', $request->id_entrevistador);
+        // Solicitudes pendientes para Admin/Gestor
+        $solicitudesPendientes = collect();
+        if ($user->id_nivel == 1) {
+            $solicitudesPendientes = Permiso::with(['rel_entrevistador.rel_usuario', 'rel_entrevista'])
+                ->solicitudesPendientes()
+                ->orderBy('fecha_solicitud', 'asc')
+                ->get();
+        } elseif ($user->id_nivel == 5 && $entrevistadorActual) {
+            // Gestor: solo solicitudes de entrevistas de su dependencia
+            $solicitudesPendientes = Permiso::with(['rel_entrevistador.rel_usuario', 'rel_entrevista'])
+                ->solicitudesPendientes()
+                ->whereHas('rel_entrevista', function($q) use ($entrevistadorActual) {
+                    $q->where('id_dependencia_origen', $entrevistadorActual->id_dependencia_origen);
+                })
+                ->where('tipo_solicitud', '!=', Permiso::SOLICITUD_ELIMINACION) // Solo Admin aprueba eliminaciones
+                ->orderBy('fecha_solicitud', 'asc')
+                ->get();
         }
 
-        if ($request->filled('id_e_ind_fvt')) {
-            $query->where('id_e_ind_fvt', $request->id_e_ind_fvt);
+        // Mis solicitudes (para Entrevistador y Gestor)
+        $misSolicitudes = collect();
+        if ($entrevistadorActual && $user->id_nivel >= 3) {
+            $misSolicitudes = Permiso::with(['rel_entrevista'])
+                ->where('id_entrevistador', $entrevistadorActual->id_entrevistador)
+                ->where('es_solicitud', true)
+                ->orderBy('fecha_solicitud', 'desc')
+                ->limit(10)
+                ->get();
         }
 
-        if ($request->filled('codigo')) {
-            $query->porCodigo($request->codigo);
-        }
-
-        if ($request->filled('estado')) {
-            if ($request->estado == '1') {
-                $query->vigentes();
-            } elseif ($request->estado == '2') {
-                $query->revocados();
+        // Filtros para permisos directos (solo Admin ve la lista completa)
+        if ($user->id_nivel == 1) {
+            if ($request->filled('id_entrevistador')) {
+                $query->where('id_entrevistador', $request->id_entrevistador);
             }
-        }
-
-        if ($request->filled('tipo')) {
-            $query->where('id_tipo', $request->tipo);
+            if ($request->filled('id_e_ind_fvt')) {
+                $query->where('id_e_ind_fvt', $request->id_e_ind_fvt);
+            }
+            if ($request->filled('codigo')) {
+                $query->porCodigo($request->codigo);
+            }
+            if ($request->filled('estado')) {
+                if ($request->estado == '1') {
+                    $query->vigentes();
+                } elseif ($request->estado == '2') {
+                    $query->revocados();
+                } elseif ($request->estado == 'pendiente') {
+                    $query->solicitudesPendientes();
+                }
+            }
+            if ($request->filled('tipo')) {
+                $query->where('id_tipo', $request->tipo);
+            }
+            // Exclude pending solicitudes from main list (shown separately)
+            if (!$request->filled('estado') || $request->estado !== 'pendiente') {
+                $query->where(function($q) {
+                    $q->where('es_solicitud', false)
+                      ->orWhere(function($q2) {
+                          $q2->where('es_solicitud', true)
+                             ->whereIn('estado_solicitud', [Permiso::SOLICITUD_APROBADA, Permiso::SOLICITUD_RECHAZADA]);
+                      });
+                });
+            }
+        } else {
+            // Non-admin: only see their own records
+            if ($entrevistadorActual) {
+                $query->where('id_entrevistador', $entrevistadorActual->id_entrevistador);
+            } else {
+                $query->whereRaw('1=0');
+            }
         }
 
         $permisos = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        $entrevistadores = Entrevistador::with('rel_usuario')
-            ->orderBy('numero_entrevistador')
-            ->get()
-            ->pluck('rel_usuario.name', 'id_entrevistador')
-            ->prepend('-- Todos --', '');
-
+        $entrevistadores = collect();
         $tipos = [
             '' => '-- Todos --',
             1 => 'Lectura',
@@ -71,7 +118,15 @@ class PermisoController extends Controller
             3 => 'Completo',
         ];
 
-        return view('permisos.index', compact('permisos', 'entrevistadores', 'tipos'));
+        if ($user->id_nivel == 1) {
+            $entrevistadores = Entrevistador::with('rel_usuario')
+                ->orderBy('numero_entrevistador')
+                ->get()
+                ->pluck('rel_usuario.name', 'id_entrevistador')
+                ->prepend('-- Todos --', '');
+        }
+
+        return view('permisos.index', compact('permisos', 'entrevistadores', 'tipos', 'solicitudesPendientes', 'misSolicitudes'));
     }
 
     /**
@@ -563,5 +618,209 @@ class PermisoController extends Controller
         }
 
         return response()->download($ruta, $permiso->rel_adjunto->nombre_original);
+    }
+
+    /**
+     * Solicitar permiso (Entrevistador o Gestor)
+     */
+    public function solicitar(Request $request)
+    {
+        $user = Auth::user();
+        $entrevistador = Entrevistador::where('id_usuario', $user->id)->first();
+
+        if (!$entrevistador) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json(['error' => 'No tiene perfil de entrevistador.'], 403);
+            }
+            flash('No tiene perfil de entrevistador asignado.')->error();
+            return redirect()->back();
+        }
+
+        $request->validate([
+            'id_e_ind_fvt' => 'required|integer',
+            'tipo_solicitud' => 'required|in:acceso,edicion,eliminacion',
+            'justificacion' => 'nullable|string|max:1000',
+        ], [
+            'tipo_solicitud.required' => 'Debe especificar el tipo de solicitud.',
+        ]);
+
+        // Eliminacion requires justificacion
+        if ($request->tipo_solicitud === 'eliminacion' && empty(trim($request->justificacion ?? ''))) {
+            flash('Debe proporcionar una justificación para solicitar la eliminación.')->error();
+            return redirect()->back();
+        }
+
+        $entrevista = Entrevista::findOrFail($request->id_e_ind_fvt);
+
+        // Check if already has a pending or approved solicitud of same type
+        $existente = Permiso::where('id_entrevistador', $entrevistador->id_entrevistador)
+            ->where('id_e_ind_fvt', $request->id_e_ind_fvt)
+            ->where('es_solicitud', true)
+            ->where('tipo_solicitud', $request->tipo_solicitud)
+            ->whereIn('estado_solicitud', [Permiso::SOLICITUD_PENDIENTE, Permiso::SOLICITUD_APROBADA])
+            ->first();
+
+        if ($existente) {
+            flash('Ya tiene una solicitud pendiente o aprobada de este tipo para esta entrevista.')->warning();
+            return redirect()->back();
+        }
+
+        $idTipo = $request->tipo_solicitud === 'edicion' ? Permiso::TIPO_ESCRITURA : Permiso::TIPO_LECTURA;
+
+        $permiso = Permiso::create([
+            'id_entrevistador' => $entrevistador->id_entrevistador,
+            'id_e_ind_fvt' => $entrevista->id_e_ind_fvt,
+            'codigo_entrevista' => $entrevista->entrevista_codigo,
+            'id_tipo' => $idTipo,
+            'es_solicitud' => true,
+            'tipo_solicitud' => $request->tipo_solicitud,
+            'estado_solicitud' => Permiso::SOLICITUD_PENDIENTE,
+            'fecha_solicitud' => now(),
+            'justificacion' => $request->justificacion ?? ('Solicitud de ' . $request->tipo_solicitud),
+            'id_estado' => Permiso::ESTADO_VIGENTE,
+        ]);
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'solicitar_permiso',
+            'objeto' => 'permiso',
+            'id_registro' => $permiso->id_permiso,
+            'referencia' => $entrevista->entrevista_codigo . ' (' . $request->tipo_solicitud . ')',
+            'ip' => $request->ip(),
+        ]);
+
+        flash('Solicitud enviada correctamente. Recibirá una notificación cuando sea procesada.')->success();
+        return redirect()->back();
+    }
+
+    /**
+     * Aprobar solicitud (Admin o Gestor de misma dependencia)
+     */
+    public function aprobar(Request $request, $id)
+    {
+        $user = Auth::user();
+        $permiso = Permiso::with(['rel_entrevista', 'rel_entrevistador'])->findOrFail($id);
+
+        if ($permiso->estado_solicitud !== Permiso::SOLICITUD_PENDIENTE) {
+            flash('Esta solicitud ya fue procesada.')->warning();
+            return redirect()->route('permisos.index');
+        }
+
+        // Eliminacion: solo Admin
+        if ($permiso->tipo_solicitud === Permiso::SOLICITUD_ELIMINACION && $user->id_nivel != 1) {
+            flash('Solo el administrador puede aprobar solicitudes de eliminación.')->error();
+            return redirect()->route('permisos.index');
+        }
+
+        if ($user->id_nivel == 1) {
+            // Admin: can approve everything
+        } elseif ($user->id_nivel == 5) {
+            $gestorEntrevistador = Entrevistador::where('id_usuario', $user->id)->first();
+            if (!$gestorEntrevistador || !$permiso->rel_entrevista ||
+                $permiso->rel_entrevista->id_dependencia_origen != $gestorEntrevistador->id_dependencia_origen) {
+                flash('No tiene permisos para aprobar esta solicitud.')->error();
+                return redirect()->route('permisos.index');
+            }
+        } else {
+            flash('No tiene permisos para aprobar solicitudes.')->error();
+            return redirect()->route('permisos.index');
+        }
+
+        DB::beginTransaction();
+        try {
+            $permiso->estado_solicitud = Permiso::SOLICITUD_APROBADA;
+            $permiso->fecha_otorgado = now();
+            $permiso->fecha_respuesta = now();
+            $permiso->id_respondido_por = $user->id;
+            $permiso->id_otorgado_por = $user->id_entrevistador;
+            $permiso->id_estado = Permiso::ESTADO_VIGENTE;
+            $permiso->save();
+
+            // Si es solicitud de eliminación, hacer soft delete de la entrevista
+            if ($permiso->tipo_solicitud === Permiso::SOLICITUD_ELIMINACION && $permiso->rel_entrevista) {
+                $permiso->rel_entrevista->update(['id_activo' => 0]);
+
+                TrazaActividad::create([
+                    'fecha_hora' => now(),
+                    'id_usuario' => $user->id,
+                    'accion' => 'eliminar',
+                    'objeto' => 'entrevista',
+                    'id_registro' => $permiso->id_e_ind_fvt,
+                    'referencia' => 'Eliminación aprobada: ' . $permiso->codigo_entrevista,
+                    'ip' => $request->ip(),
+                ]);
+            }
+
+            TrazaActividad::create([
+                'fecha_hora' => now(),
+                'id_usuario' => $user->id,
+                'accion' => 'aprobar_solicitud',
+                'objeto' => 'permiso',
+                'id_registro' => $permiso->id_permiso,
+                'referencia' => $permiso->codigo_entrevista . ' (' . $permiso->tipo_solicitud . ')',
+                'ip' => $request->ip(),
+            ]);
+
+            DB::commit();
+            flash('Solicitud aprobada correctamente.')->success();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            flash('Error al aprobar la solicitud: ' . $e->getMessage())->error();
+        }
+
+        return redirect()->route('permisos.index');
+    }
+
+    /**
+     * Rechazar solicitud (Admin o Gestor de misma dependencia)
+     */
+    public function rechazar(Request $request, $id)
+    {
+        $user = Auth::user();
+        $permiso = Permiso::with(['rel_entrevista'])->findOrFail($id);
+
+        if ($permiso->estado_solicitud !== Permiso::SOLICITUD_PENDIENTE) {
+            flash('Esta solicitud ya fue procesada.')->warning();
+            return redirect()->route('permisos.index');
+        }
+
+        if ($permiso->tipo_solicitud === Permiso::SOLICITUD_ELIMINACION && $user->id_nivel != 1) {
+            flash('Solo el administrador puede procesar solicitudes de eliminación.')->error();
+            return redirect()->route('permisos.index');
+        }
+
+        if ($user->id_nivel == 1) {
+            // ok
+        } elseif ($user->id_nivel == 5) {
+            $gestorEntrevistador = Entrevistador::where('id_usuario', $user->id)->first();
+            if (!$gestorEntrevistador || !$permiso->rel_entrevista ||
+                $permiso->rel_entrevista->id_dependencia_origen != $gestorEntrevistador->id_dependencia_origen) {
+                flash('No tiene permisos para rechazar esta solicitud.')->error();
+                return redirect()->route('permisos.index');
+            }
+        } else {
+            flash('No tiene permisos para rechazar solicitudes.')->error();
+            return redirect()->route('permisos.index');
+        }
+
+        $permiso->estado_solicitud = Permiso::SOLICITUD_RECHAZADA;
+        $permiso->fecha_respuesta = now();
+        $permiso->id_respondido_por = $user->id;
+        $permiso->id_estado = Permiso::ESTADO_REVOCADO;
+        $permiso->save();
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'rechazar_solicitud',
+            'objeto' => 'permiso',
+            'id_registro' => $permiso->id_permiso,
+            'referencia' => $permiso->codigo_entrevista . ' (' . $permiso->tipo_solicitud . ')',
+            'ip' => $request->ip(),
+        ]);
+
+        flash('Solicitud rechazada.')->warning();
+        return redirect()->route('permisos.index');
     }
 }

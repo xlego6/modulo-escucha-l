@@ -4,6 +4,133 @@
 @section('content_header', 'Permisos de Acceso a Entrevistas')
 
 @section('content')
+
+{{-- Solicitudes Pendientes (Admin / Gestor) --}}
+@if($solicitudesPendientes->count() > 0)
+<div class="card card-warning">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-bell mr-2"></i>Solicitudes Pendientes ({{ $solicitudesPendientes->count() }})
+        </h3>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Solicitante</th>
+                    <th>Entrevista</th>
+                    <th>Tipo</th>
+                    <th>Justificación</th>
+                    <th>Fecha</th>
+                    <th width="140">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($solicitudesPendientes as $sol)
+                <tr>
+                    <td>
+                        @if($sol->rel_entrevistador && $sol->rel_entrevistador->rel_usuario)
+                            {{ $sol->rel_entrevistador->rel_usuario->name }}
+                        @else
+                            <span class="text-muted">N/A</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($sol->rel_entrevista)
+                            <a href="{{ route('entrevistas.show', $sol->id_e_ind_fvt) }}">
+                                {{ $sol->codigo_entrevista }}
+                            </a>
+                            <br><small class="text-muted">{{ \Illuminate\Support\Str::limit($sol->rel_entrevista->titulo, 35) }}</small>
+                        @else
+                            {{ $sol->codigo_entrevista ?? 'N/A' }}
+                        @endif
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ $sol->tipo_solicitud === 'eliminacion' ? 'danger' : ($sol->tipo_solicitud === 'edicion' ? 'warning' : 'info') }}">
+                            {{ $sol->fmt_tipo_solicitud }}
+                        </span>
+                    </td>
+                    <td>
+                        <small>{{ \Illuminate\Support\Str::limit($sol->justificacion, 60) }}</small>
+                    </td>
+                    <td>
+                        <small>{{ $sol->fecha_solicitud ? $sol->fecha_solicitud->format('d/m/Y H:i') : '-' }}</small>
+                    </td>
+                    <td>
+                        <form action="{{ route('permisos.aprobar', $sol->id_permiso) }}" method="POST" style="display:inline" onsubmit="return confirm('¿Aprobar esta solicitud?')">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-success" title="Aprobar">
+                                <i class="fas fa-check"></i> Aprobar
+                            </button>
+                        </form>
+                        <form action="{{ route('permisos.rechazar', $sol->id_permiso) }}" method="POST" style="display:inline" onsubmit="return confirm('¿Rechazar esta solicitud?')">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-danger" title="Rechazar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
+{{-- Mis Solicitudes (Entrevistador / Gestor) --}}
+@if($misSolicitudes->count() > 0)
+<div class="card card-info card-outline">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-paper-plane mr-2"></i>Mis Solicitudes</h3>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Entrevista</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Fecha Solicitud</th>
+                    <th>Respuesta</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($misSolicitudes as $sol)
+                <tr>
+                    <td>
+                        @if($sol->rel_entrevista)
+                            <a href="{{ route('entrevistas.show', $sol->id_e_ind_fvt) }}">{{ $sol->codigo_entrevista }}</a>
+                        @else
+                            {{ $sol->codigo_entrevista ?? 'N/A' }}
+                        @endif
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ $sol->tipo_solicitud === 'eliminacion' ? 'danger' : ($sol->tipo_solicitud === 'edicion' ? 'warning' : 'info') }}">
+                            {{ $sol->fmt_tipo_solicitud }}
+                        </span>
+                    </td>
+                    <td>
+                        @if($sol->estado_solicitud === 'pendiente')
+                            <span class="badge badge-secondary"><i class="fas fa-clock"></i> Pendiente</span>
+                        @elseif($sol->estado_solicitud === 'aprobado')
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Aprobada</span>
+                        @elseif($sol->estado_solicitud === 'rechazado')
+                            <span class="badge badge-danger"><i class="fas fa-times"></i> Rechazada</span>
+                        @endif
+                    </td>
+                    <td><small>{{ $sol->fecha_solicitud ? $sol->fecha_solicitud->format('d/m/Y H:i') : '-' }}</small></td>
+                    <td><small>{{ $sol->fecha_respuesta ? $sol->fecha_respuesta->format('d/m/Y H:i') : '-' }}</small></td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
+{{-- Lista de Permisos (Admin ve todos, otros ven los suyos) --}}
+@if(Auth::user()->id_nivel == 1)
 <div class="card">
     <div class="card-header">
         <div class="row">
@@ -148,4 +275,6 @@
     </div>
     @endif
 </div>
+@endif
+
 @endsection

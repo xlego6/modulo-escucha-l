@@ -14,9 +14,11 @@
                     {{ $entrevista->entrevista_codigo }}
                 </h3>
                 <div class="card-tools">
+                    @if($puedeEditar)
                     <a href="{{ route('entrevistas.wizard.edit', $entrevista->id_e_ind_fvt) }}" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Editar
                     </a>
+                    @endif
                     <a href="{{ route('entrevistas.index') }}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left"></i> Volver
                     </a>
@@ -267,13 +269,17 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-user mr-2"></i>Testimoniante #{{ $index + 1 }}:
-                                @if($pe->rel_persona)
-                                    <strong>{{ $pe->rel_persona->nombre }} {{ $pe->rel_persona->apellido }}</strong>
-                                    @if($pe->rel_persona->nombre_identitario)
-                                        <small class="text-muted">({{ $pe->rel_persona->nombre_identitario }})</small>
+                                @if(Auth::user()->id_nivel == 1)
+                                    @if($pe->rel_persona)
+                                        <strong>{{ $pe->rel_persona->nombre }} {{ $pe->rel_persona->apellido }}</strong>
+                                        @if($pe->rel_persona->nombre_identitario)
+                                            <small class="text-muted">({{ $pe->rel_persona->nombre_identitario }})</small>
+                                        @endif
+                                    @else
+                                        <span class="text-muted">Sin datos</span>
                                     @endif
                                 @else
-                                    <span class="text-muted">Sin datos</span>
+                                    <strong>Testimoniante {{ $index + 1 }}</strong>
                                 @endif
                             </h6>
                         </div>
@@ -679,7 +685,8 @@
     </div>
 
     <div class="col-md-4">
-        <!-- Adjuntos -->
+        <!-- Adjuntos: ocultar para Líder (nivel 2) -->
+        @if(Auth::user()->id_nivel != 2)
         <div class="card card-info card-outline">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-paperclip"></i> Archivos Adjuntos</h3>
@@ -723,16 +730,49 @@
                 @endif
             </div>
         </div>
+        @endif
 
         <!-- Acciones -->
+        @php $nivelActual = Auth::user()->id_nivel; @endphp
+        @if($puedeEditar || ($nivelActual == 1) || ($nivelActual == 3) || ($nivelActual == 5))
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-cogs"></i> Acciones</h3>
             </div>
             <div class="card-body">
-                <a href="{{ route('entrevistas.wizard.edit', $entrevista->id_e_ind_fvt) }}" class="btn btn-warning btn-block">
+                {{-- Editar: admin o quien tiene permiso --}}
+                @if($puedeEditar)
+                <a href="{{ route('entrevistas.wizard.edit', $entrevista->id_e_ind_fvt) }}" class="btn btn-warning btn-block mb-2">
                     <i class="fas fa-edit"></i> Editar Entrevista
                 </a>
+                @endif
+
+                {{-- Solicitar edición: Entrevistador (no propietario, sin permiso) o Gestor --}}
+                @if(in_array($nivelActual, [3, 5]) && !$puedeEditar && !$solicitudEdicionPendiente)
+                <button type="button" class="btn btn-outline-warning btn-block mb-2" data-toggle="modal" data-target="#modalSolicitarEdicion">
+                    <i class="fas fa-edit"></i> Solicitar Permiso de Edición
+                </button>
+                @elseif(in_array($nivelActual, [3, 5]) && $solicitudEdicionPendiente)
+                <button class="btn btn-outline-secondary btn-block mb-2" disabled>
+                    <i class="fas fa-clock"></i> Solicitud de Edición Pendiente
+                </button>
+                @endif
+
+                {{-- Solicitar eliminación: Entrevistador propietario o Gestor --}}
+                @if(($nivelActual == 3 && $esPropietario) || $nivelActual == 5)
+                    @if(!$solicitudEliminacionPendiente)
+                    <button type="button" class="btn btn-outline-danger btn-block mb-2" data-toggle="modal" data-target="#modalSolicitarEliminacion">
+                        <i class="fas fa-trash"></i> Solicitar Eliminación
+                    </button>
+                    @else
+                    <button class="btn btn-outline-secondary btn-block mb-2" disabled>
+                        <i class="fas fa-clock"></i> Solicitud de Eliminación Pendiente
+                    </button>
+                    @endif
+                @endif
+
+                {{-- Eliminar directo: solo Admin --}}
+                @if($nivelActual == 1)
                 <form action="{{ route('entrevistas.destroy', $entrevista->id_e_ind_fvt) }}" method="POST" class="mt-2" onsubmit="return confirm('Esta seguro de eliminar esta entrevista?')">
                     @csrf
                     @method('DELETE')
@@ -740,8 +780,72 @@
                         <i class="fas fa-trash"></i> Eliminar Entrevista
                     </button>
                 </form>
+                @endif
             </div>
+        </div>
+        @endif
+    </div>
+</div>
+{{-- Modal Solicitar Permiso de Edición --}}
+@if(in_array(Auth::user()->id_nivel, [3, 5]))
+<div class="modal fade" id="modalSolicitarEdicion" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-edit mr-2"></i>Solicitar Permiso de Edición</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <form action="{{ route('permisos.solicitar') }}" method="POST">
+                @csrf
+                <input type="hidden" name="id_e_ind_fvt" value="{{ $entrevista->id_e_ind_fvt }}">
+                <input type="hidden" name="tipo_solicitud" value="edicion">
+                <div class="modal-body">
+                    <p>Está solicitando permiso para <strong>editar</strong> la entrevista <strong>{{ $entrevista->entrevista_codigo }}</strong>.</p>
+                    <div class="form-group">
+                        <label for="justificacion_edicion">Justificación (opcional)</label>
+                        <textarea class="form-control" id="justificacion_edicion" name="justificacion" rows="3" placeholder="Indique el motivo de la solicitud..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-paper-plane mr-1"></i>Enviar Solicitud</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+@endif
+
+{{-- Modal Solicitar Eliminación --}}
+@if((Auth::user()->id_nivel == 3 && $esPropietario) || Auth::user()->id_nivel == 5)
+<div class="modal fade" id="modalSolicitarEliminacion" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-trash mr-2"></i>Solicitar Eliminación</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <form action="{{ route('permisos.solicitar') }}" method="POST">
+                @csrf
+                <input type="hidden" name="id_e_ind_fvt" value="{{ $entrevista->id_e_ind_fvt }}">
+                <input type="hidden" name="tipo_solicitud" value="eliminacion">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        La solicitud será revisada por el administrador antes de proceder.
+                    </div>
+                    <div class="form-group">
+                        <label for="justificacion_eliminacion">Justificación <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="justificacion_eliminacion" name="justificacion" rows="4" placeholder="Indique el motivo por el cual solicita la eliminación..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane mr-1"></i>Enviar Solicitud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 @endsection

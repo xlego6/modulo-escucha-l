@@ -300,12 +300,12 @@
                                 <div class="btn-group btn-group-sm">
                                     @php
                                         $tieneTextoExtraido = !$esTranscripcion && !empty($adjunto->texto_extraido);
-                                        $puedeReproducir = $adjunto->es_audio || $adjunto->es_video ||
+                                        $puedeReproducirAdj = $adjunto->es_audio || $adjunto->es_video ||
                                             strpos($adjunto->tipo_mime, 'pdf') !== false ||
                                             strpos($adjunto->tipo_mime, 'image') !== false ||
                                             $esTranscripcion || $tieneTextoExtraido;
                                     @endphp
-                                    @if($puedeReproducir)
+                                    @if($puedeReproducirAdj && $puedeVer)
                                     <button type="button" class="btn btn-info btn-reproducir"
                                             data-id="{{ $adjunto->id_adjunto }}"
                                             data-nombre="{{ $adjunto->nombre_original }}"
@@ -318,12 +318,17 @@
                                             title="{{ $esTranscripcion ? 'Ver Transcripcion' : ($tieneTextoExtraido ? 'Ver Documento' : 'Ver/Reproducir') }}">
                                         <i class="fas {{ $esTranscripcion ? 'fa-eye' : ($tieneTextoExtraido ? 'fa-eye' : 'fa-play') }}"></i>
                                     </button>
+                                    @elseif($puedeReproducirAdj && !$puedeVer)
+                                    <span class="btn btn-secondary" title="Sin permiso para reproducir" disabled>
+                                        <i class="fas fa-lock"></i>
+                                    </span>
                                     @endif
-                                    @if($adjunto->existe_archivo)
+                                    @if($adjunto->existe_archivo && $puedeGestionar)
                                     <a href="{{ route('adjuntos.descargar', $adjunto->id_adjunto) }}" class="btn btn-success" title="Descargar">
                                         <i class="fas fa-download"></i>
                                     </a>
                                     @endif
+                                    @if($puedeGestionar)
                                     <form action="{{ route('adjuntos.eliminar', $adjunto->id_adjunto) }}" method="POST" style="display:inline" onsubmit="return confirm('Esta seguro de eliminar este archivo?')">
                                         @csrf
                                         @method('DELETE')
@@ -331,6 +336,7 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -349,6 +355,7 @@
     </div>
 
     <div class="col-md-4">
+        @if($puedeGestionar)
         <!-- Formulario de subida -->
         <div class="card card-success">
             <div class="card-header">
@@ -395,6 +402,7 @@
                 </div>
             </form>
         </div>
+        @endif
 
         <!-- Resumen -->
         <div class="card">
