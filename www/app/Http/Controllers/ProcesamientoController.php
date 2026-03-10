@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\TrazaActividad;
+use App\Models\CatItem;
 
 class ProcesamientoController extends Controller
 {
@@ -28,55 +29,221 @@ class ProcesamientoController extends Controller
     /**
      * Vista principal de procesamientos
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Estadisticas generales
-        $totalEntrevistas = Entrevista::where('id_activo', 1)->count();
+        $tipo = $request->get('tipo', 'transcripcion');
 
-        // Contar entrevistas con audio o video
-        $conAudio = Adjunto::where(function($q) {
-                $q->where('tipo_mime', 'like', '%audio%')
-                  ->orWhere('tipo_mime', 'like', '%video%');
-            })
-            ->distinct('id_e_ind_fvt')
-            ->count('id_e_ind_fvt');
+        // Stats globales
+        $statsTranscripcion = $this->calcStatsGlobales('transcripcion');
+        $statsAnonimizacion = $this->calcStatsGlobales('anonimizacion');
 
-        // Estadísticas reales de procesamiento
-        $transcritas = Entrevista::where('id_activo', 1)
-            ->whereNotNull('transcripcion_completada_at')
-            ->count();
+        // Transcriptores para el filtro
+        $transcriptores = DB::table('esclarecimiento.asignacion_transcripcion as at')
+            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.id_transcriptor')
+            ->join('users as u', 'u.id', '=', 'e.id_usuario')
+            ->select('e.id_entrevistador', 'u.name', 'e.id_dependencia_origen')
+            ->distinct()
+            ->orderBy('u.name')
+            ->get();
 
-        $conEntidades = Entrevista::where('id_activo', 1)
-            ->whereNotNull('entidades_detectadas_at')
-            ->count();
+        // Anonimizadores para el filtro
+        $anonimizadores = DB::table('esclarecimiento.asignacion_anonimizacion as aa')
+            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'aa.id_anonimizador')
+            ->join('users as u', 'u.id', '=', 'e.id_usuario')
+            ->select('e.id_entrevistador', 'u.name', 'e.id_dependencia_origen')
+            ->distinct()
+            ->orderBy('u.name')
+            ->get();
 
-        $anonimizadas = Entrevista::where('id_activo', 1)
-            ->whereNotNull('anonimizacion_completada_at')
-            ->count();
+        // Dependencias disponibles
+        $dependencias = CatItem::where('id_cat', 4)->where('habilitado', 1)->orderBy('orden')->get();
+
+        // Filtros aplicados
+        $filtroIds = array_filter((array)$request->get('ids', []));
+        $filtroDependencia = $request->get('dependencia');
+
+        // Stats y listado detalle si hay filtro activo
+        $detalleStats = null;
+        $detalleAsignaciones = collect();
+
+        if (!empty($filtroIds) || !empty($filtroDependencia)) {
+            $detalleStats = $this->calcDetalleStats($tipo, $filtroIds, $filtroDependencia);
+            $detalleAsignaciones = $this->calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia);
+        }
 
         // Trabajos en cola
-        $trabajosEnCola = DB::table('esclarecimiento.trabajo_procesamiento')
-            ->where('estado', 'pendiente')
-            ->count();
-
-        $trabajosProcesando = DB::table('esclarecimiento.trabajo_procesamiento')
-            ->where('estado', 'procesando')
-            ->count();
-
-        $stats = [
-            'total_entrevistas' => $totalEntrevistas,
-            'con_audio' => $conAudio,
-            'transcritas' => $transcritas,
-            'con_entidades' => $conEntidades,
-            'anonimizadas' => $anonimizadas,
-            'trabajos_en_cola' => $trabajosEnCola,
-            'trabajos_procesando' => $trabajosProcesando,
-        ];
+        $trabajosEnCola = DB::table('esclarecimiento.trabajo_procesamiento')->where('estado', 'pendiente')->count();
+        $trabajosProcesando = DB::table('esclarecimiento.trabajo_procesamiento')->where('estado', 'procesando')->count();
 
         // Estado de los servicios
         $servicios = $this->procesamientoService->getServicesInfo();
 
-        return view('procesamientos.index', compact('stats', 'servicios'));
+        return view('procesamientos.index', compact(
+            'tipo',
+            'statsTranscripcion', 'statsAnonimizacion',
+            'transcriptores', 'anonimizadores', 'dependencias',
+            'filtroIds', 'filtroDependencia',
+            'detalleStats', 'detalleAsignaciones',
+            'trabajosEnCola', 'trabajosProcesando',
+            'servicios'
+        ));
+    }
+
+    // ─── Helpers estadísticos ────────────────────────────────────────────────
+
+    private function audioStatsForIds($ids)
+    {
+        $idsArray = array_unique(is_array($ids) ? $ids : $ids->toArray());
+        if (empty($idsArray)) {
+            return ['cantidad_entrevistas' => 0, 'cantidad_audios' => 0, 'duracion_total' => 0];
+        }
+
+        $result = DB::table('esclarecimiento.adjunto')
+            ->whereIn('id_e_ind_fvt', $idsArray)
+            ->where(function($q) {
+                $q->where('tipo_mime', 'like', '%audio%')
+                  ->orWhere('tipo_mime', 'like', '%video%');
+            })
+            ->selectRaw('COUNT(*) as cantidad_audios, COALESCE(SUM(duracion), 0) as duracion_total')
+            ->first();
+
+        return [
+            'cantidad_entrevistas' => count($idsArray),
+            'cantidad_audios' => (int)($result->cantidad_audios ?? 0),
+            'duracion_total' => (int)($result->duracion_total ?? 0),
+        ];
+    }
+
+    private function calcStatsGlobales($tipo)
+    {
+        $table = $tipo === 'transcripcion'
+            ? 'esclarecimiento.asignacion_transcripcion'
+            : 'esclarecimiento.asignacion_anonimizacion';
+
+        $estados = ['asignada', 'en_edicion', 'enviada_revision', 'rechazada', 'aprobada'];
+        $stats = [];
+
+        foreach ($estados as $estado) {
+            $ids = DB::table($table)->where('estado', $estado)->distinct()->pluck('id_e_ind_fvt');
+            $stats[$estado] = $this->audioStatsForIds($ids);
+        }
+
+        // Procesadas (solo transcripción: con transcripcion_completada_at)
+        if ($tipo === 'transcripcion') {
+            $ids = DB::table('esclarecimiento.e_ind_fvt')
+                ->where('id_activo', 1)
+                ->whereNotNull('transcripcion_completada_at')
+                ->pluck('id_e_ind_fvt');
+            $stats['procesadas'] = $this->audioStatsForIds($ids);
+        }
+
+        // Totales
+        $idsTotales = DB::table($table)->distinct()->pluck('id_e_ind_fvt');
+        $stats['totales'] = $this->audioStatsForIds($idsTotales);
+
+        return $stats;
+    }
+
+    private function getEntrevistaIdsFiltradas($tipo, $filtroIds, $filtroDependencia, $estado = null)
+    {
+        $table = $tipo === 'transcripcion'
+            ? 'esclarecimiento.asignacion_transcripcion'
+            : 'esclarecimiento.asignacion_anonimizacion';
+        $personaCol = $tipo === 'transcripcion' ? 'id_transcriptor' : 'id_anonimizador';
+
+        $query = DB::table($table . ' as at')
+            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.' . $personaCol);
+
+        if (!empty($filtroIds)) {
+            $query->whereIn('at.' . $personaCol, (array)$filtroIds);
+        } elseif (!empty($filtroDependencia)) {
+            $query->where('e.id_dependencia_origen', $filtroDependencia);
+        }
+
+        if ($estado) {
+            $query->where('at.estado', $estado);
+        }
+
+        return $query->distinct()->pluck('at.id_e_ind_fvt');
+    }
+
+    private function calcDetalleStats($tipo, $filtroIds, $filtroDependencia)
+    {
+        $table = $tipo === 'transcripcion'
+            ? 'esclarecimiento.asignacion_transcripcion'
+            : 'esclarecimiento.asignacion_anonimizacion';
+        $personaCol = $tipo === 'transcripcion' ? 'id_transcriptor' : 'id_anonimizador';
+
+        $estados = ['asignada', 'en_edicion', 'enviada_revision', 'rechazada', 'aprobada'];
+        $stats = [];
+
+        foreach ($estados as $estado) {
+            $ids = $this->getEntrevistaIdsFiltradas($tipo, $filtroIds, $filtroDependencia, $estado);
+            $s = $this->audioStatsForIds($ids);
+
+            if ($estado === 'en_edicion') {
+                $q = DB::table($table . ' as at')
+                    ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.' . $personaCol)
+                    ->where('at.estado', 'en_edicion')
+                    ->whereNotNull('at.fecha_inicio_edicion')
+                    ->whereNotNull('at.fecha_envio_revision');
+
+                if (!empty($filtroIds)) {
+                    $q->whereIn('at.' . $personaCol, (array)$filtroIds);
+                } elseif (!empty($filtroDependencia)) {
+                    $q->where('e.id_dependencia_origen', $filtroDependencia);
+                }
+
+                $s['tiempo_edicion'] = (int)$q->sum(DB::raw("EXTRACT(EPOCH FROM (at.fecha_envio_revision - at.fecha_inicio_edicion))"));
+            }
+
+            $stats[$estado] = $s;
+        }
+
+        $idsTotales = $this->getEntrevistaIdsFiltradas($tipo, $filtroIds, $filtroDependencia);
+        $stats['totales'] = $this->audioStatsForIds($idsTotales);
+
+        return $stats;
+    }
+
+    private function calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia)
+    {
+        $table = $tipo === 'transcripcion'
+            ? 'esclarecimiento.asignacion_transcripcion'
+            : 'esclarecimiento.asignacion_anonimizacion';
+        $personaCol = $tipo === 'transcripcion' ? 'id_transcriptor' : 'id_anonimizador';
+
+        $query = DB::table($table . ' as at')
+            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.' . $personaCol)
+            ->join('users as u', 'u.id', '=', 'e.id_usuario')
+            ->join('esclarecimiento.e_ind_fvt as ent', 'ent.id_e_ind_fvt', '=', 'at.id_e_ind_fvt')
+            ->leftJoin(DB::raw("(
+                SELECT id_e_ind_fvt,
+                       COUNT(*) as num_audios,
+                       COALESCE(SUM(duracion), 0) as duracion_total
+                FROM esclarecimiento.adjunto
+                WHERE tipo_mime LIKE '%audio%' OR tipo_mime LIKE '%video%'
+                GROUP BY id_e_ind_fvt
+            ) as adj"), 'adj.id_e_ind_fvt', '=', 'at.id_e_ind_fvt')
+            ->select(
+                'at.id_asignacion',
+                'at.id_e_ind_fvt',
+                'ent.entrevista_codigo',
+                'at.estado',
+                'at.fecha_asignacion',
+                'u.name as nombre_persona',
+                DB::raw('COALESCE(adj.duracion_total, 0) as duracion_total'),
+                DB::raw('COALESCE(adj.num_audios, 0) as num_audios')
+            )
+            ->orderBy('at.fecha_asignacion');
+
+        if (!empty($filtroIds)) {
+            $query->whereIn('at.' . $personaCol, (array)$filtroIds);
+        } elseif (!empty($filtroDependencia)) {
+            $query->where('e.id_dependencia_origen', $filtroDependencia);
+        }
+
+        return $query->get();
     }
 
     /**

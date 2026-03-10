@@ -127,6 +127,16 @@ class AdjuntoController extends Controller
                 'existe_archivo' => 1,
             ]);
 
+            // Extraer duración para audio/video
+            if (str_contains($tipo_mime, 'audio') || str_contains($tipo_mime, 'video')) {
+                $rutaAbsoluta = Storage::disk('public')->path($ruta);
+                $duracion = self::extraerDuracion($rutaAbsoluta);
+                if ($duracion) {
+                    $adjunto->duracion = $duracion;
+                    $adjunto->save();
+                }
+            }
+
             // Registrar traza
             TrazaActividad::create([
                 'fecha_hora' => now(),
@@ -297,5 +307,41 @@ class AdjuntoController extends Controller
             ->prepend('-- Todos --', '');
 
         return view('adjuntos.index', compact('adjuntos', 'tipos'));
+    }
+
+    /**
+     * Extraer duración en segundos de un archivo de audio/video usando ffprobe.
+     * Devuelve null si ffprobe no está disponible o el archivo no tiene duración.
+     */
+    public static function extraerDuracion(string $rutaAbsoluta): ?int
+    {
+        if (!file_exists($rutaAbsoluta)) {
+            return null;
+        }
+
+        $ffprobe = trim(shell_exec('which ffprobe 2>/dev/null') ?? '');
+        if (!$ffprobe) {
+            $ffprobe = 'ffprobe';
+        }
+
+        $cmd = sprintf(
+            '%s -v quiet -print_format json -show_format %s 2>/dev/null',
+            escapeshellcmd($ffprobe),
+            escapeshellarg($rutaAbsoluta)
+        );
+
+        $output = shell_exec($cmd);
+        if (!$output) {
+            return null;
+        }
+
+        $data = json_decode($output, true);
+        $duracion = $data['format']['duration'] ?? null;
+
+        if ($duracion === null || $duracion <= 0) {
+            return null;
+        }
+
+        return (int)round((float)$duracion);
     }
 }
