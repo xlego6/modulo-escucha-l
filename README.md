@@ -31,6 +31,9 @@ docker compose exec php chown -R www-data:www-data /var/www/storage /var/www/boo
 
 :: Generar clave
 docker compose exec -w //var/www php php artisan key:generate
+
+:: Ejecutar migraciones
+docker compose exec -w //var/www php php artisan migrate --force
 ```
 
 ### Linux / Mac
@@ -54,6 +57,9 @@ docker compose exec php chown -R www-data:www-data /var/www/storage /var/www/boo
 
 # Generar clave
 docker compose exec -w /var/www php php artisan key:generate
+
+# Ejecutar migraciones
+docker compose exec -w /var/www php php artisan migrate --force
 ```
 
 Acceder a: http://localhost:8001
