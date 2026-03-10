@@ -24,6 +24,10 @@
                         <b>Email</b> <a class="float-right">{{ $user->email }}</a>
                     </li>
                     <li class="list-group-item">
+                        <b>Dependencia</b>
+                        <a class="float-right">{{ $entrevistador ? $entrevistador->fmt_dependencia_origen : 'Sin asignar' }}</a>
+                    </li>
+                    <li class="list-group-item">
                         <b>ID Entrevistador</b> <a class="float-right">{{ $user->id_entrevistador ?: 'N/A' }}</a>
                     </li>
                     <li class="list-group-item">
