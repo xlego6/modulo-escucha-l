@@ -34,7 +34,7 @@ Route::middleware(['auth'])->group(function () {
     // =============================================
     // RUTAS LIBRES DE COMPROMISO (home, perfil, ayuda, API)
     // =============================================
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/home', fn() => redirect()->route('estadisticas.index'))->name('home');
     Route::get('/perfil', [HomeController::class, 'perfil'])->name('perfil');
     Route::get('ayuda', [AyudaController::class, 'index'])->name('ayuda.index');
     Route::post('/perfil/actualizar', [HomeController::class, 'actualizarPerfil'])->name('perfil.actualizar');
