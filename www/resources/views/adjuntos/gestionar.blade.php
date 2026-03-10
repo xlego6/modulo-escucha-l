@@ -299,7 +299,7 @@
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     @php
-                                        $tieneTextoExtraido = !$esTranscripcion && !empty($adjunto->texto_extraido);
+                                        $tieneTextoExtraido = !$esTranscripcion && !$adjunto->es_audio && !$adjunto->es_video && !empty($adjunto->texto_extraido);
                                         $puedeReproducirAdj = $adjunto->es_audio || $adjunto->es_video ||
                                             strpos($adjunto->tipo_mime, 'pdf') !== false ||
                                             strpos($adjunto->tipo_mime, 'image') !== false ||
@@ -518,11 +518,14 @@ $(document).ready(function() {
     }
 
     // Mostrar nombre del archivo seleccionado
-    document.getElementById('archivo').addEventListener('change', function(e) {
-        var fileName = e.target.files[0] ? e.target.files[0].name : 'Seleccionar archivo...';
-        var label = this.nextElementSibling;
-        label.textContent = fileName;
-    });
+    var archivoInput = document.getElementById('archivo');
+    if (archivoInput) {
+        archivoInput.addEventListener('change', function(e) {
+            var fileName = e.target.files[0] ? e.target.files[0].name : 'Seleccionar archivo...';
+            var label = this.nextElementSibling;
+            label.textContent = fileName;
+        });
+    }
 
     // Formatear bytes a unidad legible
     function formatBytes(bytes) {
