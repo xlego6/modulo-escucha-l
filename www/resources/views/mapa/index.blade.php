@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     #mapa {
-        height: 500px;
+        height: 650px;
         width: 100%;
         border-radius: 4px;
     }
@@ -135,7 +135,7 @@
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-list-ol mr-2"></i>Entrevistas por Departamento</h3>
             </div>
-            <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
+            <div class="card-body p-0" style="max-height: 650px; overflow-y: auto;">
                 <table class="table table-striped table-sm" id="tabla-departamentos">
                     <thead>
                         <tr>
@@ -213,6 +213,9 @@ document.addEventListener('DOMContentLoaded', function() {
             tipoActual = this.dataset.tipo;
             document.getElementById('tipo-actual').textContent = nombresTipo[tipoActual];
 
+            // Ocultar detalle al cambiar de vista
+            cerrarDetalle();
+
             // Recargar datos
             cargarDatos();
         });
@@ -263,15 +266,19 @@ function agregarMarcadores(datos, maxEntrevistas) {
     var color = coloresTipo[tipoActual] || '#EBC01A';
 
     datos.forEach(function(item) {
-        var radio = Math.max(10, Math.min(40, (item.total / maxEntrevistas) * 40));
+        // Radio en metros (escala con el zoom del mapa)
+        // Min: 8km, Max: 50km segun proporcion de entrevistas
+        var radio = maxEntrevistas > 0
+            ? Math.max(8000, Math.min(50000, (item.total / maxEntrevistas) * 50000))
+            : 12000;
 
-        var marker = L.circleMarker([item.lat, item.lng], {
+        var marker = L.circle([item.lat, item.lng], {
             radius: radio,
             fillColor: color,
-            color: '#000',
+            color: '#fff',
             weight: 1,
-            opacity: 1,
-            fillOpacity: 0.7
+            opacity: 0.8,
+            fillOpacity: 0.6
         }).addTo(mapa);
 
         marker.bindPopup(

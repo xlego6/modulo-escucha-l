@@ -46,19 +46,30 @@ class MapaController extends Controller
                 $porDepartamento = $this->getDatosPorLugarToma();
         }
 
-        // Coordenadas de departamentos
+        // Coordenadas de departamentos (fallback si el geo no tiene lat/lon)
         $coordenadas = $this->getCoordenadasDepartamentos();
 
         $datos = [];
         foreach ($porDepartamento as $item) {
-            $nombreDepto = strtoupper($this->normalizarNombreDepto($item->departamento));
-            if (isset($coordenadas[$nombreDepto])) {
+            $lat = $item->lat ?? null;
+            $lng = $item->lon ?? null;
+
+            // Si el geo no tiene coordenadas, usar fallback hardcoded
+            if (!$lat || !$lng) {
+                $nombreDepto = $this->normalizarNombreDepto($item->departamento);
+                if (isset($coordenadas[$nombreDepto])) {
+                    $lat = $coordenadas[$nombreDepto]['lat'];
+                    $lng = $coordenadas[$nombreDepto]['lng'];
+                }
+            }
+
+            if ($lat && $lng) {
                 $datos[] = [
                     'id' => $item->id_depto,
                     'nombre' => $item->departamento,
                     'total' => $item->total,
-                    'lat' => $coordenadas[$nombreDepto]['lat'],
-                    'lng' => $coordenadas[$nombreDepto]['lng'],
+                    'lat' => $lat,
+                    'lng' => $lng,
                 ];
             }
         }
@@ -87,12 +98,14 @@ class MapaController extends Controller
             SELECT
                 depto.id_geo as id_depto,
                 depto.descripcion as departamento,
+                depto.lat,
+                depto.lon,
                 COUNT(e.id_e_ind_fvt) as total
             FROM esclarecimiento.e_ind_fvt e
             INNER JOIN catalogos.geo muni ON e.entrevista_lugar = muni.id_geo
             INNER JOIN catalogos.geo depto ON muni.id_padre = depto.id_geo AND depto.nivel = 2
             WHERE e.id_activo = 1 AND e.entrevista_lugar IS NOT NULL
-            GROUP BY depto.id_geo, depto.descripcion
+            GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
             ORDER BY total DESC
         ");
     }
@@ -106,6 +119,8 @@ class MapaController extends Controller
             SELECT
                 depto.id_geo as id_depto,
                 depto.descripcion as departamento,
+                depto.lat,
+                depto.lon,
                 COUNT(DISTINCT e.id_e_ind_fvt) as total
             FROM esclarecimiento.e_ind_fvt e
             INNER JOIN fichas.persona_entrevistada pe ON e.id_e_ind_fvt = pe.id_e_ind_fvt
@@ -116,7 +131,7 @@ class MapaController extends Controller
             WHERE e.id_activo = 1
                 AND depto.nivel = 2
                 AND (p.id_lugar_nacimiento_depto IS NOT NULL OR p.id_lugar_residencia_depto IS NOT NULL)
-            GROUP BY depto.id_geo, depto.descripcion
+            GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
             ORDER BY total DESC
         ");
     }
@@ -130,6 +145,8 @@ class MapaController extends Controller
             SELECT
                 depto.id_geo as id_depto,
                 depto.descripcion as departamento,
+                depto.lat,
+                depto.lon,
                 COUNT(DISTINCT cl.id_e_ind_fvt) as total
             FROM esclarecimiento.contenido_lugar cl
             INNER JOIN esclarecimiento.e_ind_fvt e ON cl.id_e_ind_fvt = e.id_e_ind_fvt
@@ -137,7 +154,7 @@ class MapaController extends Controller
             WHERE e.id_activo = 1
                 AND depto.nivel = 2
                 AND cl.id_departamento IS NOT NULL
-            GROUP BY depto.id_geo, depto.descripcion
+            GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
             ORDER BY total DESC
         ");
     }
@@ -147,11 +164,11 @@ class MapaController extends Controller
      */
     private function normalizarNombreDepto($nombre)
     {
-        $nombre = strtoupper(trim($nombre));
-        // Quitar tildes
+        $nombre = mb_strtoupper(trim($nombre), 'UTF-8');
+        // Quitar tildes (mayúsculas y minúsculas por si acaso)
         $nombre = str_replace(
-            ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ'],
-            ['A', 'E', 'I', 'O', 'U', 'N'],
+            ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ', 'á', 'é', 'í', 'ó', 'ú', 'ñ', 'Ü', 'ü'],
+            ['A', 'E', 'I', 'O', 'U', 'N', 'A', 'E', 'I', 'O', 'U', 'N', 'U', 'U'],
             $nombre
         );
         return $nombre;
