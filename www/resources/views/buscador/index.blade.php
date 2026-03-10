@@ -180,17 +180,17 @@
                 <!-- Seccion Entrevistas -->
                 @if($resultados['entrevistas']->count() > 0)
                 <div class="card seccion-resultado entrevistas">
-                    <div class="card-header seccion-header" data-toggle="collapse" data-target="#seccion-entrevistas">
+                    <div class="card-header seccion-header" onclick="toggleSeccion('seccion-entrevistas', this)">
                         <h3 class="card-title">
                             <i class="fas fa-microphone text-success"></i>
                             Entrevistas
                             <span class="badge badge-success contador-seccion ml-2">{{ $resultados['entrevistas']->count() }}</span>
                         </h3>
                         <div class="card-tools">
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-up toggle-icon"></i>
                         </div>
                     </div>
-                    <div class="collapse show" id="seccion-entrevistas">
+                    <div id="seccion-entrevistas">
                         <div class="card-body p-0">
                             @foreach($resultados['entrevistas'] as $entrevista)
                             <div class="resultado-item">
@@ -278,17 +278,17 @@
                 <!-- Seccion Personas -->
                 @if($resultados['personas']->count() > 0)
                 <div class="card seccion-resultado personas">
-                    <div class="card-header seccion-header" data-toggle="collapse" data-target="#seccion-personas">
+                    <div class="card-header seccion-header" onclick="toggleSeccion('seccion-personas', this)">
                         <h3 class="card-title">
                             <i class="fas fa-users text-info"></i>
                             Personas
                             <span class="badge badge-info contador-seccion ml-2">{{ $resultados['personas']->count() }}</span>
                         </h3>
                         <div class="card-tools">
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-up toggle-icon"></i>
                         </div>
                     </div>
-                    <div class="collapse show" id="seccion-personas">
+                    <div id="seccion-personas">
                         <div class="card-body p-0">
                             @foreach($resultados['personas'] as $persona)
                             <div class="resultado-item">
@@ -348,17 +348,17 @@
                 <!-- Seccion Documentos -->
                 @if($resultados['documentos']->count() > 0)
                 <div class="card seccion-resultado documentos">
-                    <div class="card-header seccion-header" data-toggle="collapse" data-target="#seccion-documentos">
+                    <div class="card-header seccion-header" onclick="toggleSeccion('seccion-documentos', this)">
                         <h3 class="card-title">
                             <i class="fas fa-file-alt text-warning"></i>
                             Documentos
                             <span class="badge badge-warning contador-seccion ml-2">{{ $resultados['documentos']->count() }}</span>
                         </h3>
                         <div class="card-tools">
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-up toggle-icon"></i>
                         </div>
                     </div>
-                    <div class="collapse show" id="seccion-documentos">
+                    <div id="seccion-documentos">
                         <div class="card-body p-0">
                             @foreach($resultados['documentos'] as $documento)
                             <div class="resultado-item">
@@ -483,25 +483,18 @@
 
 @section('scripts')
 <script>
-// Toggle icono chevron al colapsar/expandir secciones
-$('.seccion-header').on('click', function() {
-    var icon = $(this).find('.card-tools i');
-    if ($(this).attr('aria-expanded') === 'true') {
-        icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+function toggleSeccion(id, header) {
+    var el = document.getElementById(id);
+    var icon = header.querySelector('.toggle-icon');
+    if (el.style.display === 'none') {
+        el.style.display = '';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
     } else {
-        icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        el.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
     }
-});
-
-// Actualizar icono cuando se colapsa/expande
-$('.collapse').on('shown.bs.collapse', function() {
-    $(this).prev('.seccion-header').find('.card-tools i')
-        .removeClass('fa-chevron-down').addClass('fa-chevron-up');
-});
-
-$('.collapse').on('hidden.bs.collapse', function() {
-    $(this).prev('.seccion-header').find('.card-tools i')
-        .removeClass('fa-chevron-up').addClass('fa-chevron-down');
-});
+}
 </script>
 @endsection

@@ -113,6 +113,8 @@ class BuscadorController extends Controller
 
     /**
      * Buscar entrevistas - Incluye busqueda en documentos asociados
+     * El buscador muestra todas las entrevistas a todos los roles autenticados;
+     * el control de acceso al detalle/edicion se aplica en EntrevistaController.
      */
     private function buscarEntrevistas($termino, Request $request, $limite = 50)
     {

@@ -53,9 +53,10 @@ class AdjuntoController extends Controller
 
         // Has approved access permission
         $tienePermisoAcceso = false;
-        if ($entrevistadorActual && !$puedeGestionar && !$esGestorMismaDependencia) {
-            $tienePermisoAcceso = \App\Models\Permiso::where('id_entrevistador', $entrevistadorActual->id_entrevistador)
-                ->where('id_e_ind_fvt', $id_entrevista)
+        if ($entrevistadorActual) {
+            $tienePermisoAcceso = (bool) DB::table('esclarecimiento.permiso')
+                ->where('id_entrevistador', (int) $entrevistadorActual->id_entrevistador)
+                ->where('id_e_ind_fvt', (int) $id_entrevista)
                 ->where('id_estado', \App\Models\Permiso::ESTADO_VIGENTE)
                 ->where(function($q) {
                     $q->where('es_solicitud', false)
