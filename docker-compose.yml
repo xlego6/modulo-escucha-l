@@ -60,21 +60,14 @@ services:
         environment:
             - WHISPER_MODEL=large-v3-turbo
             - WHISPER_LANGUAGE=es
-            - WHISPER_DEVICE=cuda
-            - WHISPER_COMPUTE_TYPE=float16
+            - WHISPER_DEVICE=cpu
+            - WHISPER_COMPUTE_TYPE=int8
             - SERVICE_PORT=5000
             # Token de HuggingFace para diarización (opcional)
             # Configurar en archivo .env de la raiz del proyecto
             - HF_TOKEN=${HF_TOKEN:-}
         networks:
             - mel
-        deploy:
-            resources:
-                reservations:
-                    devices:
-                        - driver: nvidia
-                          count: 1
-                          capabilities: [gpu]
 
     # Servicio NER (spaCy)
     ner:
