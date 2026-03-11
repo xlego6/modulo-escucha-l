@@ -225,13 +225,17 @@ class ProcesamientoController extends Controller
                 WHERE tipo_mime LIKE '%audio%' OR tipo_mime LIKE '%video%'
                 GROUP BY id_e_ind_fvt
             ) as adj"), 'adj.id_e_ind_fvt', '=', 'at.id_e_ind_fvt')
+            ->leftJoin('esclarecimiento.adjunto as adj_asig', 'adj_asig.id_adjunto', '=', 'at.id_adjunto')
             ->select(
                 'at.id_asignacion',
                 'at.id_e_ind_fvt',
+                'at.id_adjunto',
                 'ent.entrevista_codigo',
                 'at.estado',
                 'at.fecha_asignacion',
                 'u.name as nombre_persona',
+                'adj_asig.nombre_original as nombre_audio',
+                'adj_asig.duracion as duracion_audio',
                 DB::raw('COALESCE(adj.duracion_total, 0) as duracion_total'),
                 DB::raw('COALESCE(adj.num_audios, 0) as num_audios')
             )
@@ -653,7 +657,7 @@ class ProcesamientoController extends Controller
         if ($nivel == 4) {
             // Incluir aprobadas para que vea su trabajo finalizado
             $asignaciones = AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
-                ->with(['rel_entrevista', 'rel_entrevista.rel_adjuntos' => function($q) {
+                ->with(['rel_entrevista', 'rel_adjunto', 'rel_entrevista.rel_adjuntos' => function($q) {
                     $q->where(function($inner) {
                         $inner->where('tipo_mime', 'like', '%audio%')
                               ->orWhere('tipo_mime', 'like', '%video%');
@@ -704,7 +708,7 @@ class ProcesamientoController extends Controller
 
         // Asignaciones pendientes de revisión
         $pendientesRevision = AsignacionTranscripcion::where('estado', AsignacionTranscripcion::ESTADO_ENVIADA_REVISION)
-            ->with(['rel_entrevista', 'rel_transcriptor.rel_usuario'])
+            ->with(['rel_entrevista', 'rel_transcriptor.rel_usuario', 'rel_adjunto'])
             ->orderBy('fecha_envio_revision', 'asc')
             ->get();
 
@@ -713,23 +717,23 @@ class ProcesamientoController extends Controller
             ->with('rel_usuario')
             ->get();
 
-        // Cargar todas las asignaciones (incluyendo aprobadas) indexadas por id_e_ind_fvt
-        // Para cada entrevista, obtener la asignación más reciente
-        $asignacionesActivas = AsignacionTranscripcion::whereIn('estado', [
+        // Cargar todas las asignaciones agrupadas por entrevista (puede haber varias por audio)
+        $todasAsignaciones = AsignacionTranscripcion::whereIn('estado', [
                 AsignacionTranscripcion::ESTADO_ASIGNADA,
                 AsignacionTranscripcion::ESTADO_EN_EDICION,
                 AsignacionTranscripcion::ESTADO_ENVIADA_REVISION,
                 AsignacionTranscripcion::ESTADO_RECHAZADA,
                 AsignacionTranscripcion::ESTADO_APROBADA,
             ])
-            ->with(['rel_transcriptor.rel_usuario', 'rel_revisor'])
+            ->with(['rel_transcriptor.rel_usuario', 'rel_revisor', 'rel_adjunto'])
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->unique('id_e_ind_fvt')
-            ->keyBy('id_e_ind_fvt');
+            ->get();
 
-        // Contar solo asignaciones en proceso (no aprobadas)
-        $enProceso = $asignacionesActivas->filter(function($a) {
+        // Agrupadas por id_e_ind_fvt para la vista
+        $asignacionesPorEntrevista = $todasAsignaciones->groupBy('id_e_ind_fvt');
+
+        // Contar solo asignaciones en proceso (no aprobadas), únicas por adjunto
+        $enProceso = $todasAsignaciones->filter(function($a) {
             return $a->estado !== AsignacionTranscripcion::ESTADO_APROBADA;
         })->count();
 
@@ -740,7 +744,7 @@ class ProcesamientoController extends Controller
             'aprobadas' => AsignacionTranscripcion::where('estado', AsignacionTranscripcion::ESTADO_APROBADA)->count(),
         ];
 
-        return view('procesamientos.edicion', compact('pendientes', 'pendientesRevision', 'transcriptores', 'asignacionesActivas', 'stats'));
+        return view('procesamientos.edicion', compact('pendientes', 'pendientesRevision', 'transcriptores', 'asignacionesPorEntrevista', 'stats'));
     }
 
     /**
@@ -1312,10 +1316,11 @@ class ProcesamientoController extends Controller
         $request->validate([
             'id_e_ind_fvt' => 'required|integer',
             'id_transcriptor' => 'required|integer',
+            'id_adjunto' => 'required|integer',
         ]);
 
-        // Verificar que no exista una asignación activa para esta entrevista
-        $existente = AsignacionTranscripcion::where('id_e_ind_fvt', $request->id_e_ind_fvt)
+        // Verificar que no exista una asignación activa para este audio específico
+        $existente = AsignacionTranscripcion::where('id_adjunto', $request->id_adjunto)
             ->whereIn('estado', [
                 AsignacionTranscripcion::ESTADO_ASIGNADA,
                 AsignacionTranscripcion::ESTADO_EN_EDICION,
@@ -1325,23 +1330,29 @@ class ProcesamientoController extends Controller
 
         if ($existente) {
             return response()->json([
-                'error' => 'Esta entrevista ya tiene una asignación activa'
+                'error' => 'Este audio ya tiene una asignación activa'
             ], 400);
         }
 
-        // Si hay una asignación aprobada previa, copiar su transcripcion_editada
-        $transcripcionPrevia = AsignacionTranscripcion::where('id_e_ind_fvt', $request->id_e_ind_fvt)
+        // Pre-llenar con el texto del audio específico (o transcripción aprobada previa)
+        $adjunto = Adjunto::findOrFail($request->id_adjunto);
+        $transcripcionPrevia = AsignacionTranscripcion::where('id_adjunto', $request->id_adjunto)
             ->where('estado', AsignacionTranscripcion::ESTADO_APROBADA)
             ->orderBy('fecha_revision', 'desc')
             ->first();
 
+        $textoInicial = $transcripcionPrevia
+            ? $transcripcionPrevia->transcripcion_editada
+            : $adjunto->texto_extraido;
+
         $asignacion = AsignacionTranscripcion::create([
             'id_e_ind_fvt' => $request->id_e_ind_fvt,
+            'id_adjunto' => $request->id_adjunto,
             'id_transcriptor' => $request->id_transcriptor,
             'id_asignado_por' => $user->id,
             'estado' => AsignacionTranscripcion::ESTADO_ASIGNADA,
             'fecha_asignacion' => now(),
-            'transcripcion_editada' => $transcripcionPrevia ? $transcripcionPrevia->transcripcion_editada : null,
+            'transcripcion_editada' => $textoInicial,
         ]);
 
         TrazaActividad::create([
@@ -1367,10 +1378,14 @@ class ProcesamientoController extends Controller
     public function editarTranscripcionAsignada($id)
     {
         $user = Auth::user();
-        $asignacion = AsignacionTranscripcion::with(['rel_entrevista', 'rel_entrevista.rel_adjuntos' => function($q) {
-            $q->where('tipo_mime', 'like', '%audio%')
-              ->orWhere('tipo_mime', 'like', '%video%');
-        }])->findOrFail($id);
+        $asignacion = AsignacionTranscripcion::with([
+            'rel_adjunto',
+            'rel_entrevista',
+            'rel_entrevista.rel_adjuntos' => function($q) {
+                $q->where('tipo_mime', 'like', '%audio%')
+                  ->orWhere('tipo_mime', 'like', '%video%');
+            }
+        ])->findOrFail($id);
 
         // Verificar que sea el transcriptor asignado o Admin/Líder
         if ($user->id_nivel > 2 && $asignacion->id_transcriptor != $user->id_entrevistador) {
@@ -1391,6 +1406,11 @@ class ProcesamientoController extends Controller
         }
 
         $entrevista = $asignacion->rel_entrevista;
+
+        // Si es asignación por audio individual, mostrar solo ese audio en el reproductor
+        if ($asignacion->id_adjunto && $asignacion->rel_adjunto) {
+            $entrevista->setRelation('rel_adjuntos', collect([$asignacion->rel_adjunto]));
+        }
 
         return view('procesamientos.editar-transcripcion-asignada', compact('asignacion', 'entrevista'));
     }
@@ -1482,6 +1502,7 @@ class ProcesamientoController extends Controller
         }
 
         $asignacion = AsignacionTranscripcion::with([
+            'rel_adjunto',
             'rel_entrevista',
             'rel_entrevista.rel_adjuntos' => function($q) {
                 $q->where('tipo_mime', 'like', '%audio%')
@@ -1492,6 +1513,11 @@ class ProcesamientoController extends Controller
         ])->findOrFail($id);
 
         $entrevista = $asignacion->rel_entrevista;
+
+        // Si es asignación por audio individual, mostrar solo ese audio
+        if ($asignacion->id_adjunto && $asignacion->rel_adjunto) {
+            $entrevista->setRelation('rel_adjuntos', collect([$asignacion->rel_adjunto]));
+        }
 
         return view('procesamientos.revisar-transcripcion', compact('asignacion', 'entrevista'));
     }
@@ -1512,11 +1538,22 @@ class ProcesamientoController extends Controller
         $asignacion = AsignacionTranscripcion::findOrFail($id);
         $entrevista = Entrevista::findOrFail($asignacion->id_e_ind_fvt);
 
-        // Guardar transcripción final como adjunto (tipo 306)
-        $entrevista->guardarTranscripcionFinal(
-            $asignacion->transcripcion_editada,
-            $user->id
-        );
+        if ($asignacion->id_adjunto) {
+            // Asignación por audio: guardar texto de vuelta en el adjunto y regenerar combinada
+            $adjunto = Adjunto::find($asignacion->id_adjunto);
+            if ($adjunto) {
+                $adjunto->texto_extraido = $asignacion->transcripcion_editada;
+                $adjunto->texto_extraido_at = now();
+                $adjunto->save();
+                $this->regenerarTranscripcionCompleta($entrevista);
+            }
+        } else {
+            // Asignación de entrevista completa: guardar como transcripción final
+            $entrevista->guardarTranscripcionFinal(
+                $asignacion->transcripcion_editada,
+                $user->id
+            );
+        }
 
         // Actualizar asignación
         $asignacion->estado = AsignacionTranscripcion::ESTADO_APROBADA;

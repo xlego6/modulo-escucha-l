@@ -3,6 +3,9 @@
 @section('title', 'Editar Transcripcion')
 @section('content_header')
 Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
+@if($asignacion->id_adjunto && $asignacion->rel_adjunto)
+ &mdash; {{ $asignacion->rel_adjunto->nombre_original }}
+@endif
 @endsection
 
 @section('css')
@@ -183,6 +186,9 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <h3 class="card-title mb-0"><i class="fas fa-keyboard mr-2"></i>Transcripcion</h3>
                 <span class="badge badge-{{ $asignacion->estado == 'rechazada' ? 'danger' : 'info' }}">
                     {{ $asignacion->fmt_estado }} &mdash; {{ $entrevista->entrevista_codigo }}
+                    @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
+                        &mdash; <i class="fas fa-file-audio"></i> {{ \Illuminate\Support\Str::limit($asignacion->rel_adjunto->nombre_original, 30) }}
+                    @endif
                 </span>
             </div>
 

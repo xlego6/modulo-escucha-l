@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\User;
+use App\Models\Adjunto;
 use Illuminate\Database\Eloquent\Model;
 
 class AsignacionTranscripcion extends Model
@@ -12,6 +13,7 @@ class AsignacionTranscripcion extends Model
 
     protected $fillable = [
         'id_e_ind_fvt',
+        'id_adjunto',
         'id_transcriptor',
         'id_asignado_por',
         'estado',
@@ -70,6 +72,11 @@ class AsignacionTranscripcion extends Model
     public function rel_revisor()
     {
         return $this->belongsTo(User::class, 'id_revisor', 'id');
+    }
+
+    public function rel_adjunto()
+    {
+        return $this->belongsTo(Adjunto::class, 'id_adjunto', 'id_adjunto');
     }
 
     // Accessors

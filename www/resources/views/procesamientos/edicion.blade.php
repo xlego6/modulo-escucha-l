@@ -55,7 +55,7 @@
             <thead>
                 <tr>
                     <th>Codigo</th>
-                    <th>Titulo</th>
+                    <th>Titulo / Audio</th>
                     <th>Transcriptor</th>
                     <th>Enviada</th>
                     <th>Acciones</th>
@@ -65,7 +65,12 @@
                 @foreach($pendientesRevision as $asignacion)
                 <tr>
                     <td><code>{{ $asignacion->rel_entrevista->entrevista_codigo }}</code></td>
-                    <td>{{ \Illuminate\Support\Str::limit($asignacion->rel_entrevista->titulo, 40) }}</td>
+                    <td>
+                        {{ \Illuminate\Support\Str::limit($asignacion->rel_entrevista->titulo, 35) }}
+                        @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
+                            <br><small class="text-muted"><i class="fas fa-file-audio"></i> {{ \Illuminate\Support\Str::limit($asignacion->rel_adjunto->nombre_original, 30) }}</small>
+                        @endif
+                    </td>
                     <td>
                         <i class="fas fa-user mr-1"></i>
                         {{ $asignacion->rel_transcriptor->rel_usuario->name ?? 'N/A' }}
@@ -101,14 +106,18 @@
                     <th>Codigo</th>
                     <th>Titulo</th>
                     <th>Adjuntos</th>
-                    <th>Asignacion</th>
+                    <th>Asignacion por Audio</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($pendientes as $entrevista)
                 @php
-                    $asignacion = $asignacionesActivas->get($entrevista->id_e_ind_fvt);
+                    $asigs = $asignacionesPorEntrevista->get($entrevista->id_e_ind_fvt, collect());
+                    // IDs de adjuntos con asignación activa (no aprobada)
+                    $adjuntosAsignados = $asigs->whereNotIn('estado', ['aprobada'])->pluck('id_adjunto')->filter()->toArray();
+                    // ¿Hay al menos un audio sin asignación activa?
+                    $hayAudioLibre = $entrevista->rel_adjuntos->contains(fn($a) => !in_array($a->id_adjunto, $adjuntosAsignados));
                 @endphp
                 <tr>
                     <td><code>{{ $entrevista->entrevista_codigo }}</code></td>
@@ -119,50 +128,32 @@
                     </td>
                     <td>
                         <span class="badge badge-info">
-                            {{ $entrevista->rel_adjuntos->count() }} adjuntos
+                            {{ $entrevista->rel_adjuntos->count() }} audio(s)
                         </span>
                     </td>
                     <td>
-                        @if($asignacion)
-                            @if($asignacion->estado === 'aprobada')
-                                {{-- Estado Finalizado --}}
-                                <span class="badge badge-success">
-                                    <i class="fas fa-check-circle"></i> Finalizada
-                                </span>
-                                <br>
-                                <small class="text-success">
-                                    <i class="fas fa-user-check"></i>
-                                    {{ $asignacion->rel_transcriptor->rel_usuario->name ?? 'N/A' }}
-                                </small>
-                                <br>
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar-check"></i>
-                                    {{ $asignacion->fecha_revision ? $asignacion->fecha_revision->format('d/m/Y H:i') : '-' }}
-                                </small>
-                                @if($asignacion->rel_revisor)
-                                <br>
-                                <small class="text-muted">
-                                    <i class="fas fa-stamp"></i> Aprobado por: {{ $asignacion->rel_revisor->name }}
-                                </small>
-                                @endif
-                            @else
-                                {{-- Estados activos --}}
-                                <span class="badge {{ $asignacion->estado_badge_class }}">
-                                    {{ $asignacion->fmt_estado }}
-                                </span>
-                                <br>
-                                <small>
-                                    <i class="fas fa-user text-muted"></i>
-                                    {{ $asignacion->rel_transcriptor->rel_usuario->name ?? 'N/A' }}
-                                </small>
-                                <br>
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar"></i>
-                                    {{ $asignacion->fecha_asignacion ? $asignacion->fecha_asignacion->format('d/m/Y H:i') : '-' }}
-                                </small>
-                            @endif
-                        @else
+                        @if($asigs->isEmpty())
                             <span class="badge badge-light text-muted">Sin asignar</span>
+                        @else
+                            @foreach($entrevista->rel_adjuntos as $adjunto)
+                            @php
+                                $asigAdjunto = $asigs->firstWhere('id_adjunto', $adjunto->id_adjunto);
+                            @endphp
+                            <div class="mb-1">
+                                <small class="text-muted" title="{{ $adjunto->nombre_original }}">
+                                    <i class="fas fa-file-audio"></i>
+                                    {{ \Illuminate\Support\Str::limit($adjunto->nombre_original, 22) }}
+                                </small>
+                                @if($asigAdjunto)
+                                    <span class="badge {{ $asigAdjunto->estado_badge_class }}">
+                                        {{ $asigAdjunto->fmt_estado }}
+                                    </span>
+                                    <small class="text-muted">{{ $asigAdjunto->rel_transcriptor->rel_usuario->name ?? '' }}</small>
+                                @else
+                                    <span class="badge badge-light">Sin asignar</span>
+                                @endif
+                            </div>
+                            @endforeach
                         @endif
                     </td>
                     <td>
@@ -173,10 +164,19 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             @endif
-                            @if(!$asignacion || $asignacion->estado === 'aprobada')
-                            <button type="button" class="btn btn-sm {{ $asignacion && $asignacion->estado === 'aprobada' ? 'btn-outline-info' : 'btn-info' }}"
-                                    onclick="abrirModalAsignar({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}')"
-                                    title="{{ $asignacion && $asignacion->estado === 'aprobada' ? 'Reasignar transcripción' : 'Asignar a transcriptor' }}">
+                            @if($hayAudioLibre)
+                            @php
+                                $adjuntosData = $entrevista->rel_adjuntos->map(function($a) use ($adjuntosAsignados) {
+                                    return [
+                                        'id' => $a->id_adjunto,
+                                        'nombre' => $a->nombre_original,
+                                        'asignado' => in_array($a->id_adjunto, $adjuntosAsignados),
+                                    ];
+                                })->values()->toJson();
+                            @endphp
+                            <button type="button" class="btn btn-sm btn-info"
+                                    onclick="abrirModalAsignar({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}', {!! htmlspecialchars($adjuntosData, ENT_QUOTES) !!})"
+                                    title="Asignar audio a transcriptor">
                                 <i class="fas fa-user-plus"></i>
                             </button>
                             @endif
@@ -219,6 +219,13 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="id_adjunto">Audio a transcribir <span class="text-danger">*</span></label>
+                        <select class="form-control" id="id_adjunto" name="id_adjunto" required>
+                            <option value="">-- Seleccione el audio --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="id_transcriptor">Transcriptor / Líder <span class="text-danger">*</span></label>
                         <select class="form-control" id="id_transcriptor" name="id_transcriptor" required>
                             <option value="">-- Seleccione --</option>
@@ -246,11 +253,22 @@
 
 @section('js')
 <script>
-function abrirModalAsignar(id, codigo) {
+function abrirModalAsignar(id, codigo, adjuntosJson) {
+    var adjuntos = typeof adjuntosJson === 'string' ? JSON.parse(adjuntosJson) : adjuntosJson;
+
     $('#asignar_id_entrevista').val(id);
     $('#asignar_codigo').val(codigo);
     $('#asignar_error').addClass('d-none');
     $('#id_transcriptor').val('');
+
+    // Poblar selector de audios
+    var $sel = $('#id_adjunto').empty().append('<option value="">-- Seleccione el audio --</option>');
+    adjuntos.forEach(function(adj) {
+        if (!adj.asignado) {
+            $sel.append('<option value="' + adj.id + '">' + adj.nombre + '</option>');
+        }
+    });
+
     $('#modalAsignar').modal('show');
 }
 
@@ -267,6 +285,7 @@ $('#formAsignar').on('submit', function(e) {
         data: {
             _token: '{{ csrf_token() }}',
             id_e_ind_fvt: $('#asignar_id_entrevista').val(),
+            id_adjunto: $('#id_adjunto').val(),
             id_transcriptor: $('#id_transcriptor').val()
         },
         success: function(response) {

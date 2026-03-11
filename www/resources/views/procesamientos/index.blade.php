@@ -267,10 +267,10 @@ function fmtDur($seg) {
                     <thead class="thead-light">
                         <tr>
                             <th>Código</th>
+                            <th>Audio asignado</th>
                             <th>Transcriptor</th>
-                            <th>Fecha asignación</th>
+                            <th>Fecha asig.</th>
                             <th>Estado</th>
-                            <th class="text-center">Audios</th>
                             <th class="text-right">Duración</th>
                         </tr>
                     </thead>
@@ -278,19 +278,20 @@ function fmtDur($seg) {
                         @foreach($detalleAsignaciones as $asig)
                         @php
                             $badgeClass = [
-                                'asignada'         => 'badge-secondary',
-                                'en_edicion'       => 'badge-info',
-                                'enviada_revision'  => 'badge-warning',
-                                'rechazada'        => 'badge-danger',
-                                'aprobada'         => 'badge-success',
+                                'asignada'        => 'badge-secondary',
+                                'en_edicion'      => 'badge-info',
+                                'enviada_revision' => 'badge-warning',
+                                'rechazada'       => 'badge-danger',
+                                'aprobada'        => 'badge-success',
                             ][$asig->estado] ?? 'badge-secondary';
                             $labelEstado = [
-                                'asignada'         => 'Asignada',
-                                'en_edicion'       => 'En edición',
-                                'enviada_revision'  => 'En revisión',
-                                'rechazada'        => 'Rechazada',
-                                'aprobada'         => 'Aprobada',
+                                'asignada'        => 'Asignada',
+                                'en_edicion'      => 'En edición',
+                                'enviada_revision' => 'En revisión',
+                                'rechazada'       => 'Rechazada',
+                                'aprobada'        => 'Aprobada',
                             ][$asig->estado] ?? $asig->estado;
+                            $duracion = $asig->id_adjunto ? $asig->duracion_audio : $asig->duracion_total;
                         @endphp
                         <tr>
                             <td>
@@ -298,19 +299,24 @@ function fmtDur($seg) {
                                     {{ $asig->entrevista_codigo ?? 'SIN-CÓDIGO' }}
                                 </a>
                             </td>
+                            <td>
+                                @if($asig->id_adjunto && $asig->nombre_audio)
+                                    <small><i class="fas fa-file-audio text-info mr-1"></i>{{ \Illuminate\Support\Str::limit($asig->nombre_audio, 35) }}</small>
+                                @else
+                                    <small class="text-muted">{{ $asig->num_audios }} audio(s) en total</small>
+                                @endif
+                            </td>
                             <td>{{ $asig->nombre_persona }}</td>
                             <td>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</td>
                             <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
-                            <td class="text-center">{{ $asig->num_audios }}</td>
-                            <td class="text-right text-monospace">{{ fmtDur($asig->duracion_total) }}</td>
+                            <td class="text-right text-monospace">{{ fmtDur($duracion) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="table-dark">
                         <tr>
-                            <td colspan="4"><strong>Totales</strong></td>
-                            <td class="text-center"><strong>{{ $detalleAsignaciones->sum('num_audios') }}</strong></td>
-                            <td class="text-right text-monospace"><strong>{{ fmtDur($detalleAsignaciones->sum('duracion_total')) }}</strong></td>
+                            <td colspan="5"><strong>Total asignaciones</strong></td>
+                            <td class="text-right text-monospace"><strong>{{ fmtDur($detalleAsignaciones->sum('duracion_audio')) }}</strong></td>
                         </tr>
                     </tfoot>
                 </table>
