@@ -58,4 +58,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
 # Verificar que pyannote se importa correctamente (falla el build si hay incompatibilidad)
 RUN python -c "from pyannote.audio import Pipeline; print('OK: pyannote.audio importado correctamente')"
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "600", "--workers", "2", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", "transcription_service:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "1800", "--workers", "2", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", "transcription_service:app"]
