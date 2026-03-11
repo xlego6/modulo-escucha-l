@@ -168,6 +168,12 @@ docker compose exec php chown -R www-data:www-data /var/www/storage /var/www/boo
 
 La duracion de los archivos de audio y video se extrae automaticamente con ffprobe al subir cada adjunto.
 
+Al desplegar en un servidor nuevo o migrar datos existentes, ejecutar una vez para poblar las duraciones:
+
+```bash
+docker compose exec -w /var/www php php artisan adjuntos:actualizar-duracion --todos
+```
+
 Si hay adjuntos subidos anteriormente que muestran `N/A` o `0:00:00` en su duracion, ejecutar:
 
 ```bash
