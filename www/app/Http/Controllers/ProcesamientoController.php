@@ -429,9 +429,10 @@ class ProcesamientoController extends Controller
         }
 
         $withDiarization = $request->input('diarizar', true);
+        $hfToken = (string) $request->input('hf_token', '');
 
         // Llamar al servicio de transcripcion
-        $result = $this->procesamientoService->transcribe($audioPath, $withDiarization);
+        $result = $this->procesamientoService->transcribe($audioPath, $withDiarization, $hfToken);
 
         if ($result['success']) {
             $texto = trim($result['text'] ?? '');
@@ -456,10 +457,12 @@ class ProcesamientoController extends Controller
                 'success' => true,
                 'message' => 'Transcripcion completada',
                 'id_adjunto' => $idAdjunto,
+                'entrevista_id' => $entrevista->id_e_ind_fvt,
                 'nombre' => $adjunto->nombre_original,
                 'text_length' => strlen($texto),
                 'text' => $texto,
-                'speakers' => $result['speakers_count'] ?? 0
+                'speakers' => $result['speakers_count'] ?? 0,
+                'diarization_error' => $result['diarization_error'] ?? null
             ]);
         }
 

@@ -192,23 +192,29 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas Pendientes de Transcripcion</h3>
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas</h3>
             </div>
             <div class="card-body p-0">
-                <table class="table table-striped table-hover">
+                <table class="table table-hover mb-0">
                     <thead>
                         <tr>
                             <th style="width: 40px;"></th>
-                            <th>Codigo</th>
+                            <th style="width: 110px;">Codigo</th>
                             <th>Titulo</th>
-                            <th>Audios</th>
-                            <th>Duracion</th>
-                            <th>Acciones</th>
+                            <th style="width: 120px;">Estado</th>
+                            <th style="width: 90px;">Audios</th>
+                            <th style="width: 80px;">Duracion</th>
+                            <th style="width: 90px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($entrevistas as $entrevista)
-                        <tr>
+                        @php
+                            $audiosTranscritos = $entrevista->rel_adjuntos->filter(fn($a) => !empty($a->texto_extraido))->count();
+                            $totalAudios = $entrevista->rel_adjuntos->count();
+                            $duracionTotal = $entrevista->rel_adjuntos->sum('duracion');
+                        @endphp
+                        <tr class="entrevista-row">
                             <td>
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input check-item"
@@ -220,20 +226,42 @@
                             <td><code>{{ $entrevista->entrevista_codigo }}</code></td>
                             <td>
                                 <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}">
-                                    {{ \Illuminate\Support\Str::limit($entrevista->titulo, 35) }}
+                                    {{ \Illuminate\Support\Str::limit($entrevista->titulo, 40) }}
                                 </a>
                             </td>
                             <td>
-                                <span class="badge badge-info">{{ $entrevista->rel_adjuntos->count() }}</span>
+                                @if($audiosTranscritos === $totalAudios && $totalAudios > 0)
+                                    <span class="badge badge-success d-block mb-1">
+                                        <i class="fas fa-check mr-1"></i>Transcrita
+                                    </span>
+                                    @if($entrevista->transcripcion_completada_at)
+                                    <small class="text-muted">{{ \Carbon\Carbon::parse($entrevista->transcripcion_completada_at)->format('d/m/Y') }}</small>
+                                    @endif
+                                @elseif($audiosTranscritos > 0)
+                                    <span class="badge badge-warning d-block mb-1">
+                                        <i class="fas fa-adjust mr-1"></i>Con texto
+                                    </span>
+                                    <small class="text-muted">{{ $audiosTranscritos }}/{{ $totalAudios }} audios</small>
+                                @else
+                                    <span class="badge badge-secondary">
+                                        <i class="fas fa-clock mr-1"></i>Pendiente
+                                    </span>
+                                @endif
                             </td>
                             <td>
-                                @php
-                                    $duracion = $entrevista->rel_adjuntos->sum('duracion');
-                                    $horas = floor($duracion / 3600);
-                                    $minutos = floor(($duracion % 3600) / 60);
-                                @endphp
-                                @if($duracion > 0)
-                                    {{ $horas }}h {{ $minutos }}m
+                                <span class="badge badge-info mr-1">{{ $totalAudios }}</span>
+                                @if($totalAudios > 0)
+                                <button class="btn btn-xs btn-outline-secondary btn-expandir"
+                                        data-id="{{ $entrevista->id_e_ind_fvt }}"
+                                        title="Mostrar/ocultar audios">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                                @endif
+                            </td>
+                            <td>
+                                @if($duracionTotal > 0)
+                                    @php $h = floor($duracionTotal/3600); $m = floor(($duracionTotal%3600)/60); @endphp
+                                    {{ $h > 0 ? $h.'h ' : '' }}{{ $m }}m
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -241,7 +269,7 @@
                             <td>
                                 <button class="btn btn-sm btn-primary btn-transcribir"
                                         data-id="{{ $entrevista->id_e_ind_fvt }}"
-                                        title="Iniciar transcripcion">
+                                        title="Transcribir todos los audios">
                                     <i class="fas fa-play"></i>
                                 </button>
                                 <a href="{{ route('adjuntos.gestionar', $entrevista->id_e_ind_fvt) }}"
@@ -250,11 +278,55 @@
                                 </a>
                             </td>
                         </tr>
+                        <tr class="subrow-audios" id="subrow-{{ $entrevista->id_e_ind_fvt }}">
+                            <td colspan="7" class="p-0 border-top-0">
+                                <table class="table table-sm mb-0" style="background:#f8f9fa;">
+                                    <tbody>
+                                        @foreach($entrevista->rel_adjuntos as $audio)
+                                        <tr id="audio-row-{{ $audio->id_adjunto }}" style="border-left: 3px solid #dee2e6;">
+                                            <td style="width:40px;" class="text-center text-muted">
+                                                <i class="fas fa-file-audio fa-sm"></i>
+                                            </td>
+                                            <td style="width:110px;"></td>
+                                            <td class="text-sm py-2">
+                                                <span class="text-muted mr-1">└</span>{{ $audio->nombre_original }}
+                                            </td>
+                                            <td style="width:120px;">
+                                                @if($audio->texto_extraido)
+                                                    <span class="badge badge-success audio-estado-badge">
+                                                        <i class="fas fa-check mr-1"></i>Transcrito
+                                                    </span>
+                                                    @if($audio->texto_extraido_at)
+                                                    <br><small class="text-muted">{{ \Carbon\Carbon::parse($audio->texto_extraido_at)->format('d/m/Y') }}</small>
+                                                    @endif
+                                                @else
+                                                    <span class="badge badge-secondary audio-estado-badge">Pendiente</span>
+                                                @endif
+                                            </td>
+                                            <td style="width:90px;" class="text-sm py-2 text-muted">
+                                                {{ $audio->fmt_duracion ?? '-' }}
+                                            </td>
+                                            <td style="width:80px;"></td>
+                                            <td style="width:90px;">
+                                                <button class="btn btn-xs btn-primary btn-transcribir-audio"
+                                                        data-id="{{ $audio->id_adjunto }}"
+                                                        data-nombre="{{ $audio->nombre_original }}"
+                                                        data-entrevista="{{ $entrevista->id_e_ind_fvt }}"
+                                                        title="Transcribir este audio">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                <i class="fas fa-check-circle fa-2x mb-2"></i><br>
-                                No hay entrevistas pendientes de transcripcion
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-microphone-slash fa-2x mb-2"></i><br>
+                                No hay entrevistas con archivos de audio
                             </td>
                         </tr>
                         @endforelse
@@ -435,10 +507,20 @@ $(document).ready(function() {
                         );
                     }
 
-                    // Marcar fila como completada
+                    // Marcar todos los badges de audios como transcritos
+                    $('#subrow-' + id + ' .audio-estado-badge').each(function() {
+                        $(this).removeClass('badge-secondary badge-warning').addClass('badge-success')
+                               .html('<i class="fas fa-check mr-1"></i>Transcrito');
+                    });
+                    // Actualizar badge de estado de la entrevista a "Transcrita completa"
+                    var hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
+                    row.find('td:nth-child(4)').html(
+                        '<span class="badge badge-success d-block mb-1"><i class="fas fa-check mr-1"></i>Transcrita</span>' +
+                        '<small class="text-muted">' + hoy + '</small>'
+                    );
+                    // Marcar boton como completado
                     btn.removeClass('btn-primary').addClass('btn-success')
                        .html('<i class="fas fa-check"></i>').prop('disabled', true);
-                    row.addClass('table-success');
                 } else {
                     mostrarError(response.error || 'Error desconocido');
                     btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
@@ -458,6 +540,109 @@ $(document).ready(function() {
         $('#resultado-error').show();
         $('#res-error-mensaje').text(mensaje);
     }
+
+    // Expandir/colapsar audios individuales (visibles por defecto)
+    $(document).on('click', '.btn-expandir', function() {
+        var id = $(this).data('id');
+        var $subrow = $('#subrow-' + id);
+        var $icon = $(this).find('i');
+        $subrow.slideToggle(200, function() {
+            var visible = $subrow.is(':visible');
+            $icon.toggleClass('fa-chevron-up', visible).toggleClass('fa-chevron-down', !visible);
+        });
+    });
+
+    // Transcribir audio individual
+    $(document).on('click', '.btn-transcribir-audio', function() {
+        var idAdjunto = $(this).data('id');
+        var nombre = $(this).data('nombre');
+        var entrevistaId = $(this).data('entrevista');
+        var btn = $(this);
+        var yaTranscrito = $('#audio-row-' + idAdjunto + ' .audio-estado-badge').hasClass('badge-success');
+
+        var mensaje = yaTranscrito
+            ? '¿Volver a transcribir "' + nombre + '"?\n\nEsto sobreescribira la transcripcion existente de este audio.'
+            : '¿Transcribir "' + nombre + '"?\n\nEste proceso puede tomar varios minutos.';
+
+        if (!confirm(mensaje)) return;
+
+        // Mostrar panel de resultado
+        $('#diarization-warning').remove();
+        $('#panel-resultado').slideDown();
+        $('#resultado-loading').show();
+        $('#resultado-exito, #resultado-error').hide();
+        $('#card-resultado').removeClass('card-success card-danger').addClass('card-primary');
+        $('html, body').animate({ scrollTop: 0 }, 300);
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: '{{ url("procesamientos/transcripcion/adjunto") }}/' + idAdjunto,
+            method: 'POST',
+            timeout: 1200000,
+            data: {
+                _token: '{{ csrf_token() }}',
+                diarizar: $('#diarizar').is(':checked') ? 1 : 0,
+                hf_token: $('#hf_token').val() || ''
+            },
+            success: function(response) {
+                $('#resultado-loading').hide();
+
+                if (response.success) {
+                    $('#card-resultado').removeClass('card-primary card-danger').addClass('card-success');
+                    $('#resultado-exito').show();
+                    $('#res-codigo').text(nombre);
+                    $('#res-caracteres').text(response.text_length ? response.text_length.toLocaleString() : '0');
+                    $('#res-hablantes').text(response.speakers !== undefined ? response.speakers : 'N/A');
+                    $('#res-texto').val(response.text || 'Sin texto');
+                    if (response.entrevista_id) {
+                        $('#btn-editar-transcripcion').attr('href', '{{ url("procesamientos/edicion") }}/' + response.entrevista_id);
+                    }
+
+                    if (response.diarization_error) {
+                        $('#resultado-exito').after(
+                            '<div class="alert alert-warning mt-2" id="diarization-warning">' +
+                            '<i class="fas fa-exclamation-triangle mr-1"></i> ' +
+                            '<strong>Diarizacion:</strong> ' + response.diarization_error +
+                            '</div>'
+                        );
+                    }
+
+                    // Actualizar badge del audio transcrito
+                    var $badge = $('#audio-row-' + idAdjunto + ' .audio-estado-badge');
+                    $badge.removeClass('badge-secondary').addClass('badge-success')
+                          .html('<i class="fas fa-check mr-1"></i>Transcrito');
+
+                    btn.removeClass('btn-primary').addClass('btn-success')
+                       .html('<i class="fas fa-check"></i>').prop('disabled', false);
+
+                    // Recalcular estado de la entrevista padre
+                    if (entrevistaId) {
+                        var $subrow = $('#subrow-' + entrevistaId);
+                        var total = $subrow.find('.audio-estado-badge').length;
+                        var transcritos = $subrow.find('.audio-estado-badge.badge-success').length;
+                        var $entrow = $('input[value="' + entrevistaId + '"]').closest('tr.entrevista-row');
+                        var $estadoCell = $entrow.find('td:nth-child(4)');
+                        var hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
+                        if (transcritos === total) {
+                            $estadoCell.html('<span class="badge badge-success d-block mb-1"><i class="fas fa-check mr-1"></i>Transcrita</span><small class="text-muted">' + hoy + '</small>');
+                        } else {
+                            $estadoCell.html('<span class="badge badge-warning d-block mb-1"><i class="fas fa-adjust mr-1"></i>Con texto</span><small class="text-muted">' + transcritos + '/' + total + ' audios</small>');
+                        }
+                    }
+                } else {
+                    mostrarError(response.error || 'Error desconocido');
+                    btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
+                }
+            },
+            error: function(xhr) {
+                $('#resultado-loading').hide();
+                var errorMsg = xhr.responseJSON?.error || 'Error de conexion con el servidor';
+                mostrarError(errorMsg);
+                btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
+            }
+        });
+    });
 
     // Procesar en lote
     $('#btn-procesar-lote').on('click', function() {
