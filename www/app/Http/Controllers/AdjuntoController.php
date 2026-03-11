@@ -7,6 +7,7 @@ use App\Models\Entrevista;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
 use App\Services\TextExtractorService;
+use App\Services\TranscripcionDocService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -276,6 +277,69 @@ class AdjuntoController extends Controller
 
         flash('Archivo eliminado exitosamente.')->success();
         return redirect()->route('adjuntos.gestionar', $id_entrevista);
+    }
+
+    /**
+     * Descargar transcripción en formato FormTR (DOCX o PDF)
+     *
+     * @param int    $id_entrevista
+     * @param string $tipo    'auto' | 'final'
+     * @param string $formato 'docx' | 'pdf'
+     */
+    public function descargarFormTR($id_entrevista, string $tipo, string $formato)
+    {
+        $entrevista = Entrevista::with([
+            'rel_adjuntos',
+            'rel_entrevistador.rel_usuario',
+            'rel_lugar_entrevista',
+            'rel_dependencia_origen',
+            'rel_tipo_testimonio',
+            'rel_modalidades',
+        ])->findOrFail($id_entrevista);
+
+        // Verificar que existe transcripción del tipo solicitado
+        $tipoAdjunto = $tipo === 'final'
+            ? Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL
+            : Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA;
+
+        $adjunto = $entrevista->rel_adjuntos->firstWhere('id_tipo', $tipoAdjunto);
+
+        if (!$adjunto || empty($adjunto->texto_extraido)) {
+            flash('No hay transcripción disponible para generar el documento.')->error();
+            return back();
+        }
+
+        $service  = new TranscripcionDocService();
+        $tipoDoc  = $tipo === 'final' ? 'final' : 'auto';
+        $codigo   = $entrevista->entrevista_codigo;
+        $sufijo   = $tipo === 'final' ? 'Final' : 'Auto';
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => Auth::id(),
+            'accion'     => 'descargar_formtr',
+            'objeto'     => 'entrevista',
+            'id_registro'=> $entrevista->id_e_ind_fvt,
+            'codigo'     => $codigo,
+            'referencia' => "Descarga FormTR ({$sufijo}) en " . strtoupper($formato),
+            'ip'         => request()->ip(),
+        ]);
+
+        if ($formato === 'pdf') {
+            $pdfPath  = $service->generarPdf($entrevista, $tipoDoc);
+            $filename = "FormTR_{$codigo}_{$sufijo}.pdf";
+            return response()->download($pdfPath, $filename, [
+                'Content-Type' => 'application/pdf',
+            ])->deleteFileAfterSend(true);
+        }
+
+        // DOCX
+        $tmpPath  = $service->generarDocx($entrevista, $tipoDoc);
+        $filename = "FormTR_{$codigo}_{$sufijo}.docx";
+
+        return response()->download($tmpPath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

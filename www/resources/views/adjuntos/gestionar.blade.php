@@ -324,9 +324,27 @@
                                     </span>
                                     @endif
                                     @if($adjunto->existe_archivo && $puedeGestionar)
-                                    <a href="{{ route('adjuntos.descargar', $adjunto->id_adjunto) }}" class="btn btn-success" title="Descargar">
+                                    <a href="{{ route('adjuntos.descargar', $adjunto->id_adjunto) }}" class="btn btn-success" title="Descargar archivo original">
                                         <i class="fas fa-download"></i>
                                     </a>
+                                    @endif
+                                    @if($esTranscripcion && !empty($adjunto->texto_extraido) && $puedeGestionar)
+                                    @php
+                                        $tipoFormTR = $esTranscripcionFinal ? 'final' : 'auto';
+                                    @endphp
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" title="Descargar transcripción">
+                                            <i class="fas fa-file-download"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item" href="{{ route('adjuntos.formtr', [$entrevista->id_e_ind_fvt, $tipoFormTR, 'docx']) }}">
+                                                <i class="fas fa-file-word text-primary mr-2"></i>Descargar .docx
+                                            </a>
+                                            <a class="dropdown-item" href="{{ route('adjuntos.formtr', [$entrevista->id_e_ind_fvt, $tipoFormTR, 'pdf']) }}">
+                                                <i class="fas fa-file-pdf text-danger mr-2"></i>Descargar .pdf
+                                            </a>
+                                        </div>
+                                    </div>
                                     @endif
                                     @if($puedeGestionar)
                                     <form action="{{ route('adjuntos.eliminar', $adjunto->id_adjunto) }}" method="POST" style="display:inline" onsubmit="return confirm('Esta seguro de eliminar este archivo?')">

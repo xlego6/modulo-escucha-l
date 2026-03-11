@@ -147,6 +147,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('adjuntos/gestionar/{id}', [AdjuntoController::class, 'gestionar'])->name('adjuntos.gestionar');
             Route::post('adjuntos/subir/{id}', [AdjuntoController::class, 'subir'])->name('adjuntos.subir');
             Route::get('adjuntos/descargar/{id}', [AdjuntoController::class, 'descargar'])->name('adjuntos.descargar');
+            Route::get('adjuntos/formtr/{id}/{tipo}/{formato}', [AdjuntoController::class, 'descargarFormTR'])->name('adjuntos.formtr');
             Route::delete('adjuntos/eliminar/{id}', [AdjuntoController::class, 'eliminar'])->name('adjuntos.eliminar');
         });
 

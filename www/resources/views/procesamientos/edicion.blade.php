@@ -105,7 +105,8 @@
                 <tr>
                     <th>Codigo</th>
                     <th>Titulo</th>
-                    <th>Adjuntos</th>
+                    <th>Audios</th>
+                    <th>Trans. Auto</th>
                     <th>Asignacion por Audio</th>
                     <th>Acciones</th>
                 </tr>
@@ -118,6 +119,8 @@
                     $adjuntosAsignados = $asigs->whereNotIn('estado', ['aprobada'])->pluck('id_adjunto')->filter()->toArray();
                     // ¿Hay al menos un audio sin asignación activa?
                     $hayAudioLibre = $entrevista->rel_adjuntos->contains(fn($a) => !in_array($a->id_adjunto, $adjuntosAsignados));
+                    $audiosTranscritos = $entrevista->rel_adjuntos->filter(fn($a) => !empty($a->texto_extraido))->count();
+                    $totalAudios = $entrevista->rel_adjuntos->count();
                 @endphp
                 <tr>
                     <td><code>{{ $entrevista->entrevista_codigo }}</code></td>
@@ -128,8 +131,21 @@
                     </td>
                     <td>
                         <span class="badge badge-info">
-                            {{ $entrevista->rel_adjuntos->count() }} audio(s)
+                            {{ $totalAudios }} audio(s)
                         </span>
+                    </td>
+                    <td>
+                        @if($audiosTranscritos === $totalAudios && $totalAudios > 0)
+                            <span class="badge badge-success">
+                                <i class="fas fa-check mr-1"></i>Completa
+                            </span>
+                        @elseif($audiosTranscritos > 0)
+                            <span class="badge badge-warning">
+                                {{ $audiosTranscritos }}/{{ $totalAudios }}
+                            </span>
+                        @else
+                            <span class="badge badge-secondary">Sin texto</span>
+                        @endif
                     </td>
                     <td>
                         @if($asigs->isEmpty())
@@ -185,7 +201,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
+                    <td colspan="6" class="text-center text-muted py-4">
                         <i class="fas fa-file-audio fa-2x mb-2"></i><br>
                         No hay entrevistas con archivos de audio/video
                     </td>
