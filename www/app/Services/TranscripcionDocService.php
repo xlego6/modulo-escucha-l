@@ -137,7 +137,7 @@ class TranscripcionDocService
         $tmpDir   = dirname($docxPath);
 
         $cmd = sprintf(
-            'soffice --headless --convert-to pdf --outdir %s %s 2>/dev/null',
+            'HOME=/tmp soffice --headless --norestore --convert-to pdf --outdir %s %s 2>/dev/null',
             escapeshellarg($tmpDir),
             escapeshellarg($docxPath)
         );
