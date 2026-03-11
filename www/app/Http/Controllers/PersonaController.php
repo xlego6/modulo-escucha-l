@@ -112,9 +112,9 @@ class PersonaController extends Controller
             TrazaActividad::create([
                 'id_usuario' => $user->id,
                 'accion' => 'crear_persona',
-                'tabla' => 'persona',
+                'objeto' => 'persona',
                 'id_registro' => $persona->id_persona,
-                'descripcion' => 'Creacion de persona: ' . $persona->fmt_nombre_completo,
+                'referencia' => 'Creacion de persona: ' . $persona->fmt_nombre_completo,
                 'ip' => $request->ip(),
             ]);
 
@@ -229,9 +229,9 @@ class PersonaController extends Controller
             TrazaActividad::create([
                 'id_usuario' => $user->id,
                 'accion' => 'editar_persona',
-                'tabla' => 'persona',
+                'objeto' => 'persona',
                 'id_registro' => $persona->id_persona,
-                'descripcion' => 'Edicion de persona: ' . $persona->fmt_nombre_completo,
+                'referencia' => 'Edicion de persona: ' . $persona->fmt_nombre_completo,
                 'ip' => $request->ip(),
             ]);
 
@@ -281,9 +281,9 @@ class PersonaController extends Controller
         TrazaActividad::create([
             'id_usuario' => $user->id,
             'accion' => 'eliminar_persona',
-            'tabla' => 'persona',
+            'objeto' => 'persona',
             'id_registro' => $id,
-            'descripcion' => 'Eliminacion de persona: ' . $nombre,
+            'referencia' => 'Eliminacion de persona: ' . $nombre,
             'ip' => request()->ip(),
         ]);
 

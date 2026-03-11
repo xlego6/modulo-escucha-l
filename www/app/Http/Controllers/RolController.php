@@ -68,9 +68,9 @@ class RolController extends Controller
         TrazaActividad::create([
             'id_usuario'  => Auth::id(),
             'accion'      => 'crear_rol',
-            'tabla'       => 'rol',
+            'objeto'      => 'rol',
             'id_registro' => $nivel,
-            'descripcion' => "Creacion de rol: {$rol->nombre}",
+            'referencia'  => "Creacion de rol: {$rol->nombre}",
             'ip'          => $request->ip(),
         ]);
 
@@ -155,9 +155,9 @@ class RolController extends Controller
         TrazaActividad::create([
             'id_usuario'  => Auth::id(),
             'accion'      => 'actualizar_permisos_rol',
-            'tabla'       => 'rol_modulo_permiso',
+            'objeto'      => 'rol',
             'id_registro' => $nivel,
-            'descripcion' => "Actualizacion de permisos del rol: {$rol->nombre}",
+            'referencia'  => "Actualizacion de permisos del rol: {$rol->nombre}",
             'ip'          => $request->ip(),
         ]);
 
@@ -193,9 +193,9 @@ class RolController extends Controller
         TrazaActividad::create([
             'id_usuario'  => Auth::id(),
             'accion'      => 'eliminar_rol',
-            'tabla'       => 'rol',
+            'objeto'      => 'rol',
             'id_registro' => $nivel,
-            'descripcion' => "Eliminacion de rol: {$nombre}",
+            'referencia'  => "Eliminacion de rol: {$nombre}",
             'ip'          => $request->ip(),
         ]);
 

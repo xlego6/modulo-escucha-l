@@ -122,6 +122,7 @@ redis-data/
 # ----------------
 # Archivos de configuracion local y otros
 # ----------------
+www/.config/
 .claude/
 *.local
 Claude.md
