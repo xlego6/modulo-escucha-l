@@ -79,7 +79,10 @@
                 <tr class="{{ $rowClass }}">
                     <td><code>{{ $asignacion->rel_entrevista->entrevista_codigo ?? 'N/A' }}</code></td>
                     <td>
-                        {{ \Illuminate\Support\Str::limit($asignacion->rel_entrevista->titulo ?? '', 45) }}
+                        {{ \Illuminate\Support\Str::limit($asignacion->rel_entrevista->titulo ?? '', 40) }}
+                        @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
+                            <br><small class="text-muted"><i class="fas fa-file-audio"></i> {{ \Illuminate\Support\Str::limit($asignacion->rel_adjunto->nombre_original, 35) }}</small>
+                        @endif
                     </td>
                     <td>
                         @if($asignacion->fecha_asignacion)

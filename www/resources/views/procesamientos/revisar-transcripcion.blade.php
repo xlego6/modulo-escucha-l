@@ -3,6 +3,9 @@
 @section('title', 'Revisar Transcripcion')
 @section('content_header')
 Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
+@if($asignacion->id_adjunto && $asignacion->rel_adjunto)
+ &mdash; {{ $asignacion->rel_adjunto->nombre_original }}
+@endif
 @endsection
 
 @section('css')
@@ -168,7 +171,12 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="card-title mb-0"><i class="fas fa-edit mr-2"></i>Transcripcion (Editable)</h3>
-                <span class="badge badge-warning"><i class="fas fa-clipboard-check mr-1"></i>En Revision &mdash; {{ $entrevista->entrevista_codigo }}</span>
+                <span class="badge badge-warning">
+                    <i class="fas fa-clipboard-check mr-1"></i>En Revision &mdash; {{ $entrevista->entrevista_codigo }}
+                    @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
+                        &mdash; <i class="fas fa-file-audio"></i> {{ \Illuminate\Support\Str::limit($asignacion->rel_adjunto->nombre_original, 30) }}
+                    @endif
+                </span>
             </div>
             <form action="{{ route('procesamientos.guardar-asignacion', $asignacion->id_asignacion) }}" method="POST" id="formTranscripcion">
                 @csrf
@@ -280,7 +288,12 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
 </div>
 
 {{-- Comparar con transcripción automática --}}
-@php $transcripcionAuto = $entrevista->getTextoParaProcesamiento(); @endphp
+@php
+    // Para asignaciones por audio: mostrar solo el texto de ese adjunto como referencia
+    $transcripcionAuto = ($asignacion->id_adjunto && $asignacion->rel_adjunto)
+        ? $asignacion->rel_adjunto->texto_extraido
+        : $entrevista->getTextoParaProcesamiento();
+@endphp
 @if($transcripcionAuto)
 <div class="row mt-3">
     <div class="col-12">
