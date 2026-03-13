@@ -147,7 +147,7 @@
                     <td><small>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</small></td>
                     <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
                     <td>
-                        <a href="{{ route('procesamientos.editar-transcripcion-asignada', $asig->id_asignacion) }}"
+                        <a href="{{ route('procesamientos.editar-asignacion', $asig->id_asignacion) }}"
                            class="btn btn-sm btn-primary">
                             <i class="fas fa-edit"></i> Editar
                         </a>
