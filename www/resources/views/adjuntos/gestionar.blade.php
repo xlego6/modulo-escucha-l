@@ -597,6 +597,62 @@ function renderizarPdfJs(pdfUrl) {
     });
 }
 
+// Iniciar conversión FLV → MP4 en el servidor y reproducir al terminar
+function iniciarConversionFlvYReproducir(videoEl, errEl, adjuntoId) {
+    var urlConvertir = '{{ route("adjuntos.flv_convertir", "") }}/' + adjuntoId;
+    var urlEstado    = '{{ route("adjuntos.flv_estado", "") }}/' + adjuntoId;
+    var urlPlay      = '{{ route("adjuntos.flv_play", "") }}/' + adjuntoId;
+
+    errEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Códec antiguo detectado. Convirtiendo video, espere...';
+    errEl.style.display = 'block';
+
+    $.ajax({
+        url: urlConvertir,
+        type: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        success: function(resp) {
+            if (resp.status === 'ready') {
+                reproducirMp4Convertido(videoEl, errEl, urlPlay);
+            } else {
+                pollEstadoFlv(videoEl, errEl, urlEstado, urlPlay);
+            }
+        },
+        error: function() {
+            errEl.textContent = 'Error al iniciar la conversión del video.';
+        }
+    });
+}
+
+function pollEstadoFlv(videoEl, errEl, urlEstado, urlPlay) {
+    var intentos = 0;
+    var maxIntentos = 120; // 10 minutos máximo (cada 5s)
+    var timer = setInterval(function() {
+        intentos++;
+        if (intentos > maxIntentos) {
+            clearInterval(timer);
+            errEl.textContent = 'La conversión tardó demasiado. Intente más tarde.';
+            return;
+        }
+        $.get(urlEstado, function(resp) {
+            if (resp.status === 'ready') {
+                clearInterval(timer);
+                reproducirMp4Convertido(videoEl, errEl, urlPlay);
+            }
+            // Si 'converting' o 'pending', sigue esperando
+        });
+    }, 5000);
+}
+
+function reproducirMp4Convertido(videoEl, errEl, urlPlay) {
+    errEl.style.display = 'none';
+    videoEl.src = urlPlay;
+    videoEl.type = 'video/mp4';
+    videoEl.load();
+    videoEl.play().catch(function() {
+        // El navegador puede bloquear autoplay; los controles ya están visibles
+    });
+}
+
 $(document).ready(function() {
     // URL de la marca de agua generada (puede ser null si GD no está disponible)
     const marcaAguaUrl = '{{ $marcaAgua ? asset($marcaAgua) : "" }}';
@@ -911,8 +967,14 @@ $(document).ready(function() {
             `;
         } else if (esVideo) {
             const videoControls = esAdmin ? 'controls autoplay' : 'controls autoplay controlsList="nodownload"';
-            if (tipo === 'video/x-flv') {
-                contenido = `<video ${videoControls} id="flv-visor-player" data-flv-src="${url}"></video>`;
+            const esFlv = tipo.includes('flv');
+            if (esFlv) {
+                contenido = `
+                    <div style="background:#000; padding: 4px;">
+                        <video ${videoControls} id="flv-visor-player" data-flv-src="${url}" style="width:100%; max-height:500px; display:block;"></video>
+                        <div id="flv-error-msg" style="display:none; color:#ff6b6b; padding:12px; text-align:center;"></div>
+                    </div>
+                `;
             } else {
                 contenido = `
                     <video ${videoControls}>
@@ -944,16 +1006,45 @@ $(document).ready(function() {
 
         // Inicializar flv.js si hay video FLV en el visor
         var flvEl = document.getElementById('flv-visor-player');
-        if (flvEl && typeof flvjs !== 'undefined' && flvjs.isSupported()) {
-            if (window._flvVisorPlayer) {
-                window._flvVisorPlayer.destroy();
-                window._flvVisorPlayer = null;
+        if (flvEl) {
+            var flvErrEl = document.getElementById('flv-error-msg');
+            var mostrarErrorFlv = function(msg) {
+                if (flvErrEl) { flvErrEl.textContent = msg; flvErrEl.style.display = 'block'; }
+                console.error('flv.js:', msg);
+            };
+
+            if (typeof flvjs === 'undefined') {
+                mostrarErrorFlv('La librería flv.js no está disponible (verifique conexión a CDN).');
+            } else if (!flvjs.isSupported()) {
+                mostrarErrorFlv('Su navegador no soporta la reproducción de archivos FLV (se requiere Media Source Extensions).');
+            } else {
+                if (window._flvVisorPlayer) {
+                    window._flvVisorPlayer.destroy();
+                    window._flvVisorPlayer = null;
+                }
+                var flvPlayer = flvjs.createPlayer({
+                    type: 'flv',
+                    url: flvEl.getAttribute('data-flv-src'),
+                    isLive: false,
+                    hasAudio: true,
+                    hasVideo: true,
+                });
+                flvPlayer.on(flvjs.Events.ERROR, function(errType, errDetail) {
+                    var detailStr = JSON.stringify(errDetail || {});
+                    // Codec antiguo (Sorenson/VP6): convertir a MP4 con ffmpeg
+                    if (detailStr.includes('CodecUnsupported') || detailStr.includes('CODEC_UNSUPPORTED')) {
+                        flvPlayer.destroy();
+                        window._flvVisorPlayer = null;
+                        iniciarConversionFlvYReproducir(flvEl, flvErrEl, id);
+                    } else {
+                        mostrarErrorFlv('Error al reproducir: ' + errType + ' — ' + detailStr);
+                    }
+                });
+                flvPlayer.attachMediaElement(flvEl);
+                flvPlayer.load();
+                flvPlayer.play();
+                window._flvVisorPlayer = flvPlayer;
             }
-            var flvPlayer = flvjs.createPlayer({ type: 'flv', url: flvEl.getAttribute('data-flv-src') });
-            flvPlayer.attachMediaElement(flvEl);
-            flvPlayer.load();
-            flvPlayer.play();
-            window._flvVisorPlayer = flvPlayer;
         }
 
         // Mostrar/ocultar info de marca segun tipo

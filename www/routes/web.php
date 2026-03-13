@@ -53,6 +53,11 @@ Route::middleware(['auth'])->group(function () {
     // Adjuntos: visor PDF seguro (requiere auth, registra traza)
     Route::get('adjuntos/pdf/{id}', [AdjuntoController::class, 'verPdf'])->name('adjuntos.ver_pdf');
 
+    // Adjuntos: conversión FLV → MP4 y reproducción
+    Route::post('adjuntos/flv-convertir/{id}', [AdjuntoController::class, 'iniciarConversionFlv'])->name('adjuntos.flv_convertir');
+    Route::get('adjuntos/flv-estado/{id}',     [AdjuntoController::class, 'estadoConversionFlv'])->name('adjuntos.flv_estado');
+    Route::get('adjuntos/flv-play/{id}',       [AdjuntoController::class, 'reproducirFlv'])->name('adjuntos.flv_play');
+
     // =============================================
     // TODAS LAS DEMÁS RUTAS REQUIEREN COMPROMISO DE RESERVA
     // =============================================
