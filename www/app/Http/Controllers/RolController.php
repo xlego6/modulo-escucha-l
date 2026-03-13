@@ -110,7 +110,14 @@ class RolController extends Controller
      */
     public function update(Request $request, $nivel)
     {
-        $rol        = Rol::findOrFail($nivel);
+        $rol = Rol::findOrFail($nivel);
+
+        // El rol Administrador no puede modificarse
+        if ($nivel == 1) {
+            flash('Los permisos del rol Administrador no pueden modificarse.')->error();
+            return redirect()->route('roles.index');
+        }
+
         $modulosData = $request->input('modulos', []);
 
         // Determinar qué módulos padre tienen "ver" activo

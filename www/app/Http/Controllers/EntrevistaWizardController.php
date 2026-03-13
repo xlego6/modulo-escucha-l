@@ -11,6 +11,7 @@ use App\Models\ContenidoTestimonio;
 use App\Models\Geo;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -701,7 +702,8 @@ class EntrevistaWizardController extends Controller
      */
     private function puedeEditar($user, $entrevista)
     {
-        if ($user->id_nivel <= 2) {
+        $p = RolModuloPermiso::getPermisosPara($user->id_nivel)['entrevistas'] ?? null;
+        if ($p && $p['puede_editar'] && $p['alcance_todas']) {
             return true;
         }
         if ($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->id_usuario == $user->id) {

@@ -7,6 +7,7 @@ use App\Models\Entrevista;
 use App\Models\Entrevistador;
 use App\Models\Adjunto;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,28 +37,30 @@ class PermisoController extends Controller
             'rel_respondido_por',
         ]);
 
-        // Solicitudes pendientes para Admin/Gestor
+        // Solicitudes pendientes: quienes pueden aprobar/rechazar (puedeEditar en permisos)
         $solicitudesPendientes = collect();
-        if ($user->id_nivel == 1) {
+        if (RolModuloPermiso::puedeEditar($user->id_nivel, 'permisos') &&
+            RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
             $solicitudesPendientes = Permiso::with(['rel_entrevistador.rel_usuario', 'rel_entrevista'])
                 ->solicitudesPendientes()
                 ->orderBy('fecha_solicitud', 'asc')
                 ->get();
-        } elseif ($user->id_nivel == 5 && $entrevistadorActual) {
-            // Gestor: solo solicitudes de entrevistas de su dependencia
+        } elseif (RolModuloPermiso::puedeEditar($user->id_nivel, 'permisos') &&
+                  RolModuloPermiso::alcanceDependencia($user->id_nivel, 'permisos') && $entrevistadorActual) {
+            // Alcance dependencia: solo solicitudes de entrevistas de su dependencia (sin eliminaciones)
             $solicitudesPendientes = Permiso::with(['rel_entrevistador.rel_usuario', 'rel_entrevista'])
                 ->solicitudesPendientes()
                 ->whereHas('rel_entrevista', function($q) use ($entrevistadorActual) {
                     $q->where('id_dependencia_origen', $entrevistadorActual->id_dependencia_origen);
                 })
-                ->where('tipo_solicitud', '!=', Permiso::SOLICITUD_ELIMINACION) // Solo Admin aprueba eliminaciones
+                ->where('tipo_solicitud', '!=', Permiso::SOLICITUD_ELIMINACION)
                 ->orderBy('fecha_solicitud', 'asc')
                 ->get();
         }
 
-        // Mis solicitudes (para Entrevistador y Gestor)
+        // Mis solicitudes: quienes tienen alcance propio o de dependencia
         $misSolicitudes = collect();
-        if ($entrevistadorActual && $user->id_nivel >= 3) {
+        if ($entrevistadorActual && !RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
             $misSolicitudes = Permiso::with(['rel_entrevista'])
                 ->where('id_entrevistador', $entrevistadorActual->id_entrevistador)
                 ->where('es_solicitud', true)
@@ -66,8 +69,8 @@ class PermisoController extends Controller
                 ->get();
         }
 
-        // Filtros para permisos directos (solo Admin ve la lista completa)
-        if ($user->id_nivel == 1) {
+        // Filtros para permisos directos (alcance total ve la lista completa)
+        if (RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
             if ($request->filled('id_entrevistador')) {
                 $query->where('id_entrevistador', $request->id_entrevistador);
             }
@@ -118,7 +121,7 @@ class PermisoController extends Controller
             3 => 'Completo',
         ];
 
-        if ($user->id_nivel == 1) {
+        if (RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
             $entrevistadores = Entrevistador::with('rel_usuario')
                 ->orderBy('numero_entrevistador')
                 ->get()
@@ -707,15 +710,18 @@ class PermisoController extends Controller
             return redirect()->route('permisos.index');
         }
 
-        // Eliminacion: solo Admin
-        if ($permiso->tipo_solicitud === Permiso::SOLICITUD_ELIMINACION && $user->id_nivel != 1) {
-            flash('Solo el administrador puede aprobar solicitudes de eliminación.')->error();
+        // Eliminaciones: solo quien puede eliminar en el módulo permisos
+        if ($permiso->tipo_solicitud === Permiso::SOLICITUD_ELIMINACION &&
+            !RolModuloPermiso::puedeEliminar($user->id_nivel, 'permisos')) {
+            flash('No tiene permisos para aprobar solicitudes de eliminación.')->error();
             return redirect()->route('permisos.index');
         }
 
-        if ($user->id_nivel == 1) {
-            // Admin: can approve everything
-        } elseif ($user->id_nivel == 5) {
+        if (RolModuloPermiso::puedeEditar($user->id_nivel, 'permisos') &&
+            RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
+            // Alcance total: puede aprobar cualquier solicitud
+        } elseif (RolModuloPermiso::puedeEditar($user->id_nivel, 'permisos') &&
+                  RolModuloPermiso::alcanceDependencia($user->id_nivel, 'permisos')) {
             $gestorEntrevistador = Entrevistador::where('id_usuario', $user->id)->first();
             if (!$gestorEntrevistador || !$permiso->rel_entrevista ||
                 $permiso->rel_entrevista->id_dependencia_origen != $gestorEntrevistador->id_dependencia_origen) {
@@ -785,14 +791,17 @@ class PermisoController extends Controller
             return redirect()->route('permisos.index');
         }
 
-        if ($permiso->tipo_solicitud === Permiso::SOLICITUD_ELIMINACION && $user->id_nivel != 1) {
-            flash('Solo el administrador puede procesar solicitudes de eliminación.')->error();
+        if ($permiso->tipo_solicitud === Permiso::SOLICITUD_ELIMINACION &&
+            !RolModuloPermiso::puedeEliminar($user->id_nivel, 'permisos')) {
+            flash('No tiene permisos para procesar solicitudes de eliminación.')->error();
             return redirect()->route('permisos.index');
         }
 
-        if ($user->id_nivel == 1) {
+        if (RolModuloPermiso::puedeEditar($user->id_nivel, 'permisos') &&
+            RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
             // ok
-        } elseif ($user->id_nivel == 5) {
+        } elseif (RolModuloPermiso::puedeEditar($user->id_nivel, 'permisos') &&
+                  RolModuloPermiso::alcanceDependencia($user->id_nivel, 'permisos')) {
             $gestorEntrevistador = Entrevistador::where('id_usuario', $user->id)->first();
             if (!$gestorEntrevistador || !$permiso->rel_entrevista ||
                 $permiso->rel_entrevista->id_dependencia_origen != $gestorEntrevistador->id_dependencia_origen) {

@@ -281,22 +281,11 @@
                     </div>
 
                     <div class="card card-body bg-light" style="max-height: 350px; overflow-y: auto; font-size: 0.92rem;">
-                        <p>Yo, <strong>{{ $user->name }}</strong>, funcionario(a) del <strong>Centro Nacional de Memoria Histórica &ndash; CNMH</strong>
+                        <p>El funcionario(a) del CNMH <strong>{{ $user->name }}</strong>
                         @if($entrevistador->fmt_dependencia_origen !== 'Sin asignar')
-                            de la <strong>{{ $entrevistador->fmt_dependencia_origen }}</strong>
+                            , de la <strong>{{ $entrevistador->fmt_dependencia_origen }}</strong>,
                         @endif
-                        , acepto las condiciones para la consulta interna del sistema de gestión de entrevistas y testimonios.</p>
-
-                        <ul class="pl-3">
-                            <li class="mb-2">Acceder al sistema <strong>exclusivamente</strong> para el desarrollo de mis funciones institucionales asignadas.</li>
-                            <li class="mb-2">No compartir mis credenciales de acceso con ninguna otra persona.</li>
-                            <li class="mb-2">Mantener la confidencialidad de toda la información a la que acceda en el ejercicio de mis funciones.</li>
-                            <li class="mb-2">Reportar de inmediato cualquier acceso no autorizado o situación que comprometa la seguridad de la información.</li>
-                            <li class="mb-2">Cumplir con todas las políticas de seguridad de la información establecidas por la entidad.</li>
-                            <li class="mb-2">Reconocer que el incumplimiento puede dar lugar a consecuencias disciplinarias y/o legales.</li>
-                        </ul>
-
-                        <p class="mb-0"><strong>Declaro que he leído y acepto las condiciones de acceso al sistema.</strong></p>
+                        acepta las condiciones para la consulta interna y/o entrega de copias de los expedientes testimoniales recopilados dentro del marco misional del CNMH en el Repositorio &ldquo;CNMH Escucha&rdquo;. Esta contribución se realiza de manera voluntaria y libre de costos.</p>
                     </div>
 
                     <div class="form-group mt-3">

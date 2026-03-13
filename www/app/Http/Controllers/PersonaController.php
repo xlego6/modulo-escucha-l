@@ -6,6 +6,7 @@ use App\Models\Persona;
 use App\Models\CatItem;
 use App\Models\Geo;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -254,8 +255,7 @@ class PersonaController extends Controller
         $persona = Persona::findOrFail($id);
         $user = Auth::user();
 
-        // Solo admin puede eliminar
-        if ($user->id_nivel > 1) {
+        if (!RolModuloPermiso::puedeEliminar($user->id_nivel, 'personas')) {
             flash('No tiene permisos para eliminar personas.')->error();
             return redirect()->route('personas.index');
         }

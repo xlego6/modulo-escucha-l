@@ -6,6 +6,7 @@ use App\Models\Adjunto;
 use App\Models\Entrevista;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use App\Services\TextExtractorService;
 use App\Services\TranscripcionDocService;
 use Illuminate\Http\Request;
@@ -44,12 +45,14 @@ class AdjuntoController extends Controller
         $esPropietario = $entrevista->rel_entrevistador &&
             $entrevista->rel_entrevistador->id_usuario == $user->id;
 
-        // Can delete/upload/download: Admin or owner
-        $puedeGestionar = ($user->id_nivel == 1) || $esPropietario;
+        // Can delete/upload/download: rol con edición total o propietario
+        $puedeGestionar = (RolModuloPermiso::puedeEditar($user->id_nivel, 'adjuntos') &&
+                           RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos')) || $esPropietario;
 
-        // Gestor of same dependencia: can view/play but not delete/download
-        $esGestorMismaDependencia = ($user->id_nivel == 5) && $entrevistadorActual &&
-            $entrevista->id_dependencia_origen &&
+        // Alcance por dependencia: puede ver pero no gestionar
+        $esGestorMismaDependencia = RolModuloPermiso::puedeVer($user->id_nivel, 'adjuntos') &&
+            RolModuloPermiso::alcanceDependencia($user->id_nivel, 'adjuntos') &&
+            $entrevistadorActual && $entrevista->id_dependencia_origen &&
             $entrevistadorActual->id_dependencia_origen == $entrevista->id_dependencia_origen;
 
         // Has approved access permission
@@ -73,8 +76,10 @@ class AdjuntoController extends Controller
                 ->exists();
         }
 
-        // Can view/play: Admin, owner, Gestor same dep, or has approved permission
-        $puedeVer = $user->id_nivel <= 2 || $esPropietario || $esGestorMismaDependencia || $tienePermisoAcceso;
+        // Can view/play: alcance total, propietario, dependencia, o permiso otorgado
+        $puedeVer = (RolModuloPermiso::puedeVer($user->id_nivel, 'adjuntos') &&
+                     RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos')) ||
+                    $esPropietario || $esGestorMismaDependencia || $tienePermisoAcceso;
 
         return view('adjuntos.gestionar', compact('entrevista', 'tipos', 'marcaAgua', 'puedeGestionar', 'puedeVer', 'esGestorMismaDependencia', 'tienePermisoAcceso'));
     }
@@ -241,8 +246,10 @@ class AdjuntoController extends Controller
         $id_entrevista = $adjunto->id_e_ind_fvt;
         $user = Auth::user();
 
-        // Solo admin o entrevistador pueden eliminar
-        if ($user->id_nivel > 2) {
+        // Puede eliminar si tiene alcance total, o si es propietario de la entrevista
+        $puedeEliminarTodo = RolModuloPermiso::puedeEliminar($user->id_nivel, 'adjuntos') &&
+                             RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos');
+        if (!$puedeEliminarTodo) {
             $entrevista = Entrevista::find($id_entrevista);
             if ($entrevista && $entrevista->rel_entrevistador->id_usuario != $user->id) {
                 flash('No tiene permisos para eliminar este archivo.')->error();

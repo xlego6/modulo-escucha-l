@@ -37,7 +37,8 @@ class CheckCompromisoReserva
             return redirect()->route('home');
         }
 
-        if (!$entrevistador->compromiso_reserva) {
+        // El compromiso de reserva solo aplica para Líder (2) y Transcriptor (4)
+        if (in_array($user->id_nivel, [2, 4]) && !$entrevistador->compromiso_reserva) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['error' => 'Debe aceptar el compromiso de reserva antes de continuar.', 'redirect' => route('perfil')], 403);
             }

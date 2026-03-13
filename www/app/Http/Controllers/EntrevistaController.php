@@ -8,6 +8,7 @@ use App\Models\Permiso;
 use App\Models\Geo;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -391,8 +392,9 @@ class EntrevistaController extends Controller
         $entrevista = Entrevista::findOrFail($id);
         $user = Auth::user();
 
-        // Solo admin puede eliminar
-        if ($user->id_nivel > 1) {
+        // Verificar permiso de eliminación según rol_modulo_permiso
+        $p = RolModuloPermiso::getPermisosPara($user->id_nivel)['entrevistas'] ?? null;
+        if (!$p || !$p['puede_eliminar']) {
             flash('No tiene permisos para eliminar entrevistas.')->error();
             return redirect()->route('entrevistas.index');
         }
@@ -451,8 +453,9 @@ class EntrevistaController extends Controller
      */
     private function puedeEditar($user, $entrevista)
     {
-        // Administradores y Líderes pueden editar todo
-        if ($user->id_nivel <= 2) {
+        // Verificar permiso de edición con alcance total según rol_modulo_permiso
+        $p = RolModuloPermiso::getPermisosPara($user->id_nivel)['entrevistas'] ?? null;
+        if ($p && $p['puede_editar'] && $p['alcance_todas']) {
             return true;
         }
 
@@ -487,18 +490,20 @@ class EntrevistaController extends Controller
      */
     private function puedeVer($user, $entrevista)
     {
-        // Administradores y Líderes pueden ver todo
-        if ($user->id_nivel <= 2) {
+        $p = RolModuloPermiso::getPermisosPara($user->id_nivel)['entrevistas'] ?? null;
+
+        // Alcance total: puede ver cualquier entrevista
+        if ($p && $p['puede_ver'] && $p['alcance_todas']) {
             return true;
         }
 
-        // El entrevistador dueño puede ver su propia entrevista
+        // El dueño puede ver su propia entrevista
         if ($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->id_usuario == $user->id) {
             return true;
         }
 
-        // Gestor de Conocimiento (nivel 5): puede ver entrevistas de su propia dependencia
-        if ($user->id_nivel == 5) {
+        // Alcance por dependencia: puede ver entrevistas de su misma dependencia
+        if ($p && $p['puede_ver'] && $p['alcance_dependencia']) {
             $entrevistadorGestor = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
             if ($entrevistadorGestor && $entrevista->id_dependencia_origen &&
                 $entrevistadorGestor->id_dependencia_origen == $entrevista->id_dependencia_origen) {

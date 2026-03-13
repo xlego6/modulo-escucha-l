@@ -323,7 +323,7 @@
                                         <i class="fas fa-lock"></i>
                                     </span>
                                     @endif
-                                    @if($adjunto->existe_archivo && $puedeGestionar)
+                                    @if($adjunto->existe_archivo && $puedeGestionar && (Auth::user()->id_nivel == 1 || (!$adjunto->es_audio && !$adjunto->es_video)))
                                     <a href="{{ route('adjuntos.descargar', $adjunto->id_adjunto) }}" class="btn btn-success" title="Descargar archivo original">
                                         <i class="fas fa-download"></i>
                                     </a>
@@ -494,6 +494,7 @@ $(document).ready(function() {
     // URL de la marca de agua generada (puede ser null si GD no está disponible)
     const marcaAguaUrl = '{{ $marcaAgua ? asset($marcaAgua) : "" }}';
     const userName = '{{ Auth::user()->name }}';
+    const esAdmin = {{ Auth::user()->id_nivel == 1 ? 'true' : 'false' }};
     const usarMarcaCSS = !marcaAguaUrl;
 
     // Textos de transcripciones (cargados desde PHP)
@@ -767,19 +768,21 @@ $(document).ready(function() {
                 </div>
             `;
         } else if (esAudio) {
+            const audioControls = esAdmin ? 'controls autoplay' : 'controls autoplay controlsList="nodownload"';
             contenido = `
                 <div class="p-4 text-center">
                     <i class="fas fa-music fa-4x text-info mb-3"></i>
                     <h5 class="text-white mb-3">${nombre}</h5>
-                    <audio controls autoplay class="w-100">
+                    <audio ${audioControls} class="w-100">
                         <source src="${url}" type="${tipo}">
                         Su navegador no soporta la reproduccion de audio.
                     </audio>
                 </div>
             `;
         } else if (esVideo) {
+            const videoControls = esAdmin ? 'controls autoplay' : 'controls autoplay controlsList="nodownload"';
             contenido = `
-                <video controls autoplay>
+                <video ${videoControls}>
                     <source src="${url}" type="${tipo}">
                     Su navegador no soporta la reproduccion de video.
                 </video>

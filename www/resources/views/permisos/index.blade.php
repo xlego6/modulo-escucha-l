@@ -130,7 +130,7 @@
 @endif
 
 {{-- Lista de Permisos (Admin ve todos, otros ven los suyos) --}}
-@if(Auth::user()->id_nivel == 1)
+@if(\App\Models\RolModuloPermiso::alcanceTodas(Auth::user()->id_nivel, 'permisos'))
 <div class="card">
     <div class="card-header">
         <div class="row">

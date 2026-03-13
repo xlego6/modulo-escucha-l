@@ -31,10 +31,9 @@
 
     @if($rol->id_nivel == 1)
     <div class="card-body pb-0">
-        <div class="alert alert-warning mb-0">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
-            <strong>Cuidado:</strong> Esta modificando el rol <strong>Administrador</strong>.
-            Quitar permisos puede bloquear el acceso a funciones criticas del sistema.
+        <div class="alert alert-danger mb-0">
+            <i class="fas fa-lock mr-1"></i>
+            <strong>Rol protegido:</strong> Los permisos del rol <strong>Administrador</strong> no pueden modificarse para garantizar el acceso al sistema.
         </div>
     </div>
     @endif
@@ -179,9 +178,11 @@
         </div>
 
         <div class="card-footer">
+            @if($rol->id_nivel != 1)
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save mr-1"></i> Guardar Permisos
             </button>
+            @endif
             <a href="{{ route('roles.index') }}" class="btn btn-default ml-2">
                 Cancelar
             </a>
