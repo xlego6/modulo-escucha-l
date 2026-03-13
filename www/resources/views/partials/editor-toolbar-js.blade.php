@@ -333,25 +333,35 @@ function renderPreview(targetId) {
     // Escapar HTML para evitar inyeccion
     text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    // Procesar linea por linea
-    var lines = text.split('\n');
+    // Normalizar saltos de línea (Windows \r\n → \n)
+    var lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
     var html = '';
     var inList = false;
 
     for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
 
-        // Encabezados: ## texto
-        if (/^## (.+)$/.test(line)) {
+        // Encabezados: ###, ##, # (del más específico al menos)
+        if (/^### (.+)/.test(line)) {
             if (inList) { html += '</ul>'; inList = false; }
-            html += '<h4>' + applyInlineFormat(line.replace(/^## /, '')) + '</h4>';
+            html += '<h4 class="preview-h4">' + applyInlineFormat(line.replace(/^### /, '')) + '</h4>';
+            continue;
+        }
+        if (/^## (.+)/.test(line)) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<h3 class="preview-h3">' + applyInlineFormat(line.replace(/^## /, '')) + '</h3>';
+            continue;
+        }
+        if (/^# (.+)/.test(line)) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<h2 class="preview-h2">' + applyInlineFormat(line.replace(/^# /, '')) + '</h2>';
             continue;
         }
 
-        // Listas: - texto
-        if (/^- (.+)$/.test(line)) {
-            if (!inList) { html += '<ul>'; inList = true; }
-            html += '<li>' + applyInlineFormat(line.replace(/^- /, '')) + '</li>';
+        // Listas: - texto  o  * texto
+        if (/^[-*] (.+)/.test(line)) {
+            if (!inList) { html += '<ul class="preview-ul">'; inList = true; }
+            html += '<li>' + applyInlineFormat(line.replace(/^[-*] /, '')) + '</li>';
             continue;
         }
 
@@ -359,7 +369,7 @@ function renderPreview(targetId) {
         if (inList) { html += '</ul>'; inList = false; }
 
         // Citas: > texto
-        if (/^&gt; (.+)$/.test(line)) {
+        if (/^&gt; (.+)/.test(line)) {
             html += '<blockquote>' + applyInlineFormat(line.replace(/^&gt; /, '')) + '</blockquote>';
             continue;
         }

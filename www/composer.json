@@ -10,7 +10,8 @@
         "laravel/framework": "^10.0",
         "laravelcollective/html": "^6.4",
         "maatwebsite/excel": "^3.1",
-        "phpoffice/phpword": "^1.4"
+        "phpoffice/phpword": "^1.4",
+        "setasign/fpdi-fpdf": "^2.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

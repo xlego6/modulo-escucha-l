@@ -62,6 +62,48 @@ class RolModuloPermiso extends Model
         return (bool) $permisos[$modulo]['puede_ver'];
     }
 
+    public static function puedeCrear(int $nivel, string $modulo): bool
+    {
+        $permisos = self::getPermisosPara($nivel);
+        if (!isset($permisos[$modulo])) return $nivel === 1;
+        return (bool) $permisos[$modulo]['puede_crear'];
+    }
+
+    public static function puedeEditar(int $nivel, string $modulo): bool
+    {
+        $permisos = self::getPermisosPara($nivel);
+        if (!isset($permisos[$modulo])) return $nivel === 1;
+        return (bool) $permisos[$modulo]['puede_editar'];
+    }
+
+    public static function puedeEliminar(int $nivel, string $modulo): bool
+    {
+        $permisos = self::getPermisosPara($nivel);
+        if (!isset($permisos[$modulo])) return $nivel === 1;
+        return (bool) $permisos[$modulo]['puede_eliminar'];
+    }
+
+    public static function alcanceTodas(int $nivel, string $modulo): bool
+    {
+        $permisos = self::getPermisosPara($nivel);
+        if (!isset($permisos[$modulo])) return $nivel === 1;
+        return (bool) $permisos[$modulo]['alcance_todas'];
+    }
+
+    public static function alcanceDependencia(int $nivel, string $modulo): bool
+    {
+        $permisos = self::getPermisosPara($nivel);
+        if (!isset($permisos[$modulo])) return false;
+        return (bool) $permisos[$modulo]['alcance_dependencia'];
+    }
+
+    public static function alcancePropias(int $nivel, string $modulo): bool
+    {
+        $permisos = self::getPermisosPara($nivel);
+        if (!isset($permisos[$modulo])) return false;
+        return (bool) $permisos[$modulo]['alcance_propias'];
+    }
+
     /**
      * Invalida la caché de permisos de un nivel
      */

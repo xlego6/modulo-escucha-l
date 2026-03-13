@@ -256,7 +256,7 @@
                                         <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-eye"></i> Ver
                                         </a>
-                                        @if(Auth::user()->id_nivel == 3 && !$permisosAprobados->contains($entrevista->id_e_ind_fvt) && (!$entrevista->rel_entrevistador || $entrevista->rel_entrevistador->id_usuario != Auth::id()))
+                                        @if(\App\Models\RolModuloPermiso::puedeCrear(Auth::user()->id_nivel, 'permisos') && !$permisosAprobados->contains($entrevista->id_e_ind_fvt) && (!$entrevista->rel_entrevistador || $entrevista->rel_entrevistador->id_usuario != Auth::id()))
                                         <form action="{{ route('permisos.solicitar') }}" method="POST" style="display:inline">
                                             @csrf
                                             <input type="hidden" name="id_e_ind_fvt" value="{{ $entrevista->id_e_ind_fvt }}">

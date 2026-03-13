@@ -6,6 +6,7 @@ use App\Models\Adjunto;
 use App\Models\Entrevista;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use App\Services\TextExtractorService;
 use App\Services\TranscripcionDocService;
 use Illuminate\Http\Request;
@@ -44,12 +45,14 @@ class AdjuntoController extends Controller
         $esPropietario = $entrevista->rel_entrevistador &&
             $entrevista->rel_entrevistador->id_usuario == $user->id;
 
-        // Can delete/upload/download: Admin or owner
-        $puedeGestionar = ($user->id_nivel == 1) || $esPropietario;
+        // Can delete/upload/download: rol con edición total o propietario
+        $puedeGestionar = (RolModuloPermiso::puedeEditar($user->id_nivel, 'adjuntos') &&
+                           RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos')) || $esPropietario;
 
-        // Gestor of same dependencia: can view/play but not delete/download
-        $esGestorMismaDependencia = ($user->id_nivel == 5) && $entrevistadorActual &&
-            $entrevista->id_dependencia_origen &&
+        // Alcance por dependencia: puede ver pero no gestionar
+        $esGestorMismaDependencia = RolModuloPermiso::puedeVer($user->id_nivel, 'adjuntos') &&
+            RolModuloPermiso::alcanceDependencia($user->id_nivel, 'adjuntos') &&
+            $entrevistadorActual && $entrevista->id_dependencia_origen &&
             $entrevistadorActual->id_dependencia_origen == $entrevista->id_dependencia_origen;
 
         // Has approved access permission
@@ -73,8 +76,10 @@ class AdjuntoController extends Controller
                 ->exists();
         }
 
-        // Can view/play: Admin, owner, Gestor same dep, or has approved permission
-        $puedeVer = $user->id_nivel <= 2 || $esPropietario || $esGestorMismaDependencia || $tienePermisoAcceso;
+        // Can view/play: alcance total, propietario, dependencia, o permiso otorgado
+        $puedeVer = (RolModuloPermiso::puedeVer($user->id_nivel, 'adjuntos') &&
+                     RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos')) ||
+                    $esPropietario || $esGestorMismaDependencia || $tienePermisoAcceso;
 
         return view('adjuntos.gestionar', compact('entrevista', 'tipos', 'marcaAgua', 'puedeGestionar', 'puedeVer', 'esGestorMismaDependencia', 'tienePermisoAcceso'));
     }
@@ -181,7 +186,7 @@ class AdjuntoController extends Controller
     }
 
     /**
-     * Descargar archivo adjunto
+     * Descargar archivo adjunto (PDFs se entregan con marca de agua)
      */
     public function descargar($id)
     {
@@ -194,17 +199,29 @@ class AdjuntoController extends Controller
 
         $user = Auth::user();
 
-        // Registrar traza de descarga
         TrazaActividad::create([
-            'fecha_hora' => now(),
-            'id_usuario' => $user->id,
-            'accion' => 'descargar_adjunto',
-            'objeto' => 'adjunto',
+            'fecha_hora'  => now(),
+            'id_usuario'  => $user->id,
+            'accion'      => 'descargar_adjunto',
+            'objeto'      => 'adjunto',
             'id_registro' => $adjunto->id_adjunto,
-            'codigo' => $adjunto->rel_entrevista->entrevista_codigo ?? null,
-            'referencia' => 'Descarga de archivo: ' . $adjunto->nombre_original,
-            'ip' => request()->ip(),
+            'codigo'      => $adjunto->rel_entrevista->entrevista_codigo ?? null,
+            'referencia'  => 'Descarga de archivo: ' . $adjunto->nombre_original,
+            'ip'          => request()->ip(),
         ]);
+
+        // Aplicar marca de agua en PDFs antes de entregar
+        if (str_contains($adjunto->tipo_mime ?? '', 'pdf')) {
+            $textoMarca = $user->name . ' - ' . now()->format('d/m/Y H:i:s');
+            $pdfMarcado = Adjunto::aplicarMarcaAguaDescarga($adjunto->ubicacion, $textoMarca);
+
+            if ($pdfMarcado && file_exists($pdfMarcado)) {
+                return response()->download($pdfMarcado, $adjunto->nombre_original, [
+                    'Content-Type' => 'application/pdf',
+                ])->deleteFileAfterSend(true);
+            }
+            // Si falla el marcado, entregar sin marca (no bloquear al usuario)
+        }
 
         return Storage::disk('public')->download(
             $adjunto->ubicacion,
@@ -213,7 +230,7 @@ class AdjuntoController extends Controller
     }
 
     /**
-     * Ver/reproducir archivo adjunto
+     * Ver/reproducir archivo adjunto (audio, video, imágenes)
      */
     public function ver($id)
     {
@@ -233,6 +250,106 @@ class AdjuntoController extends Controller
     }
 
     /**
+     * Servir PDF de forma segura para el visor PDF.js (con control de acceso y traza)
+     */
+    public function verPdf($id)
+    {
+        $adjunto = Adjunto::with('rel_entrevista.rel_entrevistador')->findOrFail($id);
+
+        if (!$adjunto->existe_archivo || !Storage::disk('public')->exists($adjunto->ubicacion)) {
+            abort(404);
+        }
+
+        if (!str_contains($adjunto->tipo_mime ?? '', 'pdf')) {
+            abort(403);
+        }
+
+        $user = Auth::user();
+        $entrevista = $adjunto->rel_entrevista;
+
+        // Verificar que el usuario puede ver el adjunto
+        if (!$this->puedeVerAdjunto($adjunto, $user)) {
+            abort(403);
+        }
+
+        // Registrar consulta en traza
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion'     => 'ver_pdf',
+            'objeto'     => 'adjunto',
+            'id_registro'=> $adjunto->id_adjunto,
+            'codigo'     => $entrevista->entrevista_codigo ?? null,
+            'referencia' => 'Consulta PDF en visor: ' . $adjunto->nombre_original,
+            'ip'         => request()->ip(),
+        ]);
+
+        $path = Storage::disk('public')->path($adjunto->ubicacion);
+
+        return response()->file($path, [
+            'Content-Type'              => 'application/pdf',
+            'Content-Disposition'       => 'inline; filename="archivo.pdf"',
+            'X-Content-Type-Options'    => 'nosniff',
+            'Cache-Control'             => 'no-store, no-cache, must-revalidate',
+        ]);
+    }
+
+    /**
+     * Verificar si el usuario autenticado puede ver/reproducir un adjunto.
+     */
+    private function puedeVerAdjunto(Adjunto $adjunto, $user): bool
+    {
+        $entrevista = $adjunto->rel_entrevista;
+        if (!$entrevista) {
+            return false;
+        }
+
+        // Alcance total
+        if (RolModuloPermiso::puedeVer($user->id_nivel, 'adjuntos') &&
+            RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos')) {
+            return true;
+        }
+
+        // Propietario
+        if ($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->id_usuario == $user->id) {
+            return true;
+        }
+
+        $entrevistador = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
+
+        // Misma dependencia
+        if ($entrevistador &&
+            RolModuloPermiso::puedeVer($user->id_nivel, 'adjuntos') &&
+            RolModuloPermiso::alcanceDependencia($user->id_nivel, 'adjuntos') &&
+            $entrevista->id_dependencia_origen &&
+            $entrevistador->id_dependencia_origen == $entrevista->id_dependencia_origen) {
+            return true;
+        }
+
+        // Permiso de acceso otorgado
+        if ($entrevistador) {
+            return (bool) DB::table('esclarecimiento.permiso')
+                ->where('id_entrevistador', (int) $entrevistador->id_entrevistador)
+                ->where('id_e_ind_fvt', (int) $adjunto->id_e_ind_fvt)
+                ->where('id_estado', \App\Models\Permiso::ESTADO_VIGENTE)
+                ->where(function ($q) {
+                    $q->where('es_solicitud', false)
+                      ->orWhere(function ($q2) {
+                          $q2->where('es_solicitud', true)
+                             ->where('estado_solicitud', \App\Models\Permiso::SOLICITUD_APROBADA);
+                      });
+                })
+                ->where(function ($q) {
+                    $q->whereNull('fecha_vencimiento')
+                      ->orWhere('fecha_vencimiento', '>', now());
+                })
+                ->exists();
+        }
+
+        return false;
+    }
+
+    /**
      * Eliminar archivo adjunto
      */
     public function eliminar($id)
@@ -241,8 +358,10 @@ class AdjuntoController extends Controller
         $id_entrevista = $adjunto->id_e_ind_fvt;
         $user = Auth::user();
 
-        // Solo admin o entrevistador pueden eliminar
-        if ($user->id_nivel > 2) {
+        // Puede eliminar si tiene alcance total, o si es propietario de la entrevista
+        $puedeEliminarTodo = RolModuloPermiso::puedeEliminar($user->id_nivel, 'adjuntos') &&
+                             RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos');
+        if (!$puedeEliminarTodo) {
             $entrevista = Entrevista::find($id_entrevista);
             if ($entrevista && $entrevista->rel_entrevistador->id_usuario != $user->id) {
                 flash('No tiene permisos para eliminar este archivo.')->error();

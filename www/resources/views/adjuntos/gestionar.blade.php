@@ -31,6 +31,31 @@
         height: 600px;
         border: none;
     }
+    /* Visor PDF.js */
+    .visor-pdf-wrapper {
+        position: relative;
+        background: #525659;
+        min-height: 300px;
+    }
+    #visor-pdf-pages {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 0;
+        overflow-y: auto;
+        max-height: 750px;
+    }
+    #visor-pdf-pages canvas {
+        display: block;
+        box-shadow: 0 0 8px rgba(0,0,0,0.6);
+        margin: 8px auto;
+    }
+    .pdf-page-num {
+        color: #ccc;
+        font-size: 12px;
+        text-align: center;
+        margin-bottom: 4px;
+    }
     .visor-content img {
         width: 100%;
         max-height: 500px;
@@ -323,7 +348,7 @@
                                         <i class="fas fa-lock"></i>
                                     </span>
                                     @endif
-                                    @if($adjunto->existe_archivo && $puedeGestionar)
+                                    @if($adjunto->existe_archivo && $puedeGestionar && (Auth::user()->id_nivel == 1 || (!$adjunto->es_audio && !$adjunto->es_video)))
                                     <a href="{{ route('adjuntos.descargar', $adjunto->id_adjunto) }}" class="btn btn-success" title="Descargar archivo original">
                                         <i class="fas fa-download"></i>
                                     </a>
@@ -489,11 +514,94 @@
 @endsection
 
 @section('scripts')
+<script src="{{ url('js/pdf.js') }}"></script>
 <script>
+
+// Dibujar marca de agua diagonal directamente sobre un canvas ya renderizado
+function dibujarMarcaAguaCanvas(canvas, texto) {
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var h = canvas.height;
+    var fontSize = Math.max(14, Math.min(22, w / 28));
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#555555';
+    ctx.font = 'bold ' + fontSize + 'px "Barlow", "Source Sans Pro", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    var angle = -Math.PI / 5; // ~-36 grados
+    var stepY = fontSize * 7;
+    var stepX = fontSize * 18;
+
+    for (var row = -2; row * stepY < h + stepY * 2; row++) {
+        for (var col = -1; col * stepX < w + stepX * 2; col++) {
+            ctx.save();
+            ctx.translate(col * stepX, row * stepY);
+            ctx.rotate(angle);
+            ctx.fillText(texto, 0, 0);
+            ctx.restore();
+        }
+    }
+    ctx.restore();
+}
+
+// Renderizar PDF usando PDF.js en el panel inline
+function renderizarPdfJs(pdfUrl) {
+    var container = document.getElementById('visor-pdf-pages');
+    if (!container) return;
+
+    var pdfjsLib = window['pdfjs-dist/build/pdf'];
+    if (!pdfjsLib) {
+        container.innerHTML = '<p class="text-danger text-center py-4"><i class="fas fa-exclamation-triangle mr-2"></i>PDF.js no disponible.</p>';
+        return;
+    }
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '{{ url("js/pdf.worker.js") }}';
+
+    var marcaPdfTexto = '{{ addslashes(Auth::user()->name) }}  |  ' + new Date().toLocaleString('es-CO');
+
+    var loadingTask = pdfjsLib.getDocument(pdfUrl);
+    loadingTask.promise.then(function(pdf) {
+        container.innerHTML = '';
+        var numPages = pdf.numPages;
+
+        for (var i = 1; i <= numPages; i++) {
+            (function(pageNum) {
+                pdf.getPage(pageNum).then(function(page) {
+                    var scale = 1.3;
+                    var viewport = page.getViewport({ scale: scale });
+
+                    var numLabel = document.createElement('p');
+                    numLabel.className = 'pdf-page-num';
+                    numLabel.textContent = 'Página ' + pageNum + ' de ' + numPages;
+
+                    var canvas = document.createElement('canvas');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    container.appendChild(numLabel);
+                    container.appendChild(canvas);
+
+                    var renderTask = page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
+                    renderTask.promise.then(function() {
+                        dibujarMarcaAguaCanvas(canvas, marcaPdfTexto);
+                    });
+                });
+            })(i);
+        }
+    }, function(reason) {
+        container.innerHTML = '<p class="text-danger text-center py-4"><i class="fas fa-exclamation-triangle mr-2"></i>Error al cargar el PDF.</p>';
+        console.error('PDF.js error:', reason);
+    });
+}
+
 $(document).ready(function() {
     // URL de la marca de agua generada (puede ser null si GD no está disponible)
     const marcaAguaUrl = '{{ $marcaAgua ? asset($marcaAgua) : "" }}';
     const userName = '{{ Auth::user()->name }}';
+    const esAdmin = {{ Auth::user()->id_nivel == 1 ? 'true' : 'false' }};
     const usarMarcaCSS = !marcaAguaUrl;
 
     // Textos de transcripciones (cargados desde PHP)
@@ -723,7 +831,30 @@ $(document).ready(function() {
         let contenido = '';
         let necesitaMarca = false;
 
-        if (tieneTexto && !esTranscripcion) {
+        // Los PDFs e imágenes siempre se visualizan como archivo, aunque tengan texto extraído
+        if (tipo.includes('pdf')) {
+            necesitaMarca = true;
+            const pdfUrl = '{{ route("adjuntos.ver_pdf", "") }}/' + id;
+            contenido = `
+                <div class="visor-pdf-wrapper">
+                    <div id="visor-pdf-pages">
+                        <p class="text-white text-center py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                            <span class="mt-2 d-block">Cargando PDF...</span>
+                        </p>
+                    </div>
+                </div>
+            `;
+            window._pendingPdfUrl = pdfUrl;
+        } else if (tipo.includes('image')) {
+            necesitaMarca = true;
+            contenido = `
+                <div class="visor-con-marca p-3 text-center" style="background: #333;">
+                    <img src="${url}" alt="${nombre}" class="img-fluid">
+                    ${generarMarcaAgua()}
+                </div>
+            `;
+        } else if (tieneTexto && !esTranscripcion) {
             // Mostrar documento con texto extraido (TXT, DOCX, etc.)
             let texto = documentosTexto[id] || 'Sin contenido';
             let caracteres = texto.length;
@@ -767,39 +898,29 @@ $(document).ready(function() {
                 </div>
             `;
         } else if (esAudio) {
+            const audioControls = esAdmin ? 'controls autoplay' : 'controls autoplay controlsList="nodownload"';
             contenido = `
                 <div class="p-4 text-center">
                     <i class="fas fa-music fa-4x text-info mb-3"></i>
                     <h5 class="text-white mb-3">${nombre}</h5>
-                    <audio controls autoplay class="w-100">
+                    <audio ${audioControls} class="w-100">
                         <source src="${url}" type="${tipo}">
                         Su navegador no soporta la reproduccion de audio.
                     </audio>
                 </div>
             `;
         } else if (esVideo) {
-            contenido = `
-                <video controls autoplay>
-                    <source src="${url}" type="${tipo}">
-                    Su navegador no soporta la reproduccion de video.
-                </video>
-            `;
-        } else if (tipo.includes('pdf')) {
-            necesitaMarca = true;
-            contenido = `
-                <div class="visor-con-marca">
-                    <iframe src="${url}#toolbar=0&navpanes=0&scrollbar=1"></iframe>
-                    ${generarMarcaAgua()}
-                </div>
-            `;
-        } else if (tipo.includes('image')) {
-            necesitaMarca = true;
-            contenido = `
-                <div class="visor-con-marca p-3 text-center" style="background: #333;">
-                    <img src="${url}" alt="${nombre}" class="img-fluid">
-                    ${generarMarcaAgua()}
-                </div>
-            `;
+            const videoControls = esAdmin ? 'controls autoplay' : 'controls autoplay controlsList="nodownload"';
+            if (tipo === 'video/x-flv') {
+                contenido = `<video ${videoControls} id="flv-visor-player" data-flv-src="${url}"></video>`;
+            } else {
+                contenido = `
+                    <video ${videoControls}>
+                        <source src="${url}" type="${tipo}">
+                        Su navegador no soporta la reproduccion de video.
+                    </video>
+                `;
+            }
         } else {
             // Otros documentos - intentar mostrar en iframe con marca
             necesitaMarca = true;
@@ -813,6 +934,27 @@ $(document).ready(function() {
 
         $('#visor-content').html(contenido);
         $('#visor-container').addClass('active');
+
+        // Renderizar PDF.js si aplica
+        if (window._pendingPdfUrl) {
+            const pdfUrl = window._pendingPdfUrl;
+            window._pendingPdfUrl = null;
+            renderizarPdfJs(pdfUrl);
+        }
+
+        // Inicializar flv.js si hay video FLV en el visor
+        var flvEl = document.getElementById('flv-visor-player');
+        if (flvEl && typeof flvjs !== 'undefined' && flvjs.isSupported()) {
+            if (window._flvVisorPlayer) {
+                window._flvVisorPlayer.destroy();
+                window._flvVisorPlayer = null;
+            }
+            var flvPlayer = flvjs.createPlayer({ type: 'flv', url: flvEl.getAttribute('data-flv-src') });
+            flvPlayer.attachMediaElement(flvEl);
+            flvPlayer.load();
+            flvPlayer.play();
+            window._flvVisorPlayer = flvPlayer;
+        }
 
         // Mostrar/ocultar info de marca segun tipo
         if (necesitaMarca) {
@@ -839,6 +981,10 @@ $(document).ready(function() {
         $('#visor-content audio, #visor-content video').each(function() {
             this.pause();
         });
+        if (window._flvVisorPlayer) {
+            window._flvVisorPlayer.destroy();
+            window._flvVisorPlayer = null;
+        }
 
         $('#visor-container').removeClass('active');
         $('#visor-content').html('');

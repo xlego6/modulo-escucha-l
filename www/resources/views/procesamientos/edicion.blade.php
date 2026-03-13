@@ -3,46 +3,168 @@
 @section('title', 'Edicion de Transcripciones')
 @section('content_header', 'Edicion de Transcripciones')
 
+@section('css')
+<style>
+.stat-block { border-radius:6px; padding:10px 12px; color:#fff; min-height:80px; display:flex; flex-direction:column; justify-content:space-between; }
+.stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; opacity:.85; }
+.stat-main  { font-size:28px; font-weight:700; line-height:1.1; }
+.stat-row   { font-size:11px; opacity:.9; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; margin-top:2px; }
+.bg-procesadas  { background: linear-gradient(135deg,#2e7d32,#43a047); }
+.bg-asignadas   { background: linear-gradient(135deg,#37474f,#546e7a); }
+.bg-en-edicion  { background: linear-gradient(135deg,#1565c0,#1e88e5); }
+.bg-en-revision { background: linear-gradient(135deg,#e65100,#fb8c00); }
+.bg-rechazadas  { background: linear-gradient(135deg,#b71c1c,#e53935); }
+.bg-aprobadas   { background: linear-gradient(135deg,#1b5e20,#388e3c); }
+.bg-totales     { background: linear-gradient(135deg,#4a148c,#7b1fa2); }
+</style>
+@endsection
+
 @section('content')
-{{-- Estadísticas --}}
-<div class="row">
-    <div class="col-md-3">
-        <div class="info-box bg-info">
-            <span class="info-box-icon"><i class="fas fa-file-audio"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Total Entrevistas</span>
-                <span class="info-box-number">{{ $stats['pendientes'] }}</span>
+{{-- Bloques estadísticos --}}
+@php
+    $bt = $stats;
+    function fmtDurEd($s) {
+        if (!$s) return '0m';
+        $h = intdiv($s, 3600); $m = intdiv($s % 3600, 60);
+        return $h ? "{$h}h {$m}m" : "{$m}m";
+    }
+@endphp
+<div class="row mb-3">
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-procesadas">
+            <div class="stat-label">Procesadas</div>
+            <div class="stat-main">{{ number_format($bt['procesadas']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['procesadas']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurEd($bt['procesadas']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="info-box bg-primary">
-            <span class="info-box-icon"><i class="fas fa-user-edit"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">En Proceso</span>
-                <span class="info-box-number">{{ $stats['asignadas'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-asignadas">
+            <div class="stat-label">Asignadas</div>
+            <div class="stat-main">{{ number_format($bt['asignada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['asignada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurEd($bt['asignada']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="info-box bg-warning">
-            <span class="info-box-icon"><i class="fas fa-clock"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Pendientes Revision</span>
-                <span class="info-box-number">{{ $stats['en_revision'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-en-edicion">
+            <div class="stat-label">En edición</div>
+            <div class="stat-main">{{ number_format($bt['en_edicion']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['en_edicion']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurEd($bt['en_edicion']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="info-box bg-success">
-            <span class="info-box-icon"><i class="fas fa-check-circle"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Finalizadas</span>
-                <span class="info-box-number">{{ $stats['aprobadas'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-en-revision">
+            <div class="stat-label">En revisión</div>
+            <div class="stat-main">{{ number_format($bt['enviada_revision']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['enviada_revision']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurEd($bt['enviada_revision']['duracion_total']) }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-rechazadas">
+            <div class="stat-label">Rechazadas</div>
+            <div class="stat-main">{{ number_format($bt['rechazada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['rechazada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurEd($bt['rechazada']['duracion_total']) }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-aprobadas">
+            <div class="stat-label">Aprobadas</div>
+            <div class="stat-main">{{ number_format($bt['aprobada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['aprobada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurEd($bt['aprobada']['duracion_total']) }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-totales">
+            <div class="stat-label">Totales</div>
+            <div class="stat-main">{{ number_format($bt['totales']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['totales']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurEd($bt['totales']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
 </div>
+
+{{-- Mis transcripciones asignadas (solo Líder) --}}
+@if(isset($misAsignaciones) && $misAsignaciones->isNotEmpty())
+<div class="card card-primary card-outline mb-3">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-user-edit mr-2"></i>Mis transcripciones asignadas ({{ $misAsignaciones->count() }})</h3>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th>Código</th>
+                    <th>Audio asignado</th>
+                    <th>Asignada</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($misAsignaciones as $asig)
+                @php
+                    $badgeClass = [
+                        'asignada'         => 'badge-secondary',
+                        'en_edicion'       => 'badge-info',
+                        'enviada_revision'  => 'badge-warning',
+                        'rechazada'        => 'badge-danger',
+                    ][$asig->estado] ?? 'badge-secondary';
+                    $labelEstado = [
+                        'asignada'         => 'Asignada',
+                        'en_edicion'       => 'En edición',
+                        'enviada_revision'  => 'En revisión',
+                        'rechazada'        => 'Rechazada',
+                    ][$asig->estado] ?? $asig->estado;
+                @endphp
+                <tr>
+                    <td><code>{{ $asig->rel_entrevista->entrevista_codigo ?? '-' }}</code></td>
+                    <td>
+                        @if($asig->id_adjunto && $asig->rel_adjunto)
+                            <small><i class="fas fa-file-audio text-info mr-1"></i>{{ \Illuminate\Support\Str::limit($asig->rel_adjunto->nombre_original, 40) }}</small>
+                        @else
+                            <small class="text-muted">Entrevista completa</small>
+                        @endif
+                    </td>
+                    <td><small>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</small></td>
+                    <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
+                    <td>
+                        <a href="{{ route('procesamientos.editar-transcripcion-asignada', $asig->id_asignacion) }}"
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        @if($asig->estado === 'enviada_revision')
+                        <a href="{{ route('procesamientos.ver-revision', $asig->id_asignacion) }}"
+                           class="btn btn-sm btn-warning ml-1">
+                            <i class="fas fa-eye"></i> Revisar
+                        </a>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 
 {{-- Pendientes de Revisión --}}
 @if($pendientesRevision->count() > 0)
@@ -174,7 +296,7 @@
                     </td>
                     <td>
                         <div class="btn-group">
-                            @if(Auth::user()->id_nivel == 1)
+                            @if(\App\Models\RolModuloPermiso::puedeEditar(Auth::user()->id_nivel, 'procesamientos.transcripcion'))
                             <a href="{{ route('procesamientos.editar-transcripcion', $entrevista->id_e_ind_fvt) }}"
                                class="btn btn-sm btn-primary" title="Editar directamente">
                                 <i class="fas fa-edit"></i>

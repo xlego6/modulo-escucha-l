@@ -314,9 +314,14 @@ function fmtDur($seg) {
                         @endforeach
                     </tbody>
                     <tfoot class="table-dark">
+                        @php
+                            // Sumar duración de audios únicos (sin repetir el mismo audio en distintos estados)
+                            $durTotal = $detalleAsignaciones->filter(fn($a) => $a->id_adjunto)->unique('id_adjunto')->sum('duracion_audio')
+                                      + $detalleAsignaciones->filter(fn($a) => !$a->id_adjunto)->unique('id_e_ind_fvt')->sum('duracion_total');
+                        @endphp
                         <tr>
-                            <td colspan="5"><strong>Total asignaciones</strong></td>
-                            <td class="text-right text-monospace"><strong>{{ fmtDur($detalleAsignaciones->sum('duracion_audio')) }}</strong></td>
+                            <td colspan="5"><strong>Total asignaciones (audios únicos)</strong></td>
+                            <td class="text-right text-monospace"><strong>{{ fmtDur($durTotal) }}</strong></td>
                         </tr>
                     </tfoot>
                 </table>

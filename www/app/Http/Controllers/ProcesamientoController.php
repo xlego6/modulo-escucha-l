@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\TrazaActividad;
+use App\Models\RolModuloPermiso;
 use App\Models\CatItem;
 
 class ProcesamientoController extends Controller
@@ -37,12 +38,11 @@ class ProcesamientoController extends Controller
         $statsTranscripcion = $this->calcStatsGlobales('transcripcion');
         $statsAnonimizacion = $this->calcStatsGlobales('anonimizacion');
 
-        // Transcriptores para el filtro
-        $transcriptores = DB::table('esclarecimiento.asignacion_transcripcion as at')
-            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.id_transcriptor')
+        // Transcriptores para el filtro: todos los Líderes (2) y Transcriptores (4)
+        $transcriptores = DB::table('esclarecimiento.entrevistador as e')
             ->join('users as u', 'u.id', '=', 'e.id_usuario')
+            ->whereIn('e.id_nivel', [2, 4])
             ->select('e.id_entrevistador', 'u.name', 'e.id_dependencia_origen')
-            ->distinct()
             ->orderBy('u.name')
             ->get();
 
@@ -137,8 +137,10 @@ class ProcesamientoController extends Controller
             $stats['procesadas'] = $this->audioStatsForIds($ids);
         }
 
-        // Totales
-        $idsTotales = DB::table($table)->distinct()->pluck('id_e_ind_fvt');
+        // Totales: todas las entrevistas activas del sistema (independiente de asignaciones)
+        $idsTotales = DB::table('esclarecimiento.e_ind_fvt')
+            ->where('id_activo', 1)
+            ->pluck('id_e_ind_fvt');
         $stats['totales'] = $this->audioStatsForIds($idsTotales);
 
         return $stats;
@@ -735,19 +737,26 @@ class ProcesamientoController extends Controller
         // Agrupadas por id_e_ind_fvt para la vista
         $asignacionesPorEntrevista = $todasAsignaciones->groupBy('id_e_ind_fvt');
 
-        // Contar solo asignaciones en proceso (no aprobadas), únicas por adjunto
-        $enProceso = $todasAsignaciones->filter(function($a) {
-            return $a->estado !== AsignacionTranscripcion::ESTADO_APROBADA;
-        })->count();
+        // Stats globales reutilizando el mismo método del centro de control
+        $stats = $this->calcStatsGlobales('transcripcion');
 
-        $stats = [
-            'pendientes' => $pendientes->total(),
-            'en_revision' => $pendientesRevision->count(),
-            'asignadas' => $enProceso,
-            'aprobadas' => AsignacionTranscripcion::where('estado', AsignacionTranscripcion::ESTADO_APROBADA)->count(),
-        ];
+        // Mis asignaciones (para Líder nivel 2)
+        $misAsignaciones = collect();
+        if ($nivel == 2) {
+            $misAsignaciones = AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
+                ->whereNotIn('estado', [AsignacionTranscripcion::ESTADO_APROBADA])
+                ->with(['rel_entrevista', 'rel_adjunto'])
+                ->orderByRaw("CASE estado
+                    WHEN 'rechazada' THEN 1
+                    WHEN 'asignada' THEN 2
+                    WHEN 'en_edicion' THEN 3
+                    WHEN 'enviada_revision' THEN 4
+                    ELSE 5 END")
+                ->orderBy('fecha_asignacion', 'desc')
+                ->get();
+        }
 
-        return view('procesamientos.edicion', compact('pendientes', 'pendientesRevision', 'transcriptores', 'asignacionesPorEntrevista', 'stats'));
+        return view('procesamientos.edicion', compact('pendientes', 'pendientesRevision', 'transcriptores', 'asignacionesPorEntrevista', 'stats', 'misAsignaciones'));
     }
 
     /**
@@ -846,8 +855,7 @@ class ProcesamientoController extends Controller
     {
         $user = auth()->user();
 
-        // Solo Admin (1) y Líder (2) pueden aprobar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
             flash('No tiene permisos para aprobar transcripciones.')->error();
             return redirect()->route('procesamientos.edicion');
         }
@@ -1311,8 +1319,7 @@ class ProcesamientoController extends Controller
     {
         $user = Auth::user();
 
-        // Solo Admin y Líder pueden asignar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
             return response()->json(['error' => 'No tiene permisos para asignar'], 403);
         }
 
@@ -1390,8 +1397,9 @@ class ProcesamientoController extends Controller
             }
         ])->findOrFail($id);
 
-        // Verificar que sea el transcriptor asignado o Admin/Líder
-        if ($user->id_nivel > 2 && $asignacion->id_transcriptor != $user->id_entrevistador) {
+        // Puede editar si es supervisor (puedeEditar en el módulo) o es el transcriptor asignado
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion') &&
+            $asignacion->id_transcriptor != $user->id_entrevistador) {
             flash('No tiene permisos para editar esta transcripción.')->error();
             return redirect()->route('procesamientos.edicion');
         }
@@ -1426,8 +1434,8 @@ class ProcesamientoController extends Controller
         $user = Auth::user();
         $asignacion = AsignacionTranscripcion::findOrFail($id);
 
-        // Verificar permisos
-        if ($user->id_nivel > 2 && $asignacion->id_transcriptor != $user->id_entrevistador) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion') &&
+            $asignacion->id_transcriptor != $user->id_entrevistador) {
             return response()->json(['error' => 'No tiene permisos'], 403);
         }
 
@@ -1461,8 +1469,8 @@ class ProcesamientoController extends Controller
         $user = Auth::user();
         $asignacion = AsignacionTranscripcion::findOrFail($id);
 
-        // Verificar que sea el transcriptor asignado
-        if ($user->id_nivel > 2 && $asignacion->id_transcriptor != $user->id_entrevistador) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion') &&
+            $asignacion->id_transcriptor != $user->id_entrevistador) {
             flash('No tiene permisos para enviar esta transcripción.')->error();
             return redirect()->route('procesamientos.edicion');
         }
@@ -1498,8 +1506,7 @@ class ProcesamientoController extends Controller
     {
         $user = Auth::user();
 
-        // Solo Admin y Líder pueden revisar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
             flash('No tiene permisos para revisar transcripciones.')->error();
             return redirect()->route('procesamientos.edicion');
         }
@@ -1532,8 +1539,7 @@ class ProcesamientoController extends Controller
     {
         $user = Auth::user();
 
-        // Solo Admin y Líder pueden aprobar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
             flash('No tiene permisos para aprobar transcripciones.')->error();
             return redirect()->route('procesamientos.edicion');
         }
@@ -1549,6 +1555,11 @@ class ProcesamientoController extends Controller
                 $adjunto->texto_extraido_at = now();
                 $adjunto->save();
                 $this->regenerarTranscripcionCompleta($entrevista);
+                // Promover automatizada recién regenerada a transcripción final
+                $textoFinal = $entrevista->fresh()->getTranscripcionAutomatizada();
+                if ($textoFinal) {
+                    $entrevista->guardarTranscripcionFinal($textoFinal, $user->id);
+                }
             }
         } else {
             // Asignación de entrevista completa: guardar como transcripción final
@@ -1586,8 +1597,7 @@ class ProcesamientoController extends Controller
     {
         $user = Auth::user();
 
-        // Solo Admin y Líder pueden rechazar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
             flash('No tiene permisos para rechazar transcripciones.')->error();
             return redirect()->route('procesamientos.edicion');
         }
@@ -1655,8 +1665,7 @@ class ProcesamientoController extends Controller
     {
         $user = Auth::user();
 
-        // Solo Admin y Lider pueden asignar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.anonimizacion')) {
             return response()->json(['error' => 'No tiene permisos para asignar'], 403);
         }
 
@@ -1724,8 +1733,8 @@ class ProcesamientoController extends Controller
         $user = Auth::user();
         $asignacion = AsignacionAnonimizacion::with(['rel_entrevista'])->findOrFail($id);
 
-        // Verificar que sea el anonimizador asignado o Admin/Lider
-        if ($user->id_nivel > 2 && $asignacion->id_anonimizador != $user->id_entrevistador) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.anonimizacion') &&
+            $asignacion->id_anonimizador != $user->id_entrevistador) {
             flash('No tiene permisos para editar esta anonimizacion.')->error();
             return redirect()->route('procesamientos.anonimizacion');
         }
@@ -1773,8 +1782,8 @@ class ProcesamientoController extends Controller
         $user = Auth::user();
         $asignacion = AsignacionAnonimizacion::with('rel_entrevista')->findOrFail($id);
 
-        // Verificar permisos
-        if ($user->id_nivel > 2 && $asignacion->id_anonimizador != $user->id_entrevistador) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.anonimizacion') &&
+            $asignacion->id_anonimizador != $user->id_entrevistador) {
             return response()->json(['error' => 'No tiene permisos'], 403);
         }
 
@@ -1894,8 +1903,8 @@ class ProcesamientoController extends Controller
         $user = Auth::user();
         $asignacion = AsignacionAnonimizacion::findOrFail($id);
 
-        // Verificar que sea el anonimizador asignado
-        if ($user->id_nivel > 2 && $asignacion->id_anonimizador != $user->id_entrevistador) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.anonimizacion') &&
+            $asignacion->id_anonimizador != $user->id_entrevistador) {
             flash('No tiene permisos para enviar esta anonimizacion.')->error();
             return redirect()->route('procesamientos.anonimizacion');
         }
@@ -1931,8 +1940,7 @@ class ProcesamientoController extends Controller
     {
         $user = Auth::user();
 
-        // Solo Admin y Lider pueden revisar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.anonimizacion')) {
             flash('No tiene permisos para revisar anonimizaciones.')->error();
             return redirect()->route('procesamientos.anonimizacion');
         }
@@ -1972,8 +1980,7 @@ class ProcesamientoController extends Controller
     {
         $user = Auth::user();
 
-        // Solo Admin y Lider pueden aprobar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.anonimizacion')) {
             flash('No tiene permisos para aprobar anonimizaciones.')->error();
             return redirect()->route('procesamientos.anonimizacion');
         }
@@ -2020,8 +2027,7 @@ class ProcesamientoController extends Controller
 
         $user = Auth::user();
 
-        // Solo Admin y Lider pueden rechazar
-        if ($user->id_nivel > 2) {
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.anonimizacion')) {
             flash('No tiene permisos para rechazar anonimizaciones.')->error();
             return redirect()->route('procesamientos.anonimizacion');
         }

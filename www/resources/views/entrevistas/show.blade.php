@@ -685,8 +685,8 @@
     </div>
 
     <div class="col-md-4">
-        <!-- Adjuntos: ocultar para Líder (nivel 2) -->
-        @if(Auth::user()->id_nivel != 2)
+        <!-- Adjuntos: visible según permiso del rol -->
+        @if(\App\Models\RolModuloPermiso::puedeVer(Auth::user()->id_nivel, 'adjuntos'))
         <div class="card card-info card-outline">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-paperclip"></i> Archivos Adjuntos</h3>
@@ -817,7 +817,8 @@
 @endif
 
 {{-- Modal Solicitar Eliminación --}}
-@if((Auth::user()->id_nivel == 3 && $esPropietario) || Auth::user()->id_nivel == 5)
+@if(\App\Models\RolModuloPermiso::puedeCrear(Auth::user()->id_nivel, 'permisos') &&
+    ($esPropietario || \App\Models\RolModuloPermiso::alcanceDependencia(Auth::user()->id_nivel, 'permisos')))
 <div class="modal fade" id="modalSolicitarEliminacion" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
