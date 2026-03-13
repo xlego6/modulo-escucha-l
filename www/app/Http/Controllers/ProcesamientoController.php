@@ -1555,6 +1555,11 @@ class ProcesamientoController extends Controller
                 $adjunto->texto_extraido_at = now();
                 $adjunto->save();
                 $this->regenerarTranscripcionCompleta($entrevista);
+                // Promover automatizada recién regenerada a transcripción final
+                $textoFinal = $entrevista->fresh()->getTranscripcionAutomatizada();
+                if ($textoFinal) {
+                    $entrevista->guardarTranscripcionFinal($textoFinal, $user->id);
+                }
             }
         } else {
             // Asignación de entrevista completa: guardar como transcripción final

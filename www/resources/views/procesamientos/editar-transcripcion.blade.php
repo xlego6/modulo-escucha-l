@@ -43,21 +43,40 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
         border: 1px solid #dee2e6;
         border-radius: 0 0 4px 4px;
         padding: 12px 16px;
-        font-family: 'Courier New', monospace;
+        font-family: 'Barlow', sans-serif;
         font-size: 14px;
         line-height: 1.6;
         background: #fff;
         overflow-y: auto;
     }
-    .preview-content p { margin: 0 0 0.3em; }
-    .preview-content h4 { color: #2d3748; margin: 0.8em 0 0.3em; }
+    .preview-content p { margin: 0 0 0.5em; }
+    .preview-h2 {
+        font-size: 1.3em; font-weight: 700;
+        color: #1a202c;
+        border-bottom: 2px solid #ebc01a;
+        padding-bottom: 3px;
+        margin: 1em 0 0.4em;
+    }
+    .preview-h3 {
+        font-size: 1.1em; font-weight: 700;
+        color: #2d3748;
+        border-left: 3px solid #ebc01a;
+        padding-left: 8px;
+        margin: 0.9em 0 0.3em;
+    }
+    .preview-h4 {
+        font-size: 1em; font-weight: 700;
+        color: #4a5568;
+        margin: 0.8em 0 0.3em;
+    }
     .preview-content blockquote {
         border-left: 3px solid #6c757d;
         padding-left: 10px;
         color: #555;
         margin: 0.3em 0;
     }
-    .preview-content ul { margin: 0.3em 0; padding-left: 24px; }
+    .preview-ul { margin: 0.3em 0 0.5em; padding-left: 24px; }
+    .preview-ul li { margin-bottom: 0.2em; }
     .preview-speaker {
         background: #d1ecf1;
         color: #0c5460;
@@ -189,8 +208,11 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     <span class="badge badge-secondary ml-1">{{ $index + 1 }}/{{ $medios->count() }}</span>
                 </label>
                 @if(strpos($medio->tipo_mime ?? '', 'video') !== false)
-                <video controls class="w-100" id="media-{{ $medio->id_adjunto }}" style="max-height: 150px;">
+                <video controls class="w-100" id="media-{{ $medio->id_adjunto }}" style="max-height: 150px;"
+                    @if($medio->tipo_mime === 'video/x-flv') data-flv-src="{{ route('adjuntos.ver', $medio->id_adjunto) }}" @endif>
+                    @if($medio->tipo_mime !== 'video/x-flv')
                     <source src="{{ route('adjuntos.ver', $medio->id_adjunto) }}" type="{{ $medio->tipo_mime }}">
+                    @endif
                 </video>
                 @else
                 <audio controls class="w-100" id="media-{{ $medio->id_adjunto }}">
@@ -543,6 +565,15 @@ $(document).ready(function() {
     });
 
     $(document).on('mouseup', function() { dragging = false; });
+});
+
+// Inicializar flv.js para archivos .flv
+document.querySelectorAll('video[data-flv-src]').forEach(function(videoEl) {
+    if (flvjs.isSupported()) {
+        var player = flvjs.createPlayer({ type: 'flv', url: videoEl.getAttribute('data-flv-src') });
+        player.attachMediaElement(videoEl);
+        player.load();
+    }
 });
 
 function skipMedia(id, seconds) {

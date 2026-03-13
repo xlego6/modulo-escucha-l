@@ -50,6 +50,9 @@ Route::middleware(['auth'])->group(function () {
     // Adjuntos: ver/reproducir (accesible para todos los autenticados sin compromiso)
     Route::get('adjuntos/ver/{id}', [AdjuntoController::class, 'ver'])->name('adjuntos.ver');
 
+    // Adjuntos: visor PDF seguro (requiere auth, registra traza)
+    Route::get('adjuntos/pdf/{id}', [AdjuntoController::class, 'verPdf'])->name('adjuntos.ver_pdf');
+
     // =============================================
     // TODAS LAS DEMÁS RUTAS REQUIEREN COMPROMISO DE RESERVA
     // =============================================

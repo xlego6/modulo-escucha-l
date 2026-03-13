@@ -113,13 +113,8 @@ class TranscripcionDocService
         $processor->setValue('DEPENDENCIA',                htmlspecialchars($datos['dependencia']));
         $processor->setValue('TIPO_TESTIMONIO',            htmlspecialchars($datos['tipoTestimonio']));
 
-        // Transcripción: los saltos de línea se convierten en <w:br/>
-        $lineas = explode("\n", $datos['texto']);
-        $textoDocx = implode(
-            '</w:t><w:br/><w:t xml:space="preserve">',
-            array_map('htmlspecialchars', $lineas)
-        );
-        $processor->setValue('TRANSCRIPCION', $textoDocx);
+        // Transcripción: markdown inline → runs OOXML con formato
+        $processor->setValue('TRANSCRIPCION', $this->markdownToDocxXml($datos['texto']));
 
         $tmpPath = tempnam(sys_get_temp_dir(), 'FormTR_') . '.docx';
         $processor->saveAs($tmpPath);
@@ -153,6 +148,127 @@ class TranscripcionDocService
         }
 
         return $pdfPath;
+    }
+
+    /**
+     * Convierte texto con markdown en XML de párrafos OOXML para TemplateProcessor.
+     *
+     * Estrategia: cierra el párrafo-plantilla vacío al inicio, emite cada línea
+     * como un <w:p> completo y reabre un párrafo vacío al final para que la
+     * plantilla pueda cerrarlo con </w:t></w:r></w:p> sin romper el XML.
+     *
+     * Soporta:
+     *   # / ## / ###  → encabezado en negrita con tamaño de fuente ajustado
+     *   - item         → párrafo con sangría y viñeta •
+     *   inline: **bold**, *italic*, ***bold+italic***, equivalentes con _
+     */
+    private function markdownToDocxXml(string $texto): string
+    {
+        // Normalizar saltos de línea (Windows \r\n → \n)
+        $lineas = explode("\n", str_replace(["\r\n", "\r"], "\n", $texto));
+
+        // Cerrar el párrafo-plantilla (que contenía ${TRANSCRIPCION} vacío)
+        $resultado = '</w:t></w:r></w:p>';
+
+        foreach ($lineas as $linea) {
+            // Encabezados: #, ##, ###
+            if (preg_match('/^(#{1,3}) (.*)$/', $linea, $m)) {
+                $nivel  = strlen($m[1]);
+                $sz     = ['1' => '36', '2' => '30', '3' => '26'][(string)$nivel];
+                $titulo = htmlspecialchars($m[2], ENT_XML1);
+                $resultado .= '<w:p>'
+                    . "<w:r><w:rPr><w:b/><w:sz w:val=\"{$sz}\"/><w:szCs w:val=\"{$sz}\"/></w:rPr>"
+                    . "<w:t xml:space=\"preserve\">{$titulo}</w:t></w:r>"
+                    . '</w:p>';
+                continue;
+            }
+
+            // Listas: - item  o  * item
+            if (preg_match('/^[-*] (.*)$/', $linea, $m)) {
+                $inner = $this->lineaMarkdownAXml($m[1]);
+                $resultado .= '<w:p><w:pPr><w:ind w:left="360"/></w:pPr>'
+                    . '<w:r><w:t xml:space="preserve">&#x2022; </w:t></w:r>'
+                    . "<w:r><w:t xml:space=\"preserve\">{$inner}</w:t></w:r>"
+                    . '</w:p>';
+                continue;
+            }
+
+            // Párrafo normal (con markdown inline)
+            $inner = $this->lineaMarkdownAXml($linea);
+            $resultado .= "<w:p><w:r><w:t xml:space=\"preserve\">{$inner}</w:t></w:r></w:p>";
+        }
+
+        // Párrafo vacío final: la plantilla lo cierra con </w:t></w:r></w:p>
+        $resultado .= '<w:p><w:r><w:t>';
+
+        return $resultado;
+    }
+
+    /**
+     * Parsea una línea con markdown inline y devuelve fragmento OOXML.
+     * Soporta: ***bold+italic***, **bold**, *italic*, ___bold+italic___, __bold__, _italic_
+     */
+    private function lineaMarkdownAXml(string $linea): string
+    {
+        $pattern = '/\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|___(.+?)___|__(.+?)__|_(.+?)_/s';
+
+        $resultado = '';
+        $ultimo    = 0;
+
+        preg_match_all($pattern, $linea, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $matchFull  = $match[0][0];
+            $matchStart = $match[0][1];
+
+            // Texto plano antes del token
+            if ($matchStart > $ultimo) {
+                $resultado .= htmlspecialchars(
+                    substr($linea, $ultimo, $matchStart - $ultimo), ENT_XML1
+                );
+            }
+
+            // Detectar formato e inner text
+            $isBold = $isItalic = false;
+            $inner  = '';
+
+            if (isset($match[1]) && $match[1][1] !== -1) {       // ***...***
+                $isBold = $isItalic = true;
+                $inner  = $match[1][0];
+            } elseif (isset($match[2]) && $match[2][1] !== -1) {  // **...**
+                $isBold = true;
+                $inner  = $match[2][0];
+            } elseif (isset($match[3]) && $match[3][1] !== -1) {  // *...*
+                $isItalic = true;
+                $inner    = $match[3][0];
+            } elseif (isset($match[4]) && $match[4][1] !== -1) {  // ___...___
+                $isBold = $isItalic = true;
+                $inner  = $match[4][0];
+            } elseif (isset($match[5]) && $match[5][1] !== -1) {  // __...__
+                $isBold = true;
+                $inner  = $match[5][0];
+            } elseif (isset($match[6]) && $match[6][1] !== -1) {  // _..._
+                $isItalic = true;
+                $inner    = $match[6][0];
+            }
+
+            $rPr          = ($isBold ? '<w:b/>' : '') . ($isItalic ? '<w:i/>' : '');
+            $innerEscaped = htmlspecialchars($inner, ENT_XML1);
+
+            // Cerrar run actual → run con formato → reabrir run plano
+            $resultado .= '</w:t></w:r>'
+                . "<w:r><w:rPr>{$rPr}</w:rPr><w:t xml:space=\"preserve\">{$innerEscaped}</w:t></w:r>"
+                . '<w:r><w:t xml:space="preserve">';
+
+            $ultimo = $matchStart + strlen($matchFull);
+        }
+
+        // Texto plano restante al final de la línea
+        if ($ultimo < strlen($linea)) {
+            $resultado .= htmlspecialchars(substr($linea, $ultimo), ENT_XML1);
+        }
+
+        return $resultado;
     }
 
     private function fmtDuracion(int $seg): string

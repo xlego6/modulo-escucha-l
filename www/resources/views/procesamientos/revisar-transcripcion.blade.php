@@ -31,21 +31,40 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
         border: 1px solid #dee2e6;
         border-radius: 0 0 4px 4px;
         padding: 12px 16px;
-        font-family: monospace;
+        font-family: 'Barlow', sans-serif;
         font-size: 14px;
         line-height: 1.6;
         background: #fff;
         overflow-y: auto;
     }
-    .preview-content p { margin: 0 0 0.3em; }
-    .preview-content h4 { color: #2d3748; margin: 0.8em 0 0.3em; }
+    .preview-content p { margin: 0 0 0.5em; }
+    .preview-h2 {
+        font-size: 1.3em; font-weight: 700;
+        color: #1a202c;
+        border-bottom: 2px solid #ebc01a;
+        padding-bottom: 3px;
+        margin: 1em 0 0.4em;
+    }
+    .preview-h3 {
+        font-size: 1.1em; font-weight: 700;
+        color: #2d3748;
+        border-left: 3px solid #ebc01a;
+        padding-left: 8px;
+        margin: 0.9em 0 0.3em;
+    }
+    .preview-h4 {
+        font-size: 1em; font-weight: 700;
+        color: #4a5568;
+        margin: 0.8em 0 0.3em;
+    }
     .preview-content blockquote {
         border-left: 3px solid #6c757d;
         padding-left: 10px;
         color: #555;
         margin: 0.3em 0;
     }
-    .preview-content ul { margin: 0.3em 0; padding-left: 24px; }
+    .preview-ul { margin: 0.3em 0 0.5em; padding-left: 24px; }
+    .preview-ul li { margin-bottom: 0.2em; }
     .preview-speaker {
         background: #d1ecf1;
         color: #0c5460;
@@ -154,8 +173,11 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
                 </audio>
                 @elseif(strpos($adjunto->tipo_mime, 'video') !== false)
-                <video controls preload="metadata" style="max-height: 160px;">
+                <video controls preload="metadata" style="max-height: 160px;" id="media-{{ $adjunto->id_adjunto }}"
+                    @if($adjunto->tipo_mime === 'video/x-flv') data-flv-src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" @endif>
+                    @if($adjunto->tipo_mime !== 'video/x-flv')
                     <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
+                    @endif
                 </video>
                 @endif
             </div>
@@ -352,6 +374,14 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @section('js')
 @include('partials.editor-toolbar-js')
 <script>
+// Inicializar flv.js para archivos .flv
+document.querySelectorAll('video[data-flv-src]').forEach(function(videoEl) {
+    if (flvjs.isSupported()) {
+        var player = flvjs.createPlayer({ type: 'flv', url: videoEl.getAttribute('data-flv-src') });
+        player.attachMediaElement(videoEl);
+        player.load();
+    }
+});
 $(document).ready(function() {
     // Confirmación antes de salir si hay cambios sin guardar
     var originalContent = $('#transcripcion').val();
@@ -363,6 +393,29 @@ $(document).ready(function() {
 
     $('#formTranscripcion').on('submit', function() {
         hasChanges = false;
+    });
+
+    // Validación del motivo de rechazo antes de enviar
+    $('#modalRechazar form').on('submit', function(e) {
+        var comentario = $(this).find('textarea[name="comentario"]').val().trim();
+        var $error = $(this).find('.rechazo-error');
+        if (comentario.length < 10) {
+            e.preventDefault();
+            if ($error.length === 0) {
+                $(this).find('.form-group').append(
+                    '<div class="rechazo-error alert alert-warning mt-2 mb-0 py-2">' +
+                    '<i class="fas fa-exclamation-triangle mr-1"></i>' +
+                    'El motivo del rechazo debe tener al menos 10 caracteres (actualmente: ' + comentario.length + ').' +
+                    '</div>'
+                );
+            } else {
+                $error.html(
+                    '<i class="fas fa-exclamation-triangle mr-1"></i>' +
+                    'El motivo del rechazo debe tener al menos 10 caracteres (actualmente: ' + comentario.length + ').'
+                );
+            }
+            $(this).find('textarea[name="comentario"]').focus();
+        }
     });
 
     $(window).on('beforeunload', function() {
