@@ -493,6 +493,90 @@ class AdjuntoController extends Controller
     }
 
     /**
+     * Iniciar conversión FLV → MP4 en background (ffmpeg).
+     * Retorna estado inmediatamente; el cliente hace polling.
+     */
+    public function iniciarConversionFlv($id)
+    {
+        $adjunto = Adjunto::findOrFail($id);
+        if (!$this->puedeVerAdjunto($adjunto, Auth::user())) {
+            return response()->json(['error' => 'Sin permiso'], 403);
+        }
+
+        $mp4Path    = storage_path('app/flv_cache/' . $id . '.mp4');
+        $lockPath   = $mp4Path . '.lock';
+
+        if (file_exists($mp4Path)) {
+            return response()->json(['status' => 'ready', 'url' => route('adjuntos.flv_play', $id)]);
+        }
+        if (file_exists($lockPath)) {
+            return response()->json(['status' => 'converting']);
+        }
+
+        $rutaOriginal = Storage::disk('public')->path($adjunto->ubicacion);
+        $dir = dirname($mp4Path);
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        touch($lockPath);
+
+        $ffmpeg  = trim(shell_exec('which ffmpeg 2>/dev/null') ?? '') ?: 'ffmpeg';
+        $logFile = $mp4Path . '.log';
+
+        // Conversión en background: al terminar exitosamente elimina el lock
+        $cmd = sprintf(
+            'nohup %s -i %s -c:v libx264 -preset fast -crf 23 -c:a aac -movflags +faststart %s -y > %s 2>&1 && rm -f %s &',
+            escapeshellcmd($ffmpeg),
+            escapeshellarg($rutaOriginal),
+            escapeshellarg($mp4Path),
+            escapeshellarg($logFile),
+            escapeshellarg($lockPath)
+        );
+        exec($cmd);
+
+        return response()->json(['status' => 'converting']);
+    }
+
+    /**
+     * Consultar estado de la conversión FLV → MP4.
+     */
+    public function estadoConversionFlv($id)
+    {
+        $mp4Path  = storage_path('app/flv_cache/' . $id . '.mp4');
+        $lockPath = $mp4Path . '.lock';
+
+        if (file_exists($mp4Path) && !file_exists($lockPath)) {
+            return response()->json(['status' => 'ready', 'url' => route('adjuntos.flv_play', $id)]);
+        }
+        if (file_exists($lockPath)) {
+            return response()->json(['status' => 'converting']);
+        }
+        return response()->json(['status' => 'pending']);
+    }
+
+    /**
+     * Servir el MP4 convertido desde el cache FLV.
+     */
+    public function reproducirFlv($id)
+    {
+        $adjunto = Adjunto::findOrFail($id);
+        if (!$this->puedeVerAdjunto($adjunto, Auth::user())) {
+            abort(403);
+        }
+
+        $mp4Path = storage_path('app/flv_cache/' . $id . '.mp4');
+        if (!file_exists($mp4Path)) {
+            abort(404, 'Video no convertido aún.');
+        }
+
+        return response()->file($mp4Path, [
+            'Content-Type'        => 'video/mp4',
+            'Content-Disposition' => 'inline; filename="video.mp4"',
+        ]);
+    }
+
+    /**
      * Extraer duración en segundos de un archivo de audio/video usando ffprobe.
      * Devuelve null si ffprobe no está disponible o el archivo no tiene duración.
      */

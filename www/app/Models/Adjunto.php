@@ -66,7 +66,8 @@ class Adjunto extends Model
     }
 
     public function getEsVideoAttribute() {
-        return strpos($this->tipo_mime ?? '', 'video') !== false;
+        $mime = $this->tipo_mime ?? '';
+        return strpos($mime, 'video') !== false || strpos($mime, 'flv') !== false;
     }
 
     public function getEsDocumentoAttribute() {
