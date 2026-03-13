@@ -43,6 +43,7 @@ www/storage/app/public/*
 www/storage/app/adjuntos/
 www/storage/app/transcripciones/
 www/storage/app/audios/
+www/storage/app/flv_cache/
 
 # ----------------
 # Servicios Python
