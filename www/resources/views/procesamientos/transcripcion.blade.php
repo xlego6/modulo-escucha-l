@@ -781,11 +781,8 @@ function pollLoteEstado() {
 
     $.ajax({
         url: '{{ route("procesamientos.transcripcion-lote-estado") }}',
-        method: 'POST',
-        data: {
-            _token: '{{ csrf_token() }}',
-            job_ids: jobIds
-        },
+        method: 'GET',
+        data: { job_ids: jobIds },
         success: function(resultados) {
             var hayPendientes = false;
 

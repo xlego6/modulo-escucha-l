@@ -557,7 +557,7 @@ class ProcesamientoController extends Controller
      */
     public function transcripcionLoteEstado(Request $request)
     {
-        $jobIds = $request->input('job_ids', []);
+        $jobIds = $request->query('job_ids', []);
         $resultados = [];
 
         foreach ($jobIds as $jobId) {
