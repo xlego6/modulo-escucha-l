@@ -489,15 +489,14 @@ class ProcesamientoController extends Controller
         $hfToken = (string) $request->input('hf_token', '');
 
         return response()->stream(function() use ($ids, $withDiarization, $hfToken) {
-            // Desactivar buffer de salida
             if (ob_get_level()) ob_end_clean();
+            set_time_limit(0);
 
             $total = count($ids);
             $procesados = 0;
             $exitosos = 0;
             $errores = 0;
 
-            // Enviar inicio
             $this->sendSSE('inicio', [
                 'total' => $total,
                 'mensaje' => "Iniciando procesamiento de {$total} entrevista(s)..."
@@ -522,16 +521,14 @@ class ProcesamientoController extends Controller
 
                     $codigo = $entrevista->entrevista_codigo;
 
-                    // Notificar que estamos procesando
                     $this->sendSSE('procesando', [
                         'id' => $id,
                         'codigo' => $codigo,
                         'procesados' => $procesados,
                         'total' => $total,
-                        'mensaje' => "Transcribiendo: {$codigo} ({$procesados}/{$total})"
+                        'mensaje' => "Iniciando transcripcion: {$codigo} ({$procesados}/{$total})"
                     ]);
 
-                    // Obtener archivos de audio
                     $audios = Adjunto::where('id_e_ind_fvt', $id)
                         ->where(function($q) {
                             $q->where('tipo_mime', 'like', '%audio%')
@@ -551,7 +548,6 @@ class ProcesamientoController extends Controller
                         continue;
                     }
 
-                    // Obtener ruta del audio
                     $primerAudio = $audios->first();
                     $audioPath = Storage::disk('public')->path($primerAudio->ubicacion);
 
@@ -567,13 +563,57 @@ class ProcesamientoController extends Controller
                         continue;
                     }
 
-                    // Llamar al servicio de transcripcion
-                    $result = $this->procesamientoService->transcribe($audioPath, $withDiarization, $hfToken);
+                    // Iniciar transcripcion asincrona
+                    $jobId = 'lote_' . $id . '_' . time();
+                    $asyncResult = $this->procesamientoService->transcribeAsync($audioPath, $jobId, $withDiarization, $hfToken);
 
-                    if ($result['success']) {
+                    if (!($asyncResult['success'] ?? false)) {
+                        $errores++;
+                        $this->sendSSE('error', [
+                            'id' => $id,
+                            'codigo' => $codigo,
+                            'procesados' => $procesados,
+                            'total' => $total,
+                            'mensaje' => "Error al iniciar: " . ($asyncResult['error'] ?? 'Error desconocido')
+                        ]);
+                        continue;
+                    }
+
+                    // Polling con heartbeats para mantener la conexion SSE viva
+                    $maxWait = 7200;
+                    $elapsed = 0;
+                    $pollInterval = 8;
+                    $result = null;
+
+                    while ($elapsed < $maxWait) {
+                        sleep($pollInterval);
+                        $elapsed += $pollInterval;
+
+                        $jobStatus = $this->procesamientoService->getTranscriptionJob($jobId);
+                        $status = $jobStatus['status'] ?? 'unknown';
+
+                        if ($status === 'completed') {
+                            $result = $jobStatus;
+                            break;
+                        } elseif ($status === 'failed') {
+                            break;
+                        }
+
+                        // Heartbeat para mantener viva la conexion SSE
+                        $mins = floor($elapsed / 60);
+                        $segs = $elapsed % 60;
+                        $this->sendSSE('procesando', [
+                            'id' => $id,
+                            'codigo' => $codigo,
+                            'procesados' => $procesados,
+                            'total' => $total,
+                            'mensaje' => "Transcribiendo {$codigo}... " . sprintf('%02d:%02d', $mins, $segs)
+                        ]);
+                    }
+
+                    if ($result && ($result['success'] ?? false)) {
                         $texto = trim($result['text'] ?? '');
 
-                        // Validar que el texto no esté vacío
                         if (empty($texto)) {
                             $errores++;
                             $this->sendSSE('error', [
@@ -586,9 +626,7 @@ class ProcesamientoController extends Controller
                             continue;
                         }
 
-                        // Guardar como adjunto de tipo "Transcripción Automatizada"
                         $entrevista->guardarTranscripcionAutomatizada($texto);
-
                         $exitosos++;
 
                         $this->sendSSE('exito', [
@@ -602,12 +640,15 @@ class ProcesamientoController extends Controller
                         ]);
                     } else {
                         $errores++;
+                        $errorMsg = (is_array($result) ? ($result['error'] ?? null) : null)
+                            ?? ($jobStatus['error'] ?? null)
+                            ?? 'Tiempo de espera agotado o error desconocido';
                         $this->sendSSE('error', [
                             'id' => $id,
                             'codigo' => $codigo,
                             'procesados' => $procesados,
                             'total' => $total,
-                            'mensaje' => "Error en {$codigo}: " . ($result['error'] ?? 'Error desconocido')
+                            'mensaje' => "Error en {$codigo}: {$errorMsg}"
                         ]);
                     }
 
@@ -622,7 +663,6 @@ class ProcesamientoController extends Controller
                 }
             }
 
-            // Enviar fin
             $this->sendSSE('fin', [
                 'total' => $total,
                 'exitosos' => $exitosos,
