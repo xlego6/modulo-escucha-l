@@ -163,15 +163,23 @@ class ProcesamientoService
      * @param bool $withDiarization Incluir diarizacion
      * @return array
      */
-    public function transcribeAsync(string $audioPath, string $jobId, bool $withDiarization = true): array
+    public function transcribeAsync(string $audioPath, string $jobId, bool $withDiarization = true, string $hfToken = ''): array
     {
         try {
+            $transcriptionPath = $this->convertPathForTranscription($audioPath);
+
+            $payload = [
+                'audio_path' => $transcriptionPath,
+                'job_id' => $jobId,
+                'with_diarization' => $withDiarization,
+            ];
+
+            if (!empty($hfToken)) {
+                $payload['hf_token'] = $hfToken;
+            }
+
             $response = Http::timeout(30)
-                ->post("{$this->transcriptionUrl}/transcribe/async", [
-                    'audio_path' => $audioPath,
-                    'job_id' => $jobId,
-                    'with_diarization' => $withDiarization
-                ]);
+                ->post("{$this->transcriptionUrl}/transcribe/async", $payload);
 
             if (!$response->successful()) {
                 $this->safeLog('error', "Error HTTP en transcribeAsync: {$response->status()}");
