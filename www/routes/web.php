@@ -181,6 +181,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('procesamientos/transcripcion', [ProcesamientoController::class, 'transcripcion'])->name('procesamientos.transcripcion');
             Route::post('procesamientos/transcripcion/{id}/iniciar', [ProcesamientoController::class, 'iniciarTranscripcion'])->name('procesamientos.iniciar-transcripcion');
             Route::post('procesamientos/transcripcion/lote', [ProcesamientoController::class, 'transcripcionLote'])->name('procesamientos.transcripcion-lote');
+            Route::post('procesamientos/transcripcion/lote/estado', [ProcesamientoController::class, 'transcripcionLoteEstado'])->name('procesamientos.transcripcion-lote-estado');
             Route::post('procesamientos/transcripcion/adjunto/{id}', [ProcesamientoController::class, 'transcribirAdjunto'])->name('procesamientos.transcribir-adjunto');
         });
 

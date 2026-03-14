@@ -11,6 +11,7 @@ use App\Models\Entrevistador;
 use App\Services\ProcesamientoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\TrazaActividad;
@@ -475,7 +476,8 @@ class ProcesamientoController extends Controller
     }
 
     /**
-     * Procesar transcripciones en lote (Server-Sent Events)
+     * Enviar trabajos de transcripcion en lote al servicio Python y retornar job_ids inmediatamente.
+     * El navegador consulta el estado via transcripcionLoteEstado() de forma independiente.
      */
     public function transcripcionLote(Request $request)
     {
@@ -488,195 +490,141 @@ class ProcesamientoController extends Controller
         $withDiarization = $request->input('diarizar', true);
         $hfToken = (string) $request->input('hf_token', '');
 
-        return response()->stream(function() use ($ids, $withDiarization, $hfToken) {
-            if (ob_get_level()) ob_end_clean();
-            set_time_limit(0);
+        $jobs = [];
 
-            $total = count($ids);
-            $procesados = 0;
-            $exitosos = 0;
-            $errores = 0;
+        foreach ($ids as $id) {
+            try {
+                $entrevista = Entrevista::find($id);
 
-            $this->sendSSE('inicio', [
-                'total' => $total,
-                'mensaje' => "Iniciando procesamiento de {$total} entrevista(s)..."
-            ]);
-
-            foreach ($ids as $id) {
-                $procesados++;
-
-                try {
-                    $entrevista = Entrevista::find($id);
-
-                    if (!$entrevista) {
-                        $this->sendSSE('error', [
-                            'id' => $id,
-                            'procesados' => $procesados,
-                            'total' => $total,
-                            'mensaje' => "Entrevista {$id} no encontrada"
-                        ]);
-                        $errores++;
-                        continue;
-                    }
-
-                    $codigo = $entrevista->entrevista_codigo;
-
-                    $this->sendSSE('procesando', [
-                        'id' => $id,
-                        'codigo' => $codigo,
-                        'procesados' => $procesados,
-                        'total' => $total,
-                        'mensaje' => "Iniciando transcripcion: {$codigo} ({$procesados}/{$total})"
-                    ]);
-
-                    $audios = Adjunto::where('id_e_ind_fvt', $id)
-                        ->where(function($q) {
-                            $q->where('tipo_mime', 'like', '%audio%')
-                              ->orWhere('tipo_mime', 'like', '%video%');
-                        })
-                        ->get();
-
-                    if ($audios->isEmpty()) {
-                        $this->sendSSE('error', [
-                            'id' => $id,
-                            'codigo' => $codigo,
-                            'procesados' => $procesados,
-                            'total' => $total,
-                            'mensaje' => "Sin archivos de audio: {$codigo}"
-                        ]);
-                        $errores++;
-                        continue;
-                    }
-
-                    $primerAudio = $audios->first();
-                    $audioPath = Storage::disk('public')->path($primerAudio->ubicacion);
-
-                    if (!file_exists($audioPath)) {
-                        $this->sendSSE('error', [
-                            'id' => $id,
-                            'codigo' => $codigo,
-                            'procesados' => $procesados,
-                            'total' => $total,
-                            'mensaje' => "Archivo no encontrado: {$codigo}"
-                        ]);
-                        $errores++;
-                        continue;
-                    }
-
-                    // Iniciar transcripcion asincrona
-                    $jobId = 'lote_' . $id . '_' . time();
-                    $asyncResult = $this->procesamientoService->transcribeAsync($audioPath, $jobId, $withDiarization, $hfToken);
-
-                    if (!($asyncResult['success'] ?? false)) {
-                        $errores++;
-                        $this->sendSSE('error', [
-                            'id' => $id,
-                            'codigo' => $codigo,
-                            'procesados' => $procesados,
-                            'total' => $total,
-                            'mensaje' => "Error al iniciar: " . ($asyncResult['error'] ?? 'Error desconocido')
-                        ]);
-                        continue;
-                    }
-
-                    // Polling con heartbeats para mantener la conexion SSE viva
-                    $maxWait = 7200; // 2 horas en segundos de reloj real
-                    $pollInterval = 8;
-                    $startTime = time();
-                    $result = null;
-                    $jobStatus = [];
-
-                    while ((time() - $startTime) < $maxWait) {
-                        sleep($pollInterval);
-
-                        $jobStatus = $this->procesamientoService->getTranscriptionJob($jobId);
-                        $status = $jobStatus['status'] ?? 'unknown';
-
-                        if ($status === 'completed') {
-                            $result = $jobStatus;
-                            break;
-                        } elseif ($status === 'failed') {
-                            break;
-                        }
-
-                        // Heartbeat para mantener viva la conexion SSE
-                        $elapsed = time() - $startTime;
-                        $mins = floor($elapsed / 60);
-                        $segs = $elapsed % 60;
-                        $this->sendSSE('procesando', [
-                            'id' => $id,
-                            'codigo' => $codigo,
-                            'procesados' => $procesados,
-                            'total' => $total,
-                            'mensaje' => "Transcribiendo {$codigo}... " . sprintf('%02d:%02d', $mins, $segs)
-                        ]);
-                    }
-
-                    if ($result && ($result['success'] ?? false)) {
-                        $texto = trim($result['text'] ?? '');
-
-                        if (empty($texto)) {
-                            $errores++;
-                            $this->sendSSE('error', [
-                                'id' => $id,
-                                'codigo' => $codigo,
-                                'procesados' => $procesados,
-                                'total' => $total,
-                                'mensaje' => "Sin texto en {$codigo}: El audio no contiene voz detectable"
-                            ]);
-                            continue;
-                        }
-
-                        $entrevista->guardarTranscripcionAutomatizada($texto);
-                        $exitosos++;
-
-                        $this->sendSSE('exito', [
-                            'id' => $id,
-                            'codigo' => $codigo,
-                            'procesados' => $procesados,
-                            'total' => $total,
-                            'caracteres' => strlen($texto),
-                            'hablantes' => $result['speakers_count'] ?? 0,
-                            'mensaje' => "Completado: {$codigo} (" . number_format(strlen($texto)) . " caracteres)"
-                        ]);
-                    } else {
-                        $errores++;
-                        $errorMsg = (is_array($result) ? ($result['error'] ?? null) : null)
-                            ?? ($jobStatus['error'] ?? null)
-                            ?? 'Tiempo de espera agotado o error desconocido';
-                        $this->sendSSE('error', [
-                            'id' => $id,
-                            'codigo' => $codigo,
-                            'procesados' => $procesados,
-                            'total' => $total,
-                            'mensaje' => "Error en {$codigo}: {$errorMsg}"
-                        ]);
-                    }
-
-                } catch (\Exception $e) {
-                    $errores++;
-                    $this->sendSSE('error', [
-                        'id' => $id,
-                        'procesados' => $procesados,
-                        'total' => $total,
-                        'mensaje' => "Excepcion: " . $e->getMessage()
-                    ]);
+                if (!$entrevista) {
+                    $jobs[] = ['id' => $id, 'codigo' => '?', 'job_id' => null, 'status' => 'error', 'error' => 'Entrevista no encontrada'];
+                    continue;
                 }
+
+                $codigo = $entrevista->entrevista_codigo;
+
+                $audios = Adjunto::where('id_e_ind_fvt', $id)
+                    ->where(function($q) {
+                        $q->where('tipo_mime', 'like', '%audio%')
+                          ->orWhere('tipo_mime', 'like', '%video%');
+                    })
+                    ->get();
+
+                if ($audios->isEmpty()) {
+                    $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => null, 'status' => 'error', 'error' => 'Sin archivos de audio'];
+                    continue;
+                }
+
+                $primerAudio = $audios->first();
+                $audioPath = Storage::disk('public')->path($primerAudio->ubicacion);
+
+                if (!file_exists($audioPath)) {
+                    $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => null, 'status' => 'error', 'error' => 'Archivo de audio no encontrado en el servidor'];
+                    continue;
+                }
+
+                $jobId = 'lote_' . $id . '_' . time();
+                $asyncResult = $this->procesamientoService->transcribeAsync($audioPath, $jobId, $withDiarization, $hfToken);
+
+                if (!($asyncResult['success'] ?? false)) {
+                    $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => null, 'status' => 'error', 'error' => $asyncResult['error'] ?? 'Error al enviar al servicio de transcripcion'];
+                    continue;
+                }
+
+                // Guardar mapping job_id → entrevista en cache para cuando se recupere el resultado
+                Cache::put("transcripcion_job_{$jobId}", [
+                    'entrevista_id' => $id,
+                    'adjunto_id'    => $primerAudio->id_adjunto,
+                    'codigo'        => $codigo,
+                    'saved'         => false,
+                    'user_id'       => Auth::id(),
+                    'ip'            => $request->ip(),
+                ], now()->addDays(2));
+
+                $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => $jobId, 'status' => 'queued'];
+
+            } catch (\Exception $e) {
+                $jobs[] = ['id' => $id, 'codigo' => '?', 'job_id' => null, 'status' => 'error', 'error' => $e->getMessage()];
+            }
+        }
+
+        return response()->json(['success' => true, 'jobs' => $jobs]);
+    }
+
+    /**
+     * Consultar el estado de los trabajos en lote y guardar resultados completados.
+     * Llamado por el navegador periodicamente via AJAX.
+     */
+    public function transcripcionLoteEstado(Request $request)
+    {
+        $jobIds = $request->input('job_ids', []);
+        $resultados = [];
+
+        foreach ($jobIds as $jobId) {
+            $cached = Cache::get("transcripcion_job_{$jobId}");
+
+            if (!$cached) {
+                $resultados[$jobId] = ['status' => 'not_found'];
+                continue;
             }
 
-            $this->sendSSE('fin', [
-                'total' => $total,
-                'exitosos' => $exitosos,
-                'errores' => $errores,
-                'mensaje' => "Procesamiento completado: {$exitosos} exitosos, {$errores} errores"
-            ]);
+            try {
+                $jobStatus = $this->procesamientoService->getTranscriptionJob($jobId);
+                $status = $jobStatus['status'] ?? 'unknown';
 
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no',
-        ]);
+                // Si completó y no se ha guardado aún, guardar la transcripcion
+                if ($status === 'completed' && ($jobStatus['success'] ?? false) && !$cached['saved']) {
+                    $texto = trim($jobStatus['text'] ?? '');
+
+                    if (!empty($texto)) {
+                        $entrevista = Entrevista::find($cached['entrevista_id']);
+                        if ($entrevista) {
+                            $entrevista->guardarTranscripcionAutomatizada($texto);
+
+                            TrazaActividad::create([
+                                'fecha_hora'  => now(),
+                                'id_usuario'  => $cached['user_id'],
+                                'accion'      => 'iniciar_transcripcion',
+                                'objeto'      => 'entrevista',
+                                'id_registro' => $entrevista->id_e_ind_fvt,
+                                'codigo'      => $cached['codigo'],
+                                'referencia'  => 'Transcripcion automatica (lote)',
+                                'ip'          => $cached['ip'],
+                            ]);
+
+                            $cached['saved'] = true;
+                            Cache::put("transcripcion_job_{$jobId}", $cached, now()->addDays(2));
+                        }
+                    } else {
+                        // Audio sin voz detectable — marcar como error
+                        $status = 'failed';
+                        $jobStatus['error'] = 'El audio no contiene voz detectable';
+                    }
+                }
+
+                $resultados[$jobId] = [
+                    'id'                => $cached['entrevista_id'],
+                    'codigo'            => $cached['codigo'],
+                    'status'            => $status,
+                    'saved'             => $cached['saved'],
+                    'success'           => $jobStatus['success'] ?? false,
+                    'error'             => $jobStatus['error'] ?? null,
+                    'speakers_count'    => $jobStatus['speakers_count'] ?? 0,
+                    'text_length'       => strlen($jobStatus['text'] ?? ''),
+                    'diarization_error' => $jobStatus['diarization_error'] ?? null,
+                ];
+
+            } catch (\Exception $e) {
+                $resultados[$jobId] = [
+                    'id'     => $cached['entrevista_id'],
+                    'codigo' => $cached['codigo'],
+                    'status' => 'error',
+                    'error'  => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json($resultados);
     }
 
     /**
