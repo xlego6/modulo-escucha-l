@@ -51,11 +51,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/status')" || exit 1
 
 # Usar Gunicorn para producción (más robusto que Flask dev server)
-# --timeout 600: Permite transcripciones de hasta 10 minutos
-# --workers 2: 2 workers para procesar peticiones
+# --timeout 7200: Permite transcripciones de hasta 2 horas (audios largos en CPU)
+# --workers 1: 1 worker para evitar competencia de CPU en transcripciones largas
 # --threads 2: 2 threads por worker
 # --bind 0.0.0.0:5000: Escuchar en todas las interfaces
 # Verificar que pyannote se importa correctamente (falla el build si hay incompatibilidad)
 RUN python -c "from pyannote.audio import Pipeline; print('OK: pyannote.audio importado correctamente')"
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "1800", "--workers", "2", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", "transcription_service:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "7200", "--workers", "1", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", "transcription_service:app"]
