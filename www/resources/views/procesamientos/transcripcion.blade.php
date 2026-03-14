@@ -653,19 +653,20 @@ $(document).ready(function() {
 
         if (ids.length === 0) return;
 
-        if (!confirm('¿Iniciar transcripcion de ' + ids.length + ' entrevista(s)?\n\nEste proceso puede tomar varios minutos por cada entrevista.')) return;
+        if (!confirm('¿Iniciar transcripcion de ' + ids.length + ' entrevista(s)?\n\nLos trabajos se envian al servidor y puede cerrar esta ventana. El progreso se actualiza automaticamente.')) return;
 
         iniciarProcesamientoLote(ids);
     });
 
-    // Cancelar lote
+    // Cancelar lote (detiene el polling local; el servidor sigue procesando)
     $('#btn-cancelar-lote').on('click', function() {
-        if (window.loteEventSource) {
-            if (confirm('¿Cancelar el procesamiento en lote?\n\nLas transcripciones ya completadas se conservaran.')) {
-                window.loteEventSource.close();
-                $('#lote-status').html('<i class="fas fa-stop-circle text-warning mr-2"></i><span>Procesamiento cancelado por el usuario</span>');
+        if (window.lotePollTimer) {
+            if (confirm('¿Detener el seguimiento en esta pantalla?\n\nEl servidor continuara procesando las transcripciones. Las completadas se guardaran automaticamente.')) {
+                clearTimeout(window.lotePollTimer);
+                window.lotePollTimer = null;
+                $('#lote-status').html('<i class="fas fa-pause-circle text-warning mr-2"></i><span>Seguimiento pausado. Los trabajos siguen en el servidor.</span>');
                 $('#lote-footer').show();
-                addLogEntry('warning', 'Procesamiento cancelado por el usuario');
+                addLogEntry('warning', 'Seguimiento pausado por el usuario');
             }
         }
     });
@@ -673,11 +674,12 @@ $(document).ready(function() {
 
 var loteExitosos = 0;
 var loteErrores = 0;
+var loteJobs = []; // [{id, codigo, job_id, status}]
 
 function iniciarProcesamientoLote(ids) {
-    // Resetear contadores
     loteExitosos = 0;
     loteErrores = 0;
+    loteJobs = [];
     $('#lote-procesados, #lote-exitosos, #lote-errores').text('0');
     $('#lote-total').text(ids.length);
     $('#lote-progress-bar').css('width', '0%');
@@ -685,140 +687,170 @@ function iniciarProcesamientoLote(ids) {
     $('#lote-log').empty();
     $('#lote-footer').hide();
 
-    // Mostrar panel
     $('#panel-lote').slideDown();
     $('html, body').animate({ scrollTop: 0 }, 300);
 
-    // Deshabilitar controles
     $('#btn-procesar-lote').prop('disabled', true);
     $('.check-item').prop('disabled', true);
     $('.btn-transcribir').prop('disabled', true);
 
-    // Crear formulario para enviar IDs
-    var formData = new FormData();
-    ids.forEach(function(id) {
-        formData.append('ids[]', id);
-    });
-    formData.append('modelo', $('#modelo-whisper').val());
-    formData.append('idioma', $('#idioma').val());
-    formData.append('dispositivo', $('#dispositivo').val());
-    formData.append('diarizar', $('#diarizar').is(':checked') ? 1 : 0);
-    formData.append('hf_token', $('#hf_token').val() || '');
-    formData.append('_token', '{{ csrf_token() }}');
+    $('#lote-mensaje').text('Enviando trabajos al servidor...');
+    addLogEntry('info', 'Enviando ' + ids.length + ' trabajo(s) al servicio de transcripcion...');
 
-    // Usar fetch con POST para enviar los IDs y recibir SSE
-    fetch('{{ route("procesamientos.transcripcion-lote") }}', {
+    $.ajax({
+        url: '{{ route("procesamientos.transcripcion-lote") }}',
         method: 'POST',
-        body: formData
-    }).then(function(response) {
-        if (!response.ok) {
-            throw new Error('Error en la solicitud');
-        }
-
-        var reader = response.body.getReader();
-        var decoder = new TextDecoder();
-        var buffer = '';
-
-        function processStream() {
-            reader.read().then(function(result) {
-                if (result.done) {
-                    return;
-                }
-
-                buffer += decoder.decode(result.value, { stream: true });
-
-                // Procesar eventos completos
-                var lines = buffer.split('\n');
-                buffer = lines.pop(); // Guardar linea incompleta
-
-                var currentEvent = '';
-                var currentData = '';
-
-                lines.forEach(function(line) {
-                    if (line.startsWith('event: ')) {
-                        currentEvent = line.substring(7);
-                    } else if (line.startsWith('data: ')) {
-                        currentData = line.substring(6);
-                        if (currentEvent && currentData) {
-                            procesarEventoLote(currentEvent, JSON.parse(currentData));
-                            currentEvent = '';
-                            currentData = '';
-                        }
-                    }
-                });
-
-                processStream();
-            }).catch(function(error) {
-                console.error('Error en stream:', error);
-                $('#lote-status').html('<i class="fas fa-exclamation-circle text-danger mr-2"></i><span>Error de conexion</span>');
+        data: {
+            _token: '{{ csrf_token() }}',
+            ids: ids,
+            diarizar: $('#diarizar').is(':checked') ? 1 : 0,
+            hf_token: $('#hf_token').val() || ''
+        },
+        success: function(response) {
+            if (!response.success) {
+                $('#lote-status').html('<i class="fas fa-exclamation-circle text-danger mr-2"></i><span>Error al enviar trabajos</span>');
                 finalizarLote();
-            });
-        }
+                return;
+            }
 
-        processStream();
-    }).catch(function(error) {
-        console.error('Error:', error);
-        $('#lote-status').html('<i class="fas fa-exclamation-circle text-danger mr-2"></i><span>Error al iniciar procesamiento</span>');
-        finalizarLote();
+            loteJobs = response.jobs;
+
+            // Marcar errores inmediatos (archivo no encontrado, etc.)
+            loteJobs.forEach(function(job) {
+                if (job.status === 'error') {
+                    loteErrores++;
+                    addLogEntry('danger', job.codigo + ': ' + job.error);
+                    var $row = $('input[value="' + job.id + '"]').closest('tr');
+                    $row.addClass('table-danger');
+                    $row.find('.btn-transcribir').removeClass('btn-primary').addClass('btn-danger')
+                        .html('<i class="fas fa-times"></i>').prop('disabled', false);
+                } else {
+                    addLogEntry('info', job.codigo + ': en cola');
+                    var $row = $('input[value="' + job.id + '"]').closest('tr');
+                    $row.addClass('table-warning');
+                    $row.find('.btn-transcribir').html('<i class="fas fa-spinner fa-spin"></i>');
+                }
+            });
+
+            $('#lote-errores').text(loteErrores);
+
+            var enCola = loteJobs.filter(function(j) { return j.job_id !== null; });
+
+            if (enCola.length === 0) {
+                // Todos fallaron al enviar
+                $('#lote-procesados').text(loteJobs.length);
+                actualizarProgreso(loteJobs.length, loteJobs.length);
+                $('#lote-status').html('<i class="fas fa-times-circle text-danger mr-2"></i><span>No se pudieron enviar los trabajos</span>');
+                finalizarLote();
+                return;
+            }
+
+            addLogEntry('success', enCola.length + ' trabajo(s) enviado(s). El servidor los procesara en segundo plano.');
+            $('#lote-mensaje').text('Procesando... Los resultados se actualizan automaticamente cada 30 segundos.');
+
+            // Iniciar polling
+            pollLoteEstado();
+        },
+        error: function(xhr) {
+            $('#lote-status').html('<i class="fas fa-exclamation-circle text-danger mr-2"></i><span>Error al contactar el servidor</span>');
+            addLogEntry('danger', 'Error: ' + (xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error de conexion'));
+            finalizarLote();
+        }
     });
 }
 
-function procesarEventoLote(evento, data) {
-    switch(evento) {
-        case 'inicio':
-            $('#lote-mensaje').text(data.mensaje);
-            addLogEntry('info', data.mensaje);
-            break;
+function pollLoteEstado() {
+    // Recoger solo los job_ids que aun no terminaron
+    var pendientes = loteJobs.filter(function(j) {
+        return j.job_id !== null && j.status !== 'completed' && j.status !== 'failed' && j.status !== 'error';
+    });
 
-        case 'procesando':
-            $('#lote-mensaje').text(data.mensaje);
-            // Marcar fila como procesando
-            var $row = $('input[value="' + data.id + '"]').closest('tr');
-            $row.addClass('table-warning');
-            $row.find('.btn-transcribir').html('<i class="fas fa-spinner fa-spin"></i>');
-            break;
-
-        case 'exito':
-            loteExitosos++;
-            $('#lote-exitosos').text(loteExitosos);
-            $('#lote-procesados').text(data.procesados);
-            actualizarProgreso(data.procesados, data.total);
-            $('#lote-mensaje').text(data.mensaje);
-            addLogEntry('success', data.mensaje);
-
-            // Marcar fila como exitosa
-            var $row = $('input[value="' + data.id + '"]').closest('tr');
-            $row.removeClass('table-warning').addClass('table-success');
-            $row.find('.btn-transcribir')
-                .removeClass('btn-primary').addClass('btn-success')
-                .html('<i class="fas fa-check"></i>').prop('disabled', true);
-            $row.find('.check-item').prop('checked', false).prop('disabled', true);
-            break;
-
-        case 'error':
-            loteErrores++;
-            $('#lote-errores').text(loteErrores);
-            $('#lote-procesados').text(data.procesados);
-            actualizarProgreso(data.procesados, data.total);
-            $('#lote-mensaje').text(data.mensaje);
-            addLogEntry('danger', data.mensaje);
-
-            // Marcar fila como error
-            if (data.id) {
-                var $row = $('input[value="' + data.id + '"]').closest('tr');
-                $row.removeClass('table-warning').addClass('table-danger');
-                $row.find('.btn-transcribir')
-                    .removeClass('btn-primary').addClass('btn-danger')
-                    .html('<i class="fas fa-times"></i>').prop('disabled', false);
-            }
-            break;
-
-        case 'fin':
-            $('#lote-status').html('<i class="fas fa-check-circle text-success mr-2"></i><span>' + data.mensaje + '</span>');
-            addLogEntry('info', data.mensaje);
-            finalizarLote();
-            break;
+    if (pendientes.length === 0) {
+        var total = loteJobs.length;
+        var procesados = loteExitosos + loteErrores;
+        $('#lote-procesados').text(procesados);
+        actualizarProgreso(procesados, total);
+        var msg = 'Procesamiento completado: ' + loteExitosos + ' exitoso(s), ' + loteErrores + ' error(es)';
+        $('#lote-status').html('<i class="fas fa-check-circle text-success mr-2"></i><span>' + msg + '</span>');
+        addLogEntry('info', msg);
+        finalizarLote();
+        return;
     }
+
+    var jobIds = pendientes.map(function(j) { return j.job_id; });
+
+    $.ajax({
+        url: '{{ route("procesamientos.transcripcion-lote-estado") }}',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            job_ids: jobIds
+        },
+        success: function(resultados) {
+            var hayPendientes = false;
+
+            jobIds.forEach(function(jobId) {
+                var res = resultados[jobId];
+                if (!res) return;
+
+                var job = loteJobs.find(function(j) { return j.job_id === jobId; });
+                if (!job) return;
+
+                var statusAnterior = job.status;
+                job.status = res.status;
+
+                if (res.status === 'completed' && res.saved && statusAnterior !== 'completed') {
+                    loteExitosos++;
+                    $('#lote-exitosos').text(loteExitosos);
+                    var msg = 'Completado: ' + res.codigo + ' (' + (res.text_length || 0).toLocaleString() + ' caracteres, ' + (res.speakers_count || 0) + ' hablante(s))';
+                    addLogEntry('success', msg);
+                    if (res.diarization_error) {
+                        addLogEntry('warning', res.codigo + ' - Diarizacion: ' + res.diarization_error);
+                    }
+                    var $row = $('input[value="' + res.id + '"]').closest('tr');
+                    $row.removeClass('table-warning').addClass('table-success');
+                    $row.find('.btn-transcribir').removeClass('btn-primary').addClass('btn-success')
+                        .html('<i class="fas fa-check"></i>').prop('disabled', true);
+                    $row.find('.check-item').prop('checked', false).prop('disabled', true);
+
+                } else if ((res.status === 'failed' || res.status === 'error') && statusAnterior !== 'failed' && statusAnterior !== 'error') {
+                    loteErrores++;
+                    $('#lote-errores').text(loteErrores);
+                    addLogEntry('danger', 'Error en ' + res.codigo + ': ' + (res.error || 'Error desconocido'));
+                    var $row = $('input[value="' + res.id + '"]').closest('tr');
+                    $row.removeClass('table-warning').addClass('table-danger');
+                    $row.find('.btn-transcribir').removeClass('btn-primary').addClass('btn-danger')
+                        .html('<i class="fas fa-times"></i>').prop('disabled', false);
+
+                } else if (res.status === 'processing' && statusAnterior === 'queued') {
+                    addLogEntry('info', res.codigo + ': transcribiendo...');
+                }
+
+                if (res.status !== 'completed' && res.status !== 'failed' && res.status !== 'error') {
+                    hayPendientes = true;
+                }
+            });
+
+            var procesados = loteExitosos + loteErrores;
+            $('#lote-procesados').text(procesados);
+            actualizarProgreso(procesados, loteJobs.length);
+
+            if (hayPendientes) {
+                var pendientesCount = loteJobs.filter(function(j) {
+                    return j.job_id !== null && j.status !== 'completed' && j.status !== 'failed' && j.status !== 'error';
+                }).length;
+                $('#lote-mensaje').text('Procesando ' + pendientesCount + ' trabajo(s). Proxima consulta en 30 segundos...');
+                window.lotePollTimer = setTimeout(pollLoteEstado, 30000);
+            } else {
+                pollLoteEstado(); // Llamada final para cerrar
+            }
+        },
+        error: function() {
+            // Error de red — reintentar en 30s sin marcar como fallido
+            addLogEntry('warning', 'Error de conexion al consultar estado. Reintentando en 30 segundos...');
+            window.lotePollTimer = setTimeout(pollLoteEstado, 30000);
+        }
+    });
 }
 
 function actualizarProgreso(procesados, total) {
