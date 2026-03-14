@@ -580,14 +580,14 @@ class ProcesamientoController extends Controller
                     }
 
                     // Polling con heartbeats para mantener la conexion SSE viva
-                    $maxWait = 7200;
-                    $elapsed = 0;
+                    $maxWait = 7200; // 2 horas en segundos de reloj real
                     $pollInterval = 8;
+                    $startTime = time();
                     $result = null;
+                    $jobStatus = [];
 
-                    while ($elapsed < $maxWait) {
+                    while ((time() - $startTime) < $maxWait) {
                         sleep($pollInterval);
-                        $elapsed += $pollInterval;
 
                         $jobStatus = $this->procesamientoService->getTranscriptionJob($jobId);
                         $status = $jobStatus['status'] ?? 'unknown';
@@ -600,6 +600,7 @@ class ProcesamientoController extends Controller
                         }
 
                         // Heartbeat para mantener viva la conexion SSE
+                        $elapsed = time() - $startTime;
                         $mins = floor($elapsed / 60);
                         $segs = $elapsed % 60;
                         $this->sendSSE('procesando', [
