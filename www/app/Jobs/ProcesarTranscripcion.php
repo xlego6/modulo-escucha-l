@@ -29,9 +29,9 @@ class ProcesarTranscripcion implements ShouldQueue
     public $tries = 3;
 
     /**
-     * Timeout en segundos (30 minutos)
+     * Timeout en segundos (2 horas)
      */
-    public $timeout = 1800;
+    public $timeout = 7200;
 
     /**
      * Create a new job instance.

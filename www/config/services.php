@@ -39,6 +39,6 @@ return [
         'url' => env('NER_SERVICE_URL', 'http://ner:5001'),
     ],
 
-    'processing_timeout' => env('PROCESSING_TIMEOUT', 600),
+    'processing_timeout' => env('PROCESSING_TIMEOUT', 7200),
 
 ];

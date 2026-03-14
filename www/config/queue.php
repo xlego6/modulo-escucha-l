@@ -26,7 +26,7 @@ return [
             'driver' => 'database',
             'table' => 'esclarecimiento.trabajo_procesamiento',
             'queue' => 'default',
-            'retry_after' => 1800, // 30 minutos para transcripciones largas
+            'retry_after' => 7200, // 2 horas para transcripciones largas
             'after_commit' => false,
         ],
 
@@ -34,7 +34,7 @@ return [
             'driver' => 'redis',
             'connection' => 'default',
             'queue' => env('REDIS_QUEUE', 'default'),
-            'retry_after' => 1800,
+            'retry_after' => 7200,
             'block_for' => null,
             'after_commit' => false,
         ],
