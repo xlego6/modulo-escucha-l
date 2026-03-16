@@ -184,12 +184,11 @@ class ProcesamientoController extends Controller
             $ids = $this->getEntrevistaIdsFiltradas($tipo, $filtroIds, $filtroDependencia, $estado);
             $s = $this->audioStatsForIds($ids);
 
-            if ($estado === 'en_edicion') {
+            if (in_array($estado, ['en_edicion', 'enviada_revision', 'rechazada', 'aprobada'])) {
                 $q = DB::table($table . ' as at')
                     ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.' . $personaCol)
-                    ->where('at.estado', 'en_edicion')
-                    ->whereNotNull('at.fecha_inicio_edicion')
-                    ->whereNotNull('at.fecha_envio_revision');
+                    ->where('at.estado', $estado)
+                    ->whereNotNull('at.fecha_inicio_edicion');
 
                 if (!empty($filtroIds)) {
                     $q->whereIn('at.' . $personaCol, (array)$filtroIds);
@@ -197,7 +196,14 @@ class ProcesamientoController extends Controller
                     $q->where('e.id_dependencia_origen', $filtroDependencia);
                 }
 
-                $s['tiempo_edicion'] = (int)$q->sum(DB::raw("EXTRACT(EPOCH FROM (at.fecha_envio_revision - at.fecha_inicio_edicion))"));
+                // Para en_edicion: tiempo transcurrido desde inicio hasta ahora
+                // Para los demás: tiempo entre inicio de edición y envío a revisión
+                if ($estado === 'en_edicion') {
+                    $s['tiempo_edicion'] = (int)$q->sum(DB::raw("EXTRACT(EPOCH FROM (NOW() - at.fecha_inicio_edicion))"));
+                } else {
+                    $q->whereNotNull('at.fecha_envio_revision');
+                    $s['tiempo_edicion'] = (int)$q->sum(DB::raw("EXTRACT(EPOCH FROM (at.fecha_envio_revision - at.fecha_inicio_edicion))"));
+                }
             }
 
             $stats[$estado] = $s;
