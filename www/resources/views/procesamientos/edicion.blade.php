@@ -296,12 +296,6 @@
                     </td>
                     <td>
                         <div class="btn-group">
-                            @if(\App\Models\RolModuloPermiso::puedeEditar(Auth::user()->id_nivel, 'procesamientos.transcripcion'))
-                            <a href="{{ route('procesamientos.editar-transcripcion', $entrevista->id_e_ind_fvt) }}"
-                               class="btn btn-sm btn-primary" title="Editar directamente">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            @endif
                             @if($hayAudioLibre)
                             @php
                                 $adjuntosData = $entrevista->rel_adjuntos->map(function($a) use ($adjuntosAsignados) {
