@@ -179,6 +179,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
                     @endif
                 </video>
+                <div class="flv-error-msg" id="flv-error-{{ $adjunto->id_adjunto }}" style="display:none; color:#ff6b6b; padding:8px; text-align:center; background:#1a1a1a;"></div>
                 @endif
             </div>
             @endforeach
@@ -374,13 +375,66 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @section('js')
 @include('partials.editor-toolbar-js')
 <script>
-// Inicializar flv.js para archivos .flv
+// Conversión FLV → MP4 y reproducción
+function iniciarConversionFlv(videoEl, errEl, adjuntoId) {
+    var urlConvertir = '{{ route("adjuntos.flv_convertir", "") }}/' + adjuntoId;
+    var urlEstado    = '{{ route("adjuntos.flv_estado", "") }}/' + adjuntoId;
+    var urlPlay      = '{{ route("adjuntos.flv_play", "") }}/' + adjuntoId;
+
+    errEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Códec antiguo detectado. Convirtiendo video, espere...';
+    errEl.style.display = 'block';
+
+    $.ajax({
+        url: urlConvertir, type: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        success: function(resp) {
+            if (resp.status === 'ready') {
+                reproducirMp4Convertido(videoEl, errEl, urlPlay);
+            } else {
+                pollEstadoFlv(videoEl, errEl, urlEstado, urlPlay);
+            }
+        },
+        error: function() { errEl.textContent = 'Error al iniciar la conversión del video.'; }
+    });
+}
+
+function pollEstadoFlv(videoEl, errEl, urlEstado, urlPlay) {
+    var intentos = 0, maxIntentos = 120;
+    var timer = setInterval(function() {
+        if (++intentos > maxIntentos) { clearInterval(timer); errEl.textContent = 'La conversión tardó demasiado. Intente más tarde.'; return; }
+        $.get(urlEstado, function(resp) { if (resp.status === 'ready') { clearInterval(timer); reproducirMp4Convertido(videoEl, errEl, urlPlay); } });
+    }, 5000);
+}
+
+function reproducirMp4Convertido(videoEl, errEl, urlPlay) {
+    errEl.style.display = 'none';
+    videoEl.src = urlPlay;
+    videoEl.type = 'video/mp4';
+    videoEl.load();
+    videoEl.play().catch(function() {});
+}
+
+// Inicializar flv.js para archivos .flv con fallback de conversión
 document.querySelectorAll('video[data-flv-src]').forEach(function(videoEl) {
-    if (flvjs.isSupported()) {
-        var player = flvjs.createPlayer({ type: 'flv', url: videoEl.getAttribute('data-flv-src') });
-        player.attachMediaElement(videoEl);
-        player.load();
+    var adjuntoId = videoEl.id.replace('media-', '');
+    var errEl = document.getElementById('flv-error-' + adjuntoId);
+    if (typeof flvjs === 'undefined' || !flvjs.isSupported()) {
+        if (errEl) { errEl.textContent = 'Su navegador no soporta la reproducción de archivos FLV.'; errEl.style.display = 'block'; }
+        return;
     }
+    var player = flvjs.createPlayer({ type: 'flv', url: videoEl.getAttribute('data-flv-src'), isLive: false, hasAudio: true, hasVideo: true });
+    player.on(flvjs.Events.ERROR, function(errType, errDetail) {
+        var detailStr = JSON.stringify(errDetail || {});
+        if (detailStr.includes('CodecUnsupported') || detailStr.includes('CODEC_UNSUPPORTED')) {
+            player.destroy();
+            iniciarConversionFlv(videoEl, errEl, adjuntoId);
+        } else if (errEl) {
+            errEl.textContent = 'Error al reproducir: ' + errType + ' — ' + detailStr;
+            errEl.style.display = 'block';
+        }
+    });
+    player.attachMediaElement(videoEl);
+    player.load();
 });
 $(document).ready(function() {
     // Confirmación antes de salir si hay cambios sin guardar
