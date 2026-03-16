@@ -79,8 +79,8 @@
                     </li>
                     @endif
 
-                    {{-- Adjuntos --}}
-                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'adjuntos'))
+                    {{-- Adjuntos (solo visible para admin) --}}
+                    @if($nivel == 1 && \App\Models\RolModuloPermiso::puedeVer($nivel, 'adjuntos'))
                     <li class="nav-item">
                         <a href="{{ route('adjuntos.index') }}" class="nav-link {{ request()->routeIs('adjuntos.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-paperclip"></i>
