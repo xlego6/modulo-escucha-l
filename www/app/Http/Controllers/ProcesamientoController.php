@@ -292,7 +292,8 @@ class ProcesamientoController extends Controller
     }
 
     /**
-     * Iniciar transcripcion de una entrevista (todos los audios)
+     * Iniciar transcripcion de una entrevista (todos los audios) - async+polling
+     * Envia cada audio como trabajo async y retorna los job_ids inmediatamente.
      */
     public function iniciarTranscripcion(Request $request, $id)
     {
@@ -312,16 +313,12 @@ class ProcesamientoController extends Controller
             return response()->json(['error' => 'No hay archivos de audio o video'], 400);
         }
 
-        // Opciones de transcripcion
         $withDiarization = $request->input('diarizar', true);
         $hfToken = (string) $request->input('hf_token', '');
 
-        $transcripcionesCompletas = [];
-        $totalCaracteres = 0;
-        $totalHablantes = 0;
+        $jobs = [];
         $errores = [];
 
-        // Transcribir cada archivo de audio
         foreach ($audios as $audio) {
             $audioPath = Storage::disk('public')->path($audio->ubicacion);
 
@@ -330,89 +327,47 @@ class ProcesamientoController extends Controller
                 continue;
             }
 
-            // Llamar al servicio de transcripcion
-            $result = $this->procesamientoService->transcribe($audioPath, $withDiarization, $hfToken);
+            $jobId = 'ind_' . $id . '_' . $audio->id_adjunto . '_' . time();
+            $asyncResult = $this->procesamientoService->transcribeAsync($audioPath, $jobId, $withDiarization, $hfToken);
 
-            if ($result['success']) {
-                $texto = trim($result['text'] ?? '');
-
-                // Validar que el texto no esté vacío
-                if (empty($texto)) {
-                    $errores[] = "Sin texto en {$audio->nombre_original}: El audio no contiene voz detectable o está vacío";
-                    continue;
-                }
-
-                // Guardar transcripcion en el adjunto
-                $audio->texto_extraido = $texto;
-                $audio->texto_extraido_at = now();
-                $audio->save();
-
-                // Acumular para el resumen
-                $transcripcionesCompletas[] = [
-                    'archivo' => $audio->nombre_original,
-                    'texto' => $texto,
-                    'caracteres' => strlen($texto),
-                    'hablantes' => $result['speakers_count'] ?? 0,
-                    'diarization_error' => $result['diarization_error'] ?? null
-                ];
-
-                $totalCaracteres += strlen($texto);
-                $totalHablantes = max($totalHablantes, $result['speakers_count'] ?? 0);
-            } else {
-                $errores[] = "Error en {$audio->nombre_original}: " . ($result['error'] ?? 'Error desconocido');
+            if (!($asyncResult['success'] ?? false)) {
+                $errores[] = "Error enviando {$audio->nombre_original}: " . ($asyncResult['error'] ?? 'Error desconocido');
+                continue;
             }
+
+            // Guardar mapping en cache: tipo 'entrevista' para saber que al completar todos se regenera la transcripcion completa
+            Cache::put("transcripcion_job_{$jobId}", [
+                'tipo'          => 'entrevista',
+                'entrevista_id' => $id,
+                'adjunto_id'    => $audio->id_adjunto,
+                'nombre'        => $audio->nombre_original,
+                'codigo'        => $entrevista->entrevista_codigo,
+                'saved'         => false,
+                'user_id'       => Auth::id(),
+                'ip'            => $request->ip(),
+            ], now()->addDays(2));
+
+            $jobs[] = $jobId;
         }
 
-        if (empty($transcripcionesCompletas)) {
+        if (empty($jobs)) {
             return response()->json([
                 'success' => false,
-                'error' => 'No se pudo transcribir ningun archivo. ' . implode('; ', $errores)
+                'error' => 'No se pudo enviar ningun archivo. ' . implode('; ', $errores)
             ], 500);
         }
 
-        // Concatenar todas las transcripciones
-        $textoCompleto = '';
-        foreach ($transcripcionesCompletas as $t) {
-            if (count($transcripcionesCompletas) > 1) {
-                $textoCompleto .= "\n\n=== {$t['archivo']} ===\n\n";
-            }
-            $textoCompleto .= $t['texto'];
-        }
-
-        // Guardar como adjunto de tipo "Transcripción Automatizada"
-        $entrevista->guardarTranscripcionAutomatizada(trim($textoCompleto));
-
-        TrazaActividad::create([
-            'fecha_hora' => now(),
-            'id_usuario' => Auth::id(),
-            'accion' => 'iniciar_transcripcion',
-            'objeto' => 'entrevista',
-            'id_registro' => $entrevista->id_e_ind_fvt,
-            'codigo' => $entrevista->entrevista_codigo,
-            'referencia' => 'Transcripción automática: ' . count($transcripcionesCompletas) . ' de ' . $audios->count() . ' archivos',
-            'ip' => $request->ip(),
-        ]);
-
-        // Recopilar errores de diarizacion
-        $diarizacionErrors = array_filter(array_column($transcripcionesCompletas, 'diarization_error'));
-        $diarizacionError = !empty($diarizacionErrors) ? $diarizacionErrors[0] : null;
-
         return response()->json([
             'success' => true,
-            'message' => 'Transcripcion completada',
-            'entrevista_id' => $id,
-            'archivos_procesados' => count($transcripcionesCompletas),
-            'archivos_total' => $audios->count(),
-            'text_length' => $totalCaracteres,
-            'text' => $textoCompleto,
-            'speakers' => $totalHablantes,
+            'job_ids' => $jobs,
+            'total_audios' => $audios->count(),
             'errores' => $errores,
-            'diarization_error' => $diarizacionError
         ]);
     }
 
     /**
-     * Transcribir un adjunto individual
+     * Transcribir un adjunto individual - async+polling
+     * Envia el trabajo async y retorna el job_id inmediatamente.
      */
     public function transcribirAdjunto(Request $request, $idAdjunto)
     {
@@ -434,45 +389,177 @@ class ProcesamientoController extends Controller
         $withDiarization = $request->input('diarizar', true);
         $hfToken = (string) $request->input('hf_token', '');
 
-        // Llamar al servicio de transcripcion
-        $result = $this->procesamientoService->transcribe($audioPath, $withDiarization, $hfToken);
+        $jobId = 'adj_' . $idAdjunto . '_' . time();
+        $asyncResult = $this->procesamientoService->transcribeAsync($audioPath, $jobId, $withDiarization, $hfToken);
 
-        if ($result['success']) {
-            $texto = trim($result['text'] ?? '');
-
-            // Validar que el texto no esté vacío
-            if (empty($texto)) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'El audio no contiene voz detectable o está vacío'
-                ], 400);
-            }
-
-            // Guardar transcripcion en el adjunto
-            $adjunto->texto_extraido = $texto;
-            $adjunto->texto_extraido_at = now();
-            $adjunto->save();
-
-            // Regenerar la transcripcion completa
-            $this->regenerarTranscripcionCompleta($entrevista);
-
+        if (!($asyncResult['success'] ?? false)) {
             return response()->json([
-                'success' => true,
-                'message' => 'Transcripcion completada',
-                'id_adjunto' => $idAdjunto,
-                'entrevista_id' => $entrevista->id_e_ind_fvt,
-                'nombre' => $adjunto->nombre_original,
-                'text_length' => strlen($texto),
-                'text' => $texto,
-                'speakers' => $result['speakers_count'] ?? 0,
-                'diarization_error' => $result['diarization_error'] ?? null
-            ]);
+                'success' => false,
+                'error' => $asyncResult['error'] ?? 'Error al enviar al servicio de transcripcion'
+            ], 500);
         }
 
+        Cache::put("transcripcion_job_{$jobId}", [
+            'tipo'          => 'adjunto',
+            'entrevista_id' => $entrevista->id_e_ind_fvt,
+            'adjunto_id'    => $adjunto->id_adjunto,
+            'nombre'        => $adjunto->nombre_original,
+            'codigo'        => $entrevista->entrevista_codigo,
+            'saved'         => false,
+            'user_id'       => Auth::id(),
+            'ip'            => $request->ip(),
+        ], now()->addDays(2));
+
         return response()->json([
-            'success' => false,
-            'error' => $result['error'] ?? 'Error desconocido'
-        ], 500);
+            'success' => true,
+            'job_id' => $jobId,
+        ]);
+    }
+
+    /**
+     * Consultar estado de trabajos individuales (entrevista completa o adjunto suelto).
+     * Llamado por el navegador via AJAX GET (sin CSRF).
+     * Cuando un job completa, guarda la transcripcion y registra traza.
+     */
+    public function transcripcionIndividualEstado(Request $request)
+    {
+        $jobIds = $request->query('job_ids', []);
+        $resultados = [];
+
+        foreach ($jobIds as $jobId) {
+            $cached = Cache::get("transcripcion_job_{$jobId}");
+
+            if (!$cached) {
+                $resultados[$jobId] = ['status' => 'not_found'];
+                continue;
+            }
+
+            try {
+                $jobStatus = $this->procesamientoService->getTranscriptionJob($jobId);
+                $status = $jobStatus['status'] ?? 'unknown';
+
+                // Si completó y no se ha guardado, guardar
+                if ($status === 'completed' && ($jobStatus['success'] ?? false) && !$cached['saved']) {
+                    $texto = trim($jobStatus['text'] ?? '');
+
+                    if (!empty($texto)) {
+                        // Guardar texto en el adjunto
+                        $adjunto = Adjunto::find($cached['adjunto_id']);
+                        if ($adjunto) {
+                            $adjunto->texto_extraido = $texto;
+                            $adjunto->texto_extraido_at = now();
+                            $adjunto->save();
+                        }
+
+                        // Si es tipo 'entrevista', no regenerar aquí — se hace cuando todos los jobs terminen
+                        // Si es tipo 'adjunto', regenerar la transcripcion completa ahora
+                        if (($cached['tipo'] ?? '') === 'adjunto') {
+                            $entrevista = Entrevista::find($cached['entrevista_id']);
+                            if ($entrevista) {
+                                $this->regenerarTranscripcionCompleta($entrevista);
+
+                                TrazaActividad::create([
+                                    'fecha_hora'  => now(),
+                                    'id_usuario'  => $cached['user_id'],
+                                    'accion'      => 'iniciar_transcripcion',
+                                    'objeto'      => 'adjunto',
+                                    'id_registro' => $cached['adjunto_id'],
+                                    'codigo'      => $cached['codigo'],
+                                    'referencia'  => 'Transcripcion automatica: ' . $cached['nombre'],
+                                    'ip'          => $cached['ip'],
+                                ]);
+                            }
+                        }
+
+                        $cached['saved'] = true;
+                        Cache::put("transcripcion_job_{$jobId}", $cached, now()->addDays(2));
+                    } else {
+                        $status = 'failed';
+                        $jobStatus['error'] = 'El audio no contiene voz detectable';
+                    }
+                }
+
+                $resultados[$jobId] = [
+                    'status'            => $status,
+                    'saved'             => $cached['saved'],
+                    'adjunto_id'        => $cached['adjunto_id'],
+                    'entrevista_id'     => $cached['entrevista_id'],
+                    'nombre'            => $cached['nombre'] ?? '',
+                    'text_length'       => strlen($jobStatus['text'] ?? ''),
+                    'text'              => $jobStatus['text'] ?? '',
+                    'speakers_count'    => $jobStatus['speakers_count'] ?? 0,
+                    'diarization_error' => $jobStatus['diarization_error'] ?? null,
+                    'error'             => $jobStatus['error'] ?? null,
+                ];
+
+            } catch (\Exception $e) {
+                $resultados[$jobId] = [
+                    'status' => 'error',
+                    'error'  => $e->getMessage(),
+                ];
+            }
+        }
+
+        // Si todos los jobs de una entrevista completaron, regenerar transcripcion completa y registrar traza
+        $entrevistaJobs = [];
+        foreach ($jobIds as $jobId) {
+            $cached = Cache::get("transcripcion_job_{$jobId}");
+            if ($cached && ($cached['tipo'] ?? '') === 'entrevista') {
+                $entrevistaJobs[$cached['entrevista_id']][] = [
+                    'job_id' => $jobId,
+                    'cached' => $cached,
+                    'status' => $resultados[$jobId]['status'] ?? 'unknown',
+                ];
+            }
+        }
+
+        foreach ($entrevistaJobs as $entrevistaId => $jobs) {
+            $todosTerminados = true;
+            $algunoExitoso = false;
+            foreach ($jobs as $j) {
+                if (!in_array($j['status'], ['completed', 'failed'])) {
+                    $todosTerminados = false;
+                    break;
+                }
+                if ($j['status'] === 'completed' && ($j['cached']['saved'] ?? false)) {
+                    $algunoExitoso = true;
+                }
+            }
+
+            if ($todosTerminados && $algunoExitoso) {
+                // Verificar si ya se regeneró (usar flag en cache del primer job)
+                $firstCached = Cache::get("transcripcion_job_{$jobs[0]['job_id']}");
+                if ($firstCached && !($firstCached['regenerated'] ?? false)) {
+                    $entrevista = Entrevista::find($entrevistaId);
+                    if ($entrevista) {
+                        $this->regenerarTranscripcionCompleta($entrevista);
+
+                        $exitosos = count(array_filter($jobs, fn($j) => $j['status'] === 'completed'));
+                        TrazaActividad::create([
+                            'fecha_hora'  => now(),
+                            'id_usuario'  => $firstCached['user_id'],
+                            'accion'      => 'iniciar_transcripcion',
+                            'objeto'      => 'entrevista',
+                            'id_registro' => $entrevistaId,
+                            'codigo'      => $firstCached['codigo'],
+                            'referencia'  => 'Transcripcion automatica: ' . $exitosos . ' de ' . count($jobs) . ' archivos',
+                            'ip'          => $firstCached['ip'],
+                        ]);
+                    }
+
+                    // Marcar como regenerado en todos los jobs de esta entrevista
+                    foreach ($jobs as $j) {
+                        $c = Cache::get("transcripcion_job_{$j['job_id']}");
+                        if ($c) {
+                            $c['regenerated'] = true;
+                            Cache::put("transcripcion_job_{$j['job_id']}", $c, now()->addDays(2));
+                        }
+                    }
+                }
+            }
+        }
+
+        return response()->json($resultados);
     }
 
     /**
