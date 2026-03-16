@@ -606,6 +606,21 @@ def process_job_queue():
                 job_status[job_id]['error'] = str(e)
 
 
+# Iniciar worker de cola automaticamente (necesario para gunicorn)
+_worker_started = False
+
+def _ensure_worker():
+    """Inicia el worker de cola si no esta corriendo"""
+    global _worker_started
+    if not _worker_started:
+        _worker_started = True
+        worker = threading.Thread(target=process_job_queue, daemon=True)
+        worker.start()
+        logger.info("Worker de cola de transcripcion iniciado")
+
+_ensure_worker()
+
+
 # ============ CLI ============
 
 def main():
