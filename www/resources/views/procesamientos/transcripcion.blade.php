@@ -19,8 +19,8 @@
             <div class="card-body">
                 <div id="resultado-loading" class="text-center py-4">
                     <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
-                    <h5>Transcribiendo audio...</h5>
-                    <p class="text-muted">Este proceso puede tomar varios minutos dependiendo de la duracion del audio.</p>
+                    <h5>Transcribiendo audio en segundo plano...</h5>
+                    <p class="text-muted">El servidor esta procesando. Esta pagina consulta el estado automaticamente cada 10 segundos.</p>
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 100%"></div>
                     </div>
@@ -453,22 +453,21 @@ $(document).ready(function() {
         $('#btn-procesar-lote').prop('disabled', count === 0);
     });
 
-    // Transcribir individual
+    // Transcribir entrevista completa (async+polling)
     $('.btn-transcribir').on('click', function() {
         var id = $(this).data('id');
         var btn = $(this);
         var row = btn.closest('tr');
         var codigo = row.find('code').text();
 
-        if (!confirm('¿Iniciar transcripcion de esta entrevista?\n\nEsto puede tomar varios minutos.')) return;
+        if (!confirm('¿Iniciar transcripcion de esta entrevista?\n\nLos trabajos se envian al servidor en segundo plano.')) return;
 
         // Mostrar panel de resultado
+        $('#diarization-warning').remove();
         $('#panel-resultado').slideDown();
         $('#resultado-loading').show();
         $('#resultado-exito, #resultado-error').hide();
         $('#card-resultado').removeClass('card-success card-danger').addClass('card-primary');
-
-        // Scroll al panel
         $('html, body').animate({ scrollTop: 0 }, 300);
 
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
@@ -476,60 +475,31 @@ $(document).ready(function() {
         $.ajax({
             url: '{{ url("procesamientos/transcripcion") }}/' + id + '/iniciar',
             method: 'POST',
-            timeout: 1200000, // 20 minutos (archivos grandes pueden tardar)
+            timeout: 30000,
             data: {
                 _token: '{{ csrf_token() }}',
-                modelo: $('#modelo-whisper').val(),
-                idioma: $('#idioma').val(),
-                dispositivo: $('#dispositivo').val(),
                 diarizar: $('#diarizar').is(':checked') ? 1 : 0,
                 hf_token: $('#hf_token').val() || ''
             },
             success: function(response) {
-                $('#resultado-loading').hide();
-
-                if (response.success) {
-                    $('#card-resultado').removeClass('card-primary card-danger').addClass('card-success');
-                    $('#resultado-exito').show();
-                    $('#res-codigo').text(codigo);
-                    $('#res-caracteres').text(response.text_length ? response.text_length.toLocaleString() : '0');
-                    $('#res-hablantes').text(response.speakers !== undefined ? response.speakers : 'N/A');
-                    $('#res-texto').val(response.text || 'Sin texto');
-                    $('#btn-editar-transcripcion').attr('href', '{{ url("procesamientos/edicion") }}/' + id);
-
-                    // Mostrar advertencia de diarizacion si hubo error
-                    if (response.diarization_error) {
-                        $('#resultado-exito').after(
-                            '<div class="alert alert-warning mt-2" id="diarization-warning">' +
-                            '<i class="fas fa-exclamation-triangle mr-1"></i> ' +
-                            '<strong>Diarizacion:</strong> ' + response.diarization_error +
-                            '</div>'
-                        );
-                    }
-
-                    // Marcar todos los badges de audios como transcritos
-                    $('#subrow-' + id + ' .audio-estado-badge').each(function() {
-                        $(this).removeClass('badge-secondary badge-warning').addClass('badge-success')
-                               .html('<i class="fas fa-check mr-1"></i>Transcrito');
+                if (response.success && response.job_ids && response.job_ids.length > 0) {
+                    pollIndividualEstado(response.job_ids, {
+                        tipo: 'entrevista',
+                        entrevistaId: id,
+                        codigo: codigo,
+                        btn: btn,
+                        row: row,
+                        totalAudios: response.total_audios
                     });
-                    // Actualizar badge de estado de la entrevista a "Transcrita completa"
-                    var hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
-                    row.find('td:nth-child(4)').html(
-                        '<span class="badge badge-success d-block mb-1"><i class="fas fa-check mr-1"></i>Transcrita</span>' +
-                        '<small class="text-muted">' + hoy + '</small>'
-                    );
-                    // Marcar boton como completado
-                    btn.removeClass('btn-primary').addClass('btn-success')
-                       .html('<i class="fas fa-check"></i>').prop('disabled', true);
                 } else {
-                    mostrarError(response.error || 'Error desconocido');
+                    $('#resultado-loading').hide();
+                    mostrarError(response.error || 'No se pudieron enviar los trabajos');
                     btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
                 }
             },
             error: function(xhr) {
                 $('#resultado-loading').hide();
-                var errorMsg = xhr.responseJSON?.error || 'Error de conexion con el servidor';
-                mostrarError(errorMsg);
+                mostrarError(xhr.responseJSON?.error || 'Error de conexion con el servidor');
                 btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
             }
         });
@@ -539,6 +509,126 @@ $(document).ready(function() {
         $('#card-resultado').removeClass('card-primary card-success').addClass('card-danger');
         $('#resultado-error').show();
         $('#res-error-mensaje').text(mensaje);
+    }
+
+    // Polling generico para transcripciones individuales (entrevista completa o adjunto suelto)
+    var individualPollTimer = null;
+    function pollIndividualEstado(jobIds, ctx) {
+        $.ajax({
+            url: '{{ url("procesamientos/transcripcion/individual/estado") }}',
+            method: 'GET',
+            data: { job_ids: jobIds },
+            timeout: 15000,
+            success: function(resultados) {
+                var todosTerminados = true;
+                var algunoExitoso = false;
+                var textoFinal = '';
+                var totalCaracteres = 0;
+                var maxHablantes = 0;
+                var diarizacionError = null;
+                var errores = [];
+
+                $.each(resultados, function(jobId, r) {
+                    if (r.status === 'completed' && r.saved) {
+                        algunoExitoso = true;
+                        if (r.text) textoFinal += (textoFinal ? '\n\n' : '') + r.text;
+                        totalCaracteres += r.text_length || 0;
+                        maxHablantes = Math.max(maxHablantes, r.speakers_count || 0);
+                        if (r.diarization_error) diarizacionError = r.diarization_error;
+                    } else if (r.status === 'failed' || r.status === 'error') {
+                        errores.push(r.error || 'Error desconocido');
+                    } else {
+                        todosTerminados = false;
+                    }
+                });
+
+                if (!todosTerminados) {
+                    individualPollTimer = setTimeout(function() {
+                        pollIndividualEstado(jobIds, ctx);
+                    }, 10000);
+                    return;
+                }
+
+                // Todos terminaron
+                $('#resultado-loading').hide();
+
+                if (algunoExitoso) {
+                    $('#card-resultado').removeClass('card-primary card-danger').addClass('card-success');
+                    $('#resultado-exito').show();
+                    $('#res-codigo').text(ctx.nombre || ctx.codigo || '');
+                    $('#res-caracteres').text(totalCaracteres ? totalCaracteres.toLocaleString() : '0');
+                    $('#res-hablantes').text(maxHablantes > 0 ? maxHablantes : 'N/A');
+                    $('#res-texto').val(textoFinal || 'Sin texto');
+
+                    if (ctx.entrevistaId) {
+                        $('#btn-editar-transcripcion').attr('href', '{{ url("procesamientos/edicion") }}/' + ctx.entrevistaId);
+                    }
+
+                    if (diarizacionError) {
+                        $('#resultado-exito').after(
+                            '<div class="alert alert-warning mt-2" id="diarization-warning">' +
+                            '<i class="fas fa-exclamation-triangle mr-1"></i> ' +
+                            '<strong>Diarizacion:</strong> ' + diarizacionError +
+                            '</div>'
+                        );
+                    }
+
+                    // Actualizar UI segun tipo
+                    if (ctx.tipo === 'adjunto') {
+                        var $badge = $('#audio-row-' + ctx.adjuntoId + ' .audio-estado-badge');
+                        $badge.removeClass('badge-secondary').addClass('badge-success')
+                              .html('<i class="fas fa-check mr-1"></i>Transcrito');
+
+                        ctx.btn.removeClass('btn-primary').addClass('btn-success')
+                           .html('<i class="fas fa-check"></i>').prop('disabled', false);
+
+                        // Recalcular estado entrevista padre
+                        if (ctx.entrevistaId) {
+                            var $subrow = $('#subrow-' + ctx.entrevistaId);
+                            var total = $subrow.find('.audio-estado-badge').length;
+                            var transcritos = $subrow.find('.audio-estado-badge.badge-success').length;
+                            var $entrow = $('input[value="' + ctx.entrevistaId + '"]').closest('tr.entrevista-row');
+                            var $estadoCell = $entrow.find('td:nth-child(4)');
+                            var hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
+                            if (transcritos === total) {
+                                $estadoCell.html('<span class="badge badge-success d-block mb-1"><i class="fas fa-check mr-1"></i>Transcrita</span><small class="text-muted">' + hoy + '</small>');
+                            } else {
+                                $estadoCell.html('<span class="badge badge-warning d-block mb-1"><i class="fas fa-adjust mr-1"></i>Con texto</span><small class="text-muted">' + transcritos + '/' + total + ' audios</small>');
+                            }
+                        }
+                    } else if (ctx.tipo === 'entrevista') {
+                        // Marcar todos los audios como transcritos
+                        $('#subrow-' + ctx.entrevistaId + ' .audio-estado-badge').each(function() {
+                            $(this).removeClass('badge-secondary badge-warning').addClass('badge-success')
+                                   .html('<i class="fas fa-check mr-1"></i>Transcrito');
+                        });
+                        var hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
+                        ctx.row.find('td:nth-child(4)').html(
+                            '<span class="badge badge-success d-block mb-1"><i class="fas fa-check mr-1"></i>Transcrita</span>' +
+                            '<small class="text-muted">' + hoy + '</small>'
+                        );
+                        ctx.btn.removeClass('btn-primary').addClass('btn-success')
+                           .html('<i class="fas fa-check"></i>').prop('disabled', true);
+                    }
+
+                    if (errores.length > 0) {
+                        $('#resultado-exito').after(
+                            '<div class="alert alert-warning mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> ' +
+                            'Algunos archivos fallaron: ' + errores.join('; ') + '</div>'
+                        );
+                    }
+                } else {
+                    mostrarError(errores.join('; ') || 'Todos los archivos fallaron');
+                    ctx.btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
+                }
+            },
+            error: function() {
+                // Error de red en el polling — reintentar
+                individualPollTimer = setTimeout(function() {
+                    pollIndividualEstado(jobIds, ctx);
+                }, 15000);
+            }
+        });
     }
 
     // Expandir/colapsar audios individuales (visibles por defecto)
@@ -552,7 +642,7 @@ $(document).ready(function() {
         });
     });
 
-    // Transcribir audio individual
+    // Transcribir audio individual (async+polling)
     $(document).on('click', '.btn-transcribir-audio', function() {
         var idAdjunto = $(this).data('id');
         var nombre = $(this).data('nombre');
@@ -562,7 +652,7 @@ $(document).ready(function() {
 
         var mensaje = yaTranscrito
             ? '¿Volver a transcribir "' + nombre + '"?\n\nEsto sobreescribira la transcripcion existente de este audio.'
-            : '¿Transcribir "' + nombre + '"?\n\nEste proceso puede tomar varios minutos.';
+            : '¿Transcribir "' + nombre + '"?\n\nEl trabajo se envia al servidor en segundo plano.';
 
         if (!confirm(mensaje)) return;
 
@@ -579,66 +669,30 @@ $(document).ready(function() {
         $.ajax({
             url: '{{ url("procesamientos/transcripcion/adjunto") }}/' + idAdjunto,
             method: 'POST',
-            timeout: 1200000,
+            timeout: 30000,
             data: {
                 _token: '{{ csrf_token() }}',
                 diarizar: $('#diarizar').is(':checked') ? 1 : 0,
                 hf_token: $('#hf_token').val() || ''
             },
             success: function(response) {
-                $('#resultado-loading').hide();
-
-                if (response.success) {
-                    $('#card-resultado').removeClass('card-primary card-danger').addClass('card-success');
-                    $('#resultado-exito').show();
-                    $('#res-codigo').text(nombre);
-                    $('#res-caracteres').text(response.text_length ? response.text_length.toLocaleString() : '0');
-                    $('#res-hablantes').text(response.speakers !== undefined ? response.speakers : 'N/A');
-                    $('#res-texto').val(response.text || 'Sin texto');
-                    if (response.entrevista_id) {
-                        $('#btn-editar-transcripcion').attr('href', '{{ url("procesamientos/edicion") }}/' + response.entrevista_id);
-                    }
-
-                    if (response.diarization_error) {
-                        $('#resultado-exito').after(
-                            '<div class="alert alert-warning mt-2" id="diarization-warning">' +
-                            '<i class="fas fa-exclamation-triangle mr-1"></i> ' +
-                            '<strong>Diarizacion:</strong> ' + response.diarization_error +
-                            '</div>'
-                        );
-                    }
-
-                    // Actualizar badge del audio transcrito
-                    var $badge = $('#audio-row-' + idAdjunto + ' .audio-estado-badge');
-                    $badge.removeClass('badge-secondary').addClass('badge-success')
-                          .html('<i class="fas fa-check mr-1"></i>Transcrito');
-
-                    btn.removeClass('btn-primary').addClass('btn-success')
-                       .html('<i class="fas fa-check"></i>').prop('disabled', false);
-
-                    // Recalcular estado de la entrevista padre
-                    if (entrevistaId) {
-                        var $subrow = $('#subrow-' + entrevistaId);
-                        var total = $subrow.find('.audio-estado-badge').length;
-                        var transcritos = $subrow.find('.audio-estado-badge.badge-success').length;
-                        var $entrow = $('input[value="' + entrevistaId + '"]').closest('tr.entrevista-row');
-                        var $estadoCell = $entrow.find('td:nth-child(4)');
-                        var hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
-                        if (transcritos === total) {
-                            $estadoCell.html('<span class="badge badge-success d-block mb-1"><i class="fas fa-check mr-1"></i>Transcrita</span><small class="text-muted">' + hoy + '</small>');
-                        } else {
-                            $estadoCell.html('<span class="badge badge-warning d-block mb-1"><i class="fas fa-adjust mr-1"></i>Con texto</span><small class="text-muted">' + transcritos + '/' + total + ' audios</small>');
-                        }
-                    }
+                if (response.success && response.job_id) {
+                    pollIndividualEstado([response.job_id], {
+                        tipo: 'adjunto',
+                        entrevistaId: entrevistaId,
+                        adjuntoId: idAdjunto,
+                        nombre: nombre,
+                        btn: btn
+                    });
                 } else {
-                    mostrarError(response.error || 'Error desconocido');
+                    $('#resultado-loading').hide();
+                    mostrarError(response.error || 'No se pudo enviar el trabajo');
                     btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
                 }
             },
             error: function(xhr) {
                 $('#resultado-loading').hide();
-                var errorMsg = xhr.responseJSON?.error || 'Error de conexion con el servidor';
-                mostrarError(errorMsg);
+                mostrarError(xhr.responseJSON?.error || 'Error de conexion con el servidor');
                 btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
             }
         });
