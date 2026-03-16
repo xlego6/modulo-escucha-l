@@ -246,7 +246,7 @@ function fmtDur($seg) {
                         <span><i class="fas fa-music"></i> {{ number_format($sd['cantidad_audios']) }}</span>
                         <span><i class="fas fa-clock"></i> {{ fmtDur($sd['duracion_total']) }}</span>
                     </div>
-                    @if($key === 'en_edicion' && isset($sd['tiempo_edicion']))
+                    @if(isset($sd['tiempo_edicion']))
                     <div class="stat-row">
                         <span><i class="fas fa-stopwatch"></i> Edición: {{ fmtDur($sd['tiempo_edicion']) }}</span>
                     </div>
@@ -482,7 +482,7 @@ function fmtDur($seg) {
                         <span><i class="fas fa-music"></i> {{ number_format($sd['cantidad_audios']) }}</span>
                         <span><i class="fas fa-clock"></i> {{ fmtDur($sd['duracion_total']) }}</span>
                     </div>
-                    @if($key === 'en_edicion' && isset($sd['tiempo_edicion']))
+                    @if(isset($sd['tiempo_edicion']))
                     <div class="stat-row">
                         <span><i class="fas fa-stopwatch"></i> Edición: {{ fmtDur($sd['tiempo_edicion']) }}</span>
                     </div>
