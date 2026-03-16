@@ -326,6 +326,26 @@ class AdjuntoController extends Controller
             return true;
         }
 
+        // Supervisor de procesamientos de transcripción
+        if (RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
+            return true;
+        }
+
+        // Transcriptor asignado a esta entrevista/adjunto
+        if ($entrevistador) {
+            $tieneAsignacion = \App\Models\AsignacionTranscripcion::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+                ->where('id_transcriptor', $entrevistador->id_entrevistador)
+                ->whereNotIn('estado', ['aprobada'])
+                ->where(function ($q) use ($adjunto) {
+                    $q->where('id_adjunto', $adjunto->id_adjunto)
+                      ->orWhereNull('id_adjunto');
+                })
+                ->exists();
+            if ($tieneAsignacion) {
+                return true;
+            }
+        }
+
         // Permiso de acceso otorgado
         if ($entrevistador) {
             return (bool) DB::table('esclarecimiento.permiso')
