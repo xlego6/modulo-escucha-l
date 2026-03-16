@@ -587,7 +587,7 @@ function iniciarConversionFlv(videoEl, errEl, adjuntoId) {
                 pollEstadoFlv(videoEl, errEl, urlEstado, urlPlay);
             }
         },
-        error: function() { errEl.textContent = 'Error al iniciar la conversión del video.'; }
+        error: function(xhr) { errEl.textContent = 'Error al iniciar la conversión del video. (HTTP ' + xhr.status + ': ' + xhr.responseText.substring(0, 200) + ')'; }
     });
 }
 
