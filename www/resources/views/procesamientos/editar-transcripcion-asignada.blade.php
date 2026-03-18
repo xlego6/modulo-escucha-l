@@ -149,6 +149,20 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
         font-size: 0.85em;
         margin-bottom: 0.2rem;
     }
+
+    /* Calificación con estrellas */
+    .star-rating { display: inline-flex; gap: 4px; }
+    .star-rating .star {
+        font-size: 2rem;
+        cursor: pointer;
+        color: #dee2e6;
+        transition: color 0.15s, transform 0.1s;
+        line-height: 1;
+        user-select: none;
+    }
+    .star-rating .star:hover,
+    .star-rating .star.hovered { color: #f0c75f; transform: scale(1.15); }
+    .star-rating .star.selected { color: #ebc01a; }
 </style>
 @endsection
 
@@ -351,25 +365,45 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-success">
-                <h5 class="modal-title"><i class="fas fa-paper-plane mr-2"></i>Enviar a Revision</h5>
+                <h5 class="modal-title"><i class="fas fa-paper-plane mr-2"></i>Enviar a Revisión</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
-            <div class="modal-body">
-                <p>¿Esta seguro de enviar la transcripcion a revision?</p>
-                <p class="text-muted small">
-                    Una vez enviada, no podra editarla hasta que sea revisada por un lider.
-                    Si es rechazada, podra corregirla y enviarla nuevamente.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <form action="{{ route('procesamientos.enviar-revision', $asignacion->id_asignacion) }}" method="POST" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-paper-plane mr-1"></i> Confirmar Envio
+            <form action="{{ route('procesamientos.enviar-revision', $asignacion->id_asignacion) }}" method="POST" id="formEnviarRevision">
+                @csrf
+                <div class="modal-body">
+                    <p>¿Está seguro de enviar la transcripción a revisión?</p>
+                    <p class="text-muted small mb-3">
+                        Una vez enviada, no podrá editarla hasta que sea revisada por un líder.
+                        Si es rechazada, podrá corregirla y enviarla nuevamente.
+                    </p>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">
+                            Califique la calidad del audio
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="star-rating mt-1" id="starRating">
+                            @for($i = 1; $i <= 5; $i++)
+                            <span class="star" data-value="{{ $i }}" title="{{ $i }} estrella{{ $i > 1 ? 's' : '' }}">&#9733;</span>
+                            @endfor
+                        </div>
+                        <input type="hidden" name="calificacion_audio" id="calificacionAudio" value="">
+                        <small class="text-muted" id="starLabel">Seleccione una calificación (1 a 5)</small>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="observacionesEnvio">Observaciones <span class="text-muted font-weight-normal">(opcional)</span></label>
+                        <textarea name="observaciones_envio" id="observacionesEnvio" class="form-control" rows="3"
+                                  placeholder="Notas sobre la calidad del audio, dificultades, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success" id="btnConfirmarEnvio" disabled>
+                        <i class="fas fa-paper-plane mr-1"></i> Confirmar Envío
                     </button>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -460,27 +494,48 @@ function changeSpeed(id) {
 function enviarARevision() {
     var texto = $('#transcripcion').val().trim();
     if (texto.length < 50) {
-        alert('La transcripcion debe tener al menos 50 caracteres');
+        alert('La transcripción debe tener al menos 50 caracteres');
         return;
     }
 
-    $('#formTranscripcion').one('submit', function(e) {
-        e.preventDefault();
-        $.ajax({
-            url: $(this).attr('action'),
-            method: 'POST',
-            data: $(this).serialize(),
-            success: function() {
-                $('#modalEnviar').modal('show');
-            },
-            error: function() {
-                alert('Error al guardar. Intente nuevamente.');
-            }
-        });
+    // Guardar borrador primero, luego abrir modal
+    $.ajax({
+        url: $('#formTranscripcion').attr('action'),
+        method: 'POST',
+        data: $('#formTranscripcion').serialize(),
+        success: function() {
+            // Resetear estrellas al abrir
+            $('#starRating .star').removeClass('selected hovered');
+            $('#calificacionAudio').val('');
+            $('#starLabel').text('Seleccione una calificación (1 a 5)');
+            $('#btnConfirmarEnvio').prop('disabled', true);
+            $('#observacionesEnvio').val('');
+            $('#modalEnviar').modal('show');
+        },
+        error: function() {
+            alert('Error al guardar. Intente nuevamente.');
+        }
     });
-
-    $('#formTranscripcion').submit();
 }
+
+// Lógica de estrellas
+$(document).on('mouseenter', '#starRating .star', function() {
+    var val = parseInt($(this).data('value'));
+    $('#starRating .star').each(function() {
+        $(this).toggleClass('hovered', parseInt($(this).data('value')) <= val);
+    });
+}).on('mouseleave', '#starRating .star', function() {
+    $('#starRating .star').removeClass('hovered');
+}).on('click', '#starRating .star', function() {
+    var val = parseInt($(this).data('value'));
+    var labels = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
+    $('#calificacionAudio').val(val);
+    $('#starRating .star').each(function() {
+        $(this).toggleClass('selected', parseInt($(this).data('value')) <= val);
+    });
+    $('#starLabel').text(val + ' / 5 — ' + labels[val]);
+    $('#btnConfirmarEnvio').prop('disabled', false);
+});
 
 // Auto-guardar cada 60 segundos
 setInterval(function() {

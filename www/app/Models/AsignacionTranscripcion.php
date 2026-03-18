@@ -24,6 +24,8 @@ class AsignacionTranscripcion extends Model
         'id_revisor',
         'comentario_revision',
         'transcripcion_editada',
+        'calificacion_audio',
+        'observaciones_envio',
     ];
 
     protected $casts = [
