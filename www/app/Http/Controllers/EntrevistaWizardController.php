@@ -390,6 +390,7 @@ class EntrevistaWizardController extends Controller
             'tiene_anexos' => $request->tiene_anexos,
             'descripcion_anexos' => $request->descripcion_anexos,
             'observaciones_toma' => $request->observaciones_toma,
+            'nombre_entrevistador' => $request->nombre_entrevistador,
         ];
     }
 

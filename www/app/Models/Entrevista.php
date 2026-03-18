@@ -51,6 +51,7 @@ class Entrevista extends Model
         'id_area_compatible',
         'observaciones_toma',
         'detalle_idiomas',
+        'nombre_entrevistador',
     ];
 
     protected $casts = [
