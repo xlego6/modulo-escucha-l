@@ -120,7 +120,8 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             'Tiene Anexos',
             'Descripcion Anexos',
             'Observaciones Toma',
-            'Entrevistador',
+            'Entrevistador (usuario)',
+            'Nombre Entrevistador',
 
             // PASO 2: TESTIMONIANTES
             'Testimoniante(s)',
@@ -252,6 +253,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             $entrevista->rel_entrevistador && $entrevista->rel_entrevistador->rel_usuario
                 ? $entrevista->rel_entrevistador->rel_usuario->name
                 : '',
+            $entrevista->nombre_entrevistador ?? '',
 
             // PASO 2: TESTIMONIANTES
             implode(' | ', array_filter($testimoniantes)),

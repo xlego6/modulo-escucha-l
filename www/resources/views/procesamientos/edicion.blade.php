@@ -312,13 +312,23 @@
                                 <i class="fas fa-user-plus"></i>
                             </button>
                             @endif
-                            @foreach($asigs->whereNotIn('estado', ['aprobada']) as $asigActiva)
+                            @if($asigs->whereNotIn('estado', ['aprobada'])->isNotEmpty())
+                            @php
+                                $asignacionesActivas = $asigs->whereNotIn('estado', ['aprobada'])->map(function($a) {
+                                    return [
+                                        'id'         => $a->id_asignacion,
+                                        'estado'     => $a->estado,
+                                        'transcriptor' => $a->rel_transcriptor->rel_usuario->name ?? 'N/A',
+                                        'audio'      => $a->rel_adjunto->nombre_original ?? '(entrevista completa)',
+                                    ];
+                                })->values()->toJson();
+                            @endphp
                             <button type="button" class="btn btn-sm btn-danger"
-                                    onclick="abrirModalDesasignar({{ $asigActiva->id_asignacion }}, '{{ $asigActiva->estado }}', '{{ addslashes($asigActiva->rel_transcriptor->rel_usuario->name ?? 'N/A') }}')"
+                                    onclick="abrirModalDesasignar('{{ $entrevista->entrevista_codigo }}', {!! htmlspecialchars($asignacionesActivas, ENT_QUOTES) !!})"
                                     title="Desasignar">
                                 <i class="fas fa-user-minus"></i>
                             </button>
-                            @endforeach
+                            @endif
                         </div>
                     </td>
                 </tr>
@@ -349,12 +359,20 @@
                 <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
+                <p class="mb-2">Entrevista: <strong id="desasignar-codigo"></strong></p>
+
+                <div class="form-group">
+                    <label for="sel-asignacion-desasignar">Seleccione la asignación a eliminar <span class="text-danger">*</span></label>
+                    <select class="form-control" id="sel-asignacion-desasignar">
+                        <option value="">-- Seleccione --</option>
+                    </select>
+                </div>
+
                 <div id="desasignar-aviso-trabajo" class="alert alert-warning d-none">
                     <i class="fas fa-exclamation-triangle mr-1"></i>
                     <strong>Atención:</strong> Esta asignación está en estado <strong id="desasignar-estado-label"></strong>.
-                    El trabajo que haya realizado el transcriptor se perderá.
+                    El trabajo realizado por el transcriptor se perderá.
                 </div>
-                <p>¿Confirma que desea eliminar la asignación del transcriptor <strong id="desasignar-nombre"></strong>?</p>
                 <p class="text-muted small mb-0">Esta acción no se puede deshacer. El audio quedará libre para ser reasignado.</p>
             </div>
             <div class="modal-footer">
@@ -362,7 +380,7 @@
                 <form id="formDesasignar" method="POST" class="d-inline">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-danger">
+                    <button type="submit" class="btn btn-danger" id="btnConfirmarDesasignar" disabled>
                         <i class="fas fa-user-minus mr-1"></i> Confirmar Desasignación
                     </button>
                 </form>
@@ -423,21 +441,45 @@
 
 @section('js')
 <script>
-function abrirModalDesasignar(id, estado, nombre) {
-    var estadosConTrabajo = ['en_edicion', 'enviada_revision', 'rechazada'];
+function abrirModalDesasignar(codigo, asignacionesJson) {
+    var asignaciones = typeof asignacionesJson === 'string' ? JSON.parse(asignacionesJson) : asignacionesJson;
     var etiquetas = {
+        'asignada': 'Asignada',
         'en_edicion': 'En edición',
         'enviada_revision': 'En revisión',
         'rechazada': 'Rechazada'
     };
-    $('#desasignar-nombre').text(nombre);
-    if (estadosConTrabajo.indexOf(estado) !== -1) {
-        $('#desasignar-estado-label').text(etiquetas[estado] || estado);
-        $('#desasignar-aviso-trabajo').removeClass('d-none');
-    } else {
-        $('#desasignar-aviso-trabajo').addClass('d-none');
-    }
-    $('#formDesasignar').attr('action', '{{ url("procesamientos/asignacion") }}/' + id + '/desasignar');
+    var estadosConTrabajo = ['en_edicion', 'enviada_revision', 'rechazada'];
+
+    $('#desasignar-codigo').text(codigo);
+    $('#desasignar-aviso-trabajo').addClass('d-none');
+    $('#btnConfirmarDesasignar').prop('disabled', true);
+
+    var $sel = $('#sel-asignacion-desasignar').empty().append('<option value="">-- Seleccione --</option>');
+    asignaciones.forEach(function(a) {
+        $sel.append('<option value="' + a.id + '" data-estado="' + a.estado + '">'
+            + a.audio + ' — ' + a.transcriptor + ' [' + (etiquetas[a.estado] || a.estado) + ']'
+            + '</option>');
+    });
+
+    $sel.off('change').on('change', function() {
+        var id = $(this).val();
+        var estado = $(this).find(':selected').data('estado');
+        if (id) {
+            $('#formDesasignar').attr('action', '{{ url("procesamientos/asignacion") }}/' + id + '/desasignar');
+            $('#btnConfirmarDesasignar').prop('disabled', false);
+            if (estadosConTrabajo.indexOf(estado) !== -1) {
+                $('#desasignar-estado-label').text(etiquetas[estado] || estado);
+                $('#desasignar-aviso-trabajo').removeClass('d-none');
+            } else {
+                $('#desasignar-aviso-trabajo').addClass('d-none');
+            }
+        } else {
+            $('#btnConfirmarDesasignar').prop('disabled', true);
+            $('#desasignar-aviso-trabajo').addClass('d-none');
+        }
+    });
+
     $('#modalDesasignar').modal('show');
 }
 
