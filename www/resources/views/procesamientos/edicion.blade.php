@@ -312,6 +312,13 @@
                                 <i class="fas fa-user-plus"></i>
                             </button>
                             @endif
+                            @foreach($asigs->whereNotIn('estado', ['aprobada']) as $asigActiva)
+                            <button type="button" class="btn btn-sm btn-danger"
+                                    onclick="abrirModalDesasignar({{ $asigActiva->id_asignacion }}, '{{ $asigActiva->estado }}', '{{ addslashes($asigActiva->rel_transcriptor->rel_usuario->name ?? 'N/A') }}')"
+                                    title="Desasignar">
+                                <i class="fas fa-user-minus"></i>
+                            </button>
+                            @endforeach
                         </div>
                     </td>
                 </tr>
@@ -331,6 +338,37 @@
         {{ $pendientes->links() }}
     </div>
     @endif
+</div>
+
+{{-- Modal Desasignar --}}
+<div class="modal fade" id="modalDesasignar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h5 class="modal-title"><i class="fas fa-user-minus mr-2"></i>Desasignar Transcripción</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="desasignar-aviso-trabajo" class="alert alert-warning d-none">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <strong>Atención:</strong> Esta asignación está en estado <strong id="desasignar-estado-label"></strong>.
+                    El trabajo que haya realizado el transcriptor se perderá.
+                </div>
+                <p>¿Confirma que desea eliminar la asignación del transcriptor <strong id="desasignar-nombre"></strong>?</p>
+                <p class="text-muted small mb-0">Esta acción no se puede deshacer. El audio quedará libre para ser reasignado.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form id="formDesasignar" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-user-minus mr-1"></i> Confirmar Desasignación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Modal Asignar Transcriptor --}}
@@ -385,6 +423,24 @@
 
 @section('js')
 <script>
+function abrirModalDesasignar(id, estado, nombre) {
+    var estadosConTrabajo = ['en_edicion', 'enviada_revision', 'rechazada'];
+    var etiquetas = {
+        'en_edicion': 'En edición',
+        'enviada_revision': 'En revisión',
+        'rechazada': 'Rechazada'
+    };
+    $('#desasignar-nombre').text(nombre);
+    if (estadosConTrabajo.indexOf(estado) !== -1) {
+        $('#desasignar-estado-label').text(etiquetas[estado] || estado);
+        $('#desasignar-aviso-trabajo').removeClass('d-none');
+    } else {
+        $('#desasignar-aviso-trabajo').addClass('d-none');
+    }
+    $('#formDesasignar').attr('action', '{{ url("procesamientos/asignacion") }}/' + id + '/desasignar');
+    $('#modalDesasignar').modal('show');
+}
+
 function abrirModalAsignar(id, codigo, adjuntosJson) {
     var adjuntos = typeof adjuntosJson === 'string' ? JSON.parse(adjuntosJson) : adjuntosJson;
 

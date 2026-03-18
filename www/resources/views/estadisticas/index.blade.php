@@ -47,9 +47,7 @@
             <div class="icon">
                 <i class="fas fa-paperclip"></i>
             </div>
-            <a href="{{ route('adjuntos.index') }}" class="small-box-footer">
-                Ver todos <i class="fas fa-arrow-circle-right"></i>
-            </a>
+            <span class="small-box-footer">&nbsp;</span>
         </div>
     </div>
     <div class="col-lg-3 col-6">

@@ -177,6 +177,7 @@ Route::middleware(['auth'])->group(function () {
         // Centro de Control y Transcripción: Admin(1), Líder(2)
         Route::middleware(['nivel:procesamientos.transcripcion'])->group(function () {
             Route::get('procesamientos', [ProcesamientoController::class, 'index'])->name('procesamientos.index');
+            Route::get('procesamientos/exportar-asignaciones', [ProcesamientoController::class, 'exportarAsignaciones'])->name('procesamientos.exportar-asignaciones');
             Route::get('procesamientos/servicios-status', [ProcesamientoController::class, 'serviciosStatus'])->name('procesamientos.servicios-status');
             Route::get('procesamientos/transcripcion', [ProcesamientoController::class, 'transcripcion'])->name('procesamientos.transcripcion');
             Route::post('procesamientos/transcripcion/{id}/iniciar', [ProcesamientoController::class, 'iniciarTranscripcion'])->name('procesamientos.iniciar-transcripcion');
@@ -206,6 +207,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('procesamientos/revision/{id}', [ProcesamientoController::class, 'verRevision'])->name('procesamientos.ver-revision');
             Route::post('procesamientos/revision/{id}/aprobar', [ProcesamientoController::class, 'aprobarTranscripcionAsignada'])->name('procesamientos.aprobar-asignacion');
             Route::post('procesamientos/revision/{id}/rechazar', [ProcesamientoController::class, 'rechazarTranscripcion'])->name('procesamientos.rechazar-asignacion');
+
+            // Desasignar transcripción (Admin/Líder)
+            Route::delete('procesamientos/asignacion/{id}/desasignar', [ProcesamientoController::class, 'desasignarTranscripcion'])->name('procesamientos.desasignar');
         });
 
         // Entidades: Admin(1), Líder(2)

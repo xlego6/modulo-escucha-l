@@ -210,8 +210,18 @@
                 </div>
             </div>
 
+            <!-- Nombre del entrevistador -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="nombre_entrevistador">Nombre del Entrevistador</label>
+                    <input type="text" class="form-control" id="nombre_entrevistador" name="nombre_entrevistador"
+                           maxlength="255" value="{{ $entrevista->nombre_entrevistador }}">
+                    <small class="form-text text-muted">Puede modificarlo si aplica.</small>
+                </div>
+            </div>
+
             <!-- Observaciones -->
-            <div class="col-md-12">
+            <div class="col-md-6">
                 <div class="form-group">
                     <label for="observaciones_toma">Observaciones sobre la Toma de Entrevista</label>
                     <textarea class="form-control" id="observaciones_toma" name="observaciones_toma" rows="3">{{ $entrevista->observaciones_toma }}</textarea>

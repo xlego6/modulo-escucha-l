@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\TrazaActividad;
 use App\Models\RolModuloPermiso;
 use App\Models\CatItem;
+use App\Exports\AsignacionesTranscripcionExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProcesamientoController extends Controller
 {
@@ -249,6 +251,7 @@ class ProcesamientoController extends Controller
                 GROUP BY id_e_ind_fvt
             ) as adj"), 'adj.id_e_ind_fvt', '=', 'at.id_e_ind_fvt')
             ->leftJoin('esclarecimiento.adjunto as adj_asig', 'adj_asig.id_adjunto', '=', 'at.id_adjunto')
+            ->leftJoin('users as u_rev', 'u_rev.id', '=', 'at.id_revisor')
             ->select(
                 'at.id_asignacion',
                 'at.id_e_ind_fvt',
@@ -256,7 +259,9 @@ class ProcesamientoController extends Controller
                 'ent.entrevista_codigo',
                 'at.estado',
                 'at.fecha_asignacion',
+                'at.fecha_revision',
                 'u.name as nombre_persona',
+                'u_rev.name as nombre_revisor',
                 'adj_asig.nombre_original as nombre_audio',
                 'adj_asig.duracion as duracion_audio',
                 DB::raw('COALESCE(adj.duracion_total, 0) as duracion_total'),
@@ -1719,6 +1724,53 @@ class ProcesamientoController extends Controller
 
         flash('Transcripción rechazada. El transcriptor ha sido notificado.')->warning();
         return redirect()->route('procesamientos.edicion');
+    }
+
+    /**
+     * Desasignar transcripción (Admin/Líder) — cualquier estado
+     */
+    public function desasignarTranscripcion($id)
+    {
+        $user = Auth::user();
+
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
+            flash('No tiene permisos para desasignar transcripciones.')->error();
+            return redirect()->route('procesamientos.edicion');
+        }
+
+        $asignacion = AsignacionTranscripcion::with(['rel_transcriptor.rel_usuario'])->findOrFail($id);
+        $nombreTranscriptor = $asignacion->rel_transcriptor->rel_usuario->name ?? 'N/A';
+        $estadoAnterior = $asignacion->estado;
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'desasignar_transcripcion',
+            'objeto' => 'transcripcion',
+            'id_registro' => $asignacion->id_asignacion,
+            'referencia' => "Desasignación de transcripción (entrevista #{$asignacion->id_e_ind_fvt}, estado anterior: {$estadoAnterior}, transcriptor: {$nombreTranscriptor})",
+            'ip' => request()->ip(),
+        ]);
+
+        $asignacion->delete();
+
+        flash("Asignación eliminada (transcriptor: {$nombreTranscriptor}).") ->success();
+        return redirect()->route('procesamientos.edicion');
+    }
+
+    /**
+     * Exportar todas las asignaciones a Excel (solo Admin)
+     */
+    public function exportarAsignaciones()
+    {
+        $user = Auth::user();
+        if ($user->id_nivel != 1) {
+            flash('Solo el administrador puede exportar asignaciones.')->error();
+            return redirect()->route('procesamientos.index');
+        }
+
+        $filename = 'asignaciones_transcripcion_' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new AsignacionesTranscripcionExport(), $filename);
     }
 
     /**

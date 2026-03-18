@@ -162,8 +162,13 @@ function fmtDur($seg) {
 
     {{-- Filtro por transcriptor / dependencia --}}
     <div class="card card-outline card-secondary mb-3">
-        <div class="card-header py-2">
-            <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Detalle por transcriptor o dependencia</h3>
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0"><i class="fas fa-filter mr-2"></i>Detalle por transcriptor o dependencia</h3>
+            @if(auth()->user()->id_nivel == 1)
+            <a href="{{ route('procesamientos.exportar-asignaciones') }}" class="btn btn-sm btn-success">
+                <i class="fas fa-file-excel mr-1"></i> Exportar todas las asignaciones
+            </a>
+            @endif
         </div>
         <form method="GET" action="{{ route('procesamientos.index') }}">
             <input type="hidden" name="tipo" value="transcripcion">
@@ -271,6 +276,8 @@ function fmtDur($seg) {
                             <th>Transcriptor</th>
                             <th>Fecha asig.</th>
                             <th>Estado</th>
+                            <th>F. Revisión</th>
+                            <th>Revisado por</th>
                             <th class="text-right">Duración</th>
                         </tr>
                     </thead>
@@ -309,6 +316,20 @@ function fmtDur($seg) {
                             <td>{{ $asig->nombre_persona }}</td>
                             <td>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</td>
                             <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
+                            <td>
+                                @if($asig->fecha_revision)
+                                    <small>{{ \Carbon\Carbon::parse($asig->fecha_revision)->format('d/m/Y') }}</small>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($asig->nombre_revisor)
+                                    <small>{{ $asig->nombre_revisor }}</small>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td class="text-right text-monospace">{{ fmtDur($duracion) }}</td>
                         </tr>
                         @endforeach
@@ -320,7 +341,7 @@ function fmtDur($seg) {
                                       + $detalleAsignaciones->filter(fn($a) => !$a->id_adjunto)->unique('id_e_ind_fvt')->sum('duracion_total');
                         @endphp
                         <tr>
-                            <td colspan="5"><strong>Total asignaciones (audios únicos)</strong></td>
+                            <td colspan="7"><strong>Total asignaciones (audios únicos)</strong></td>
                             <td class="text-right text-monospace"><strong>{{ fmtDur($durTotal) }}</strong></td>
                         </tr>
                     </tfoot>
