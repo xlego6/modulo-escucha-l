@@ -346,7 +346,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
 </div>
 
 {{-- Anotaciones del revisor (solo visible si rechazada y hay anotaciones) --}}
-@if($asignacion->estado == 'rechazada' && $asignacion->transcripcion_anotada)
+@if($asignacion->transcripcion_anotada)
 <div class="row mt-3">
     <div class="col-12">
         <div class="card card-outline card-warning">
