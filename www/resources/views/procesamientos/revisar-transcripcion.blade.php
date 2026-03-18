@@ -160,6 +160,8 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
         font-size: 14px;
         line-height: 1.8;
         background: #fff;
+        color: #212529;
+        caret-color: #212529;
         outline: none;
         white-space: pre-wrap;
         overflow-y: auto;
