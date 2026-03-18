@@ -1759,6 +1759,24 @@ class ProcesamientoController extends Controller
     }
 
     /**
+     * Guardar anotaciones del revisor (HTML con <mark>) en transcripcion_anotada
+     */
+    public function guardarAnotaciones(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion')) {
+            return response()->json(['error' => 'Sin permisos'], 403);
+        }
+
+        $asignacion = AsignacionTranscripcion::findOrFail($id);
+        $html = strip_tags($request->input('anotaciones', ''), '<mark><span><p><br><strong><em><b><i><div>');
+        $asignacion->transcripcion_anotada = $html ?: null;
+        $asignacion->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Exportar todas las asignaciones a Excel (solo Admin)
      */
     public function exportarAsignaciones()

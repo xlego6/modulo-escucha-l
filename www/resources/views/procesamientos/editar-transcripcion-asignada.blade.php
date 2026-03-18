@@ -150,6 +150,12 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
         margin-bottom: 0.2rem;
     }
 
+    /* Anotaciones del revisor (panel de referencia) */
+    .anotaciones-ref { font-family: 'Barlow', sans-serif; font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
+    .anotaciones-ref mark.amarillo { background: #fff3cd; color: #856404; padding: 1px 2px; border-radius: 2px; }
+    .anotaciones-ref mark.rojo     { background: #f8d7da; color: #721c24; padding: 1px 2px; border-radius: 2px; }
+    .anotaciones-ref mark.verde    { background: #d4edda; color: #155724; padding: 1px 2px; border-radius: 2px; }
+
     /* Calificación con estrellas */
     .star-rating { display: inline-flex; gap: 4px; }
     .star-rating .star {
@@ -338,6 +344,36 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
         </div>
     </div>
 </div>
+
+{{-- Anotaciones del revisor (solo visible si rechazada y hay anotaciones) --}}
+@if($asignacion->estado == 'rechazada' && $asignacion->transcripcion_anotada)
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card card-outline card-warning">
+            <div class="card-header py-2">
+                <h3 class="card-title"><i class="fas fa-highlighter mr-2 text-warning"></i>Anotaciones del revisor</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    El revisor marcó las secciones que requieren corrección. Úsalo como referencia mientras editas tu transcripción.
+                </p>
+                <div class="anotaciones-ref">{!! $asignacion->transcripcion_anotada !!}</div>
+                <div class="mt-2 small">
+                    <span class="badge" style="background:#fff3cd;color:#856404;border:1px solid #ffc107">Atención</span>
+                    <span class="badge ml-1" style="background:#f8d7da;color:#721c24;border:1px solid #f5c6cb">Error</span>
+                    <span class="badge ml-1" style="background:#d4edda;color:#155724;border:1px solid #c3e6cb">OK</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Transcripción automática colapsada --}}
 @if($transcripcionAuto && $asignacion->transcripcion_editada != $transcripcionAuto)

@@ -26,6 +26,7 @@ class AsignacionTranscripcion extends Model
         'transcripcion_editada',
         'calificacion_audio',
         'observaciones_envio',
+        'transcripcion_anotada',
     ];
 
     protected $casts = [
