@@ -210,6 +210,9 @@ Route::middleware(['auth'])->group(function () {
 
             // Desasignar transcripción (Admin/Líder)
             Route::delete('procesamientos/asignacion/{id}/desasignar', [ProcesamientoController::class, 'desasignarTranscripcion'])->name('procesamientos.desasignar');
+
+            // Guardar anotaciones del revisor
+            Route::post('procesamientos/asignacion/{id}/anotar', [ProcesamientoController::class, 'guardarAnotaciones'])->name('procesamientos.anotar');
         });
 
         // Entidades: Admin(1), Líder(2)

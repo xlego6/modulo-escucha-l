@@ -149,6 +149,27 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
         font-size: 0.85em;
         margin-bottom: 0.2rem;
     }
+
+    /* Anotaciones del revisor */
+    #anotaciones-editor {
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 4px 4px;
+        padding: 12px 16px;
+        min-height: 300px;
+        font-family: 'Barlow', sans-serif;
+        font-size: 14px;
+        line-height: 1.8;
+        background: #fff;
+        outline: none;
+        white-space: pre-wrap;
+        overflow-y: auto;
+    }
+    #anotaciones-editor:focus { border-color: #80bdff; box-shadow: 0 0 0 2px rgba(0,123,255,.15); }
+    #anotaciones-editor mark.amarillo { background: #fff3cd; color: #856404; padding: 1px 2px; border-radius: 2px; }
+    #anotaciones-editor mark.rojo     { background: #f8d7da; color: #721c24; padding: 1px 2px; border-radius: 2px; }
+    #anotaciones-editor mark.verde    { background: #d4edda; color: #155724; padding: 1px 2px; border-radius: 2px; }
+    .anotacion-toolbar { background: #f8f9fa; padding: 6px 8px; border: 1px solid #dee2e6; border-bottom: none; border-radius: 4px 4px 0 0; }
+    #anotaciones-guardado { transition: opacity .4s; }
 </style>
 @endsection
 
@@ -310,6 +331,49 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
     </div>
 </div>
 
+{{-- Panel de anotaciones del revisor --}}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card card-outline card-warning">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-highlighter mr-2"></i>Anotaciones para el transcriptor
+                    <small class="text-muted font-weight-normal ml-2">(selecciona texto y aplica color para marcar errores)</small>
+                </h3>
+                <span id="anotaciones-guardado" class="text-success small" style="opacity:0">
+                    <i class="fas fa-check mr-1"></i>Guardado
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <div class="anotacion-toolbar">
+                    <div class="btn-group btn-group-sm mr-2">
+                        <button type="button" class="btn btn-warning btn-sm" onclick="resaltar('amarillo')" title="Marcar en amarillo (atención)">
+                            <i class="fas fa-highlighter"></i> Atención
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="resaltar('rojo')" title="Marcar en rojo (error)">
+                            <i class="fas fa-highlighter"></i> Error
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm" onclick="resaltar('verde')" title="Marcar en verde (correcto)">
+                            <i class="fas fa-highlighter"></i> OK
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mr-2" onclick="limpiarMarca()" title="Quitar marca de la selección">
+                        <i class="fas fa-eraser"></i> Quitar marca
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="guardarAnotaciones()" id="btnGuardarAnotaciones">
+                        <i class="fas fa-save mr-1"></i>Guardar anotaciones
+                    </button>
+                </div>
+                <div id="anotaciones-editor"
+                     contenteditable="true"
+                     spellcheck="true">{!! $asignacion->transcripcion_anotada
+                        ? $asignacion->transcripcion_anotada
+                        : nl2br(e($asignacion->transcripcion_editada)) !!}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Comparar con transcripción automática --}}
 @php
     // Para asignaciones por audio: mostrar solo el texto de ese adjunto como referencia
@@ -436,6 +500,70 @@ document.querySelectorAll('video[data-flv-src]').forEach(function(videoEl) {
     player.attachMediaElement(videoEl);
     player.load();
 });
+// ── Resaltador de anotaciones ──────────────────────────────────────────────
+function resaltar(color) {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed) { return; }
+    var range = sel.getRangeAt(0);
+    // Verificar que la selección está dentro del editor
+    var editor = document.getElementById('anotaciones-editor');
+    if (!editor.contains(range.commonAncestorContainer)) { return; }
+
+    var mark = document.createElement('mark');
+    mark.className = color;
+    try {
+        range.surroundContents(mark);
+    } catch (e) {
+        // Si hay nodos parciales, extraer y envolver
+        var fragment = range.extractContents();
+        mark.appendChild(fragment);
+        range.insertNode(mark);
+    }
+    sel.removeAllRanges();
+}
+
+function limpiarMarca() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed) { return; }
+    var range = sel.getRangeAt(0);
+    var editor = document.getElementById('anotaciones-editor');
+    if (!editor.contains(range.commonAncestorContainer)) { return; }
+
+    // Buscar mark ancestro y quitarlo
+    var node = range.commonAncestorContainer;
+    while (node && node !== editor) {
+        if (node.nodeName === 'MARK') {
+            var parent = node.parentNode;
+            while (node.firstChild) parent.insertBefore(node.firstChild, node);
+            parent.removeChild(node);
+            break;
+        }
+        node = node.parentNode;
+    }
+}
+
+function guardarAnotaciones() {
+    var html = document.getElementById('anotaciones-editor').innerHTML;
+    var btn = $('#btnGuardarAnotaciones');
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Guardando...');
+
+    $.ajax({
+        url: '{{ route("procesamientos.anotar", $asignacion->id_asignacion) }}',
+        method: 'POST',
+        data: { _token: '{{ csrf_token() }}', anotaciones: html },
+        success: function() {
+            btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Guardar anotaciones');
+            var $aviso = $('#anotaciones-guardado');
+            $aviso.css('opacity', 1);
+            setTimeout(function() { $aviso.css('opacity', 0); }, 2500);
+        },
+        error: function() {
+            btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Guardar anotaciones');
+            alert('Error al guardar las anotaciones.');
+        }
+    });
+}
+
 $(document).ready(function() {
     // Confirmación antes de salir si hay cambios sin guardar
     var originalContent = $('#transcripcion').val();
