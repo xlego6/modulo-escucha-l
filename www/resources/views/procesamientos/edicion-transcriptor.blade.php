@@ -3,51 +3,78 @@
 @section('title', 'Mis Transcripciones Asignadas')
 @section('content_header', 'Mis Transcripciones Asignadas')
 
+@section('css')
+<style>
+.stat-block { border-radius:6px; padding:10px 12px; color:#fff; min-height:80px; display:flex; flex-direction:column; justify-content:space-between; }
+.stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; opacity:.85; }
+.stat-main  { font-size:28px; font-weight:700; line-height:1.1; }
+.stat-row   { font-size:11px; opacity:.9; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; margin-top:2px; }
+.bg-asignadas   { background: linear-gradient(135deg,#37474f,#546e7a); }
+.bg-en-edicion  { background: linear-gradient(135deg,#1565c0,#1e88e5); }
+.bg-en-revision { background: linear-gradient(135deg,#e65100,#fb8c00); }
+.bg-rechazadas  { background: linear-gradient(135deg,#b71c1c,#e53935); }
+.bg-aprobadas   { background: linear-gradient(135deg,#1b5e20,#388e3c); }
+</style>
+@endsection
+
 @section('content')
-{{-- Estadísticas --}}
-<div class="row">
-    <div class="col">
-        <div class="info-box bg-secondary">
-            <span class="info-box-icon"><i class="fas fa-inbox"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Asignadas</span>
-                <span class="info-box-number">{{ $stats['asignadas'] }}</span>
+{{-- Bloques estadísticos --}}
+@php
+    $bt = $stats;
+    function fmtDurTrans($s) {
+        if (!$s) return '0m';
+        $h = intdiv($s, 3600); $m = intdiv($s % 3600, 60);
+        return $h ? "{$h}h {$m}m" : "{$m}m";
+    }
+@endphp
+<div class="row mb-3">
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-asignadas">
+            <div class="stat-label">Asignadas</div>
+            <div class="stat-main">{{ number_format($bt['asignada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['asignada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurTrans($bt['asignada']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col">
-        <div class="info-box bg-primary">
-            <span class="info-box-icon"><i class="fas fa-edit"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">En Edicion</span>
-                <span class="info-box-number">{{ $stats['en_edicion'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-en-edicion">
+            <div class="stat-label">En edición</div>
+            <div class="stat-main">{{ number_format($bt['en_edicion']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['en_edicion']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurTrans($bt['en_edicion']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col">
-        <div class="info-box bg-warning">
-            <span class="info-box-icon"><i class="fas fa-clock"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">En Revision</span>
-                <span class="info-box-number">{{ $stats['enviadas'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-en-revision">
+            <div class="stat-label">En revisión</div>
+            <div class="stat-main">{{ number_format($bt['enviada_revision']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['enviada_revision']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurTrans($bt['enviada_revision']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col">
-        <div class="info-box bg-danger">
-            <span class="info-box-icon"><i class="fas fa-undo"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Rechazadas</span>
-                <span class="info-box-number">{{ $stats['rechazadas'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-rechazadas">
+            <div class="stat-label">Rechazadas</div>
+            <div class="stat-main">{{ number_format($bt['rechazada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['rechazada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurTrans($bt['rechazada']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col">
-        <div class="info-box bg-success">
-            <span class="info-box-icon"><i class="fas fa-check-circle"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Finalizadas</span>
-                <span class="info-box-number">{{ $stats['aprobadas'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-aprobadas">
+            <div class="stat-label">Aprobadas</div>
+            <div class="stat-main">{{ number_format($bt['aprobada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['aprobada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurTrans($bt['aprobada']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
@@ -64,8 +91,9 @@
                 <tr>
                     <th>Codigo</th>
                     <th>Titulo</th>
-                    <th>Fecha Asignacion</th>
+                    <th>F. Asignación</th>
                     <th>Estado</th>
+                    <th>Revisión</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -86,12 +114,13 @@
                     </td>
                     <td>
                         @if($asignacion->fecha_asignacion)
-                            {{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}
+                            {{ $asignacion->fecha_asignacion->format('d/m/Y') }}
+                            <br><small class="text-muted">{{ $asignacion->fecha_asignacion->format('H:i') }}</small>
                         @endif
                     </td>
                     <td>
                         <span class="badge {{ $asignacion->estado_badge_class }}">
-                            {{ $asignacion->estado == 'aprobada' ? 'Finalizada' : $asignacion->fmt_estado }}
+                            {{ $asignacion->estado == 'aprobada' ? 'Aprobada' : $asignacion->fmt_estado }}
                         </span>
                         @if($asignacion->estado == 'rechazada' && $asignacion->comentario_revision)
                             <br>
@@ -102,6 +131,26 @@
                         @endif
                     </td>
                     <td>
+                        @if($asignacion->fecha_revision)
+                            <small>
+                                {{ $asignacion->fecha_revision->format('d/m/Y H:i') }}
+                            </small>
+                            @if($asignacion->rel_revisor)
+                                <br><small class="text-muted">
+                                    <i class="fas fa-user"></i>
+                                    {{ $asignacion->rel_revisor->name ?? ($asignacion->rel_revisor->nombres ?? 'N/A') }}
+                                </small>
+                            @endif
+                        @elseif($asignacion->fecha_envio_revision)
+                            <small class="text-muted">
+                                <i class="fas fa-hourglass-half"></i>
+                                Enviada {{ $asignacion->fecha_envio_revision->format('d/m/Y') }}
+                            </small>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </td>
+                    <td>
                         @if(in_array($asignacion->estado, ['asignada', 'en_edicion', 'rechazada']))
                             <a href="{{ route('procesamientos.editar-asignacion', $asignacion->id_asignacion) }}"
                                class="btn btn-sm btn-primary">
@@ -109,21 +158,18 @@
                             </a>
                         @elseif($asignacion->estado == 'enviada_revision')
                             <span class="text-muted">
-                                <i class="fas fa-hourglass-half"></i> En revision
+                                <i class="fas fa-hourglass-half"></i> En revisión
                             </span>
                         @elseif($asignacion->estado == 'aprobada')
                             <span class="text-success">
                                 <i class="fas fa-check-circle"></i> Completada
                             </span>
-                            @if($asignacion->fecha_revision)
-                                <br><small class="text-muted">{{ $asignacion->fecha_revision->format('d/m/Y') }}</small>
-                            @endif
                         @endif
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
+                    <td colspan="6" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2"></i><br>
                         No tiene transcripciones asignadas
                     </td>
@@ -148,22 +194,22 @@
         <div class="row text-center">
             <div class="col">
                 <span class="badge badge-secondary p-2 mb-2">1. Asignada</span>
-                <p class="small mb-0">Se le asigna una transcripcion</p>
+                <p class="small mb-0">Se le asigna una transcripción</p>
             </div>
             <div class="col">
-                <span class="badge badge-primary p-2 mb-2">2. En Edicion</span>
-                <p class="small mb-0">Trabaja en la transcripcion</p>
+                <span class="badge badge-primary p-2 mb-2">2. En Edición</span>
+                <p class="small mb-0">Trabaja en la transcripción</p>
             </div>
             <div class="col">
-                <span class="badge badge-warning p-2 mb-2">3. En Revision</span>
-                <p class="small mb-0">Enviada para revision</p>
+                <span class="badge badge-warning p-2 mb-2">3. En Revisión</span>
+                <p class="small mb-0">Enviada para revisión</p>
             </div>
             <div class="col">
                 <span class="badge badge-danger p-2 mb-2">Rechazada</span>
                 <p class="small mb-0">Requiere correcciones</p>
             </div>
             <div class="col">
-                <span class="badge badge-success p-2 mb-2">4. Finalizada</span>
+                <span class="badge badge-success p-2 mb-2">4. Aprobada</span>
                 <p class="small mb-0">Aprobada y completada</p>
             </div>
         </div>

@@ -115,6 +115,20 @@ class ProcesamientoController extends Controller
         ];
     }
 
+    private function calcStatsTranscriptor($transcriptorId)
+    {
+        $estados = ['asignada', 'en_edicion', 'enviada_revision', 'rechazada', 'aprobada'];
+        $stats = [];
+        foreach ($estados as $estado) {
+            $ids = DB::table('esclarecimiento.asignacion_transcripcion')
+                ->where('id_transcriptor', $transcriptorId)
+                ->where('estado', $estado)
+                ->distinct()->pluck('id_e_ind_fvt');
+            $stats[$estado] = $this->audioStatsForIds($ids);
+        }
+        return $stats;
+    }
+
     private function calcStatsGlobales($tipo)
     {
         $table = $tipo === 'transcripcion'
@@ -744,7 +758,8 @@ class ProcesamientoController extends Controller
         if ($nivel == 4) {
             // Incluir aprobadas para que vea su trabajo finalizado
             $asignaciones = AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
-                ->with(['rel_entrevista', 'rel_adjunto', 'rel_entrevista.rel_adjuntos' => function($q) {
+                ->with(['rel_entrevista', 'rel_adjunto', 'rel_revisor',
+                        'rel_entrevista.rel_adjuntos' => function($q) {
                     $q->where(function($inner) {
                         $inner->where('tipo_mime', 'like', '%audio%')
                               ->orWhere('tipo_mime', 'like', '%video%');
@@ -760,18 +775,7 @@ class ProcesamientoController extends Controller
                 ->orderBy('fecha_asignacion', 'desc')
                 ->paginate(20);
 
-            $stats = [
-                'asignadas' => AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
-                    ->where('estado', AsignacionTranscripcion::ESTADO_ASIGNADA)->count(),
-                'en_edicion' => AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
-                    ->where('estado', AsignacionTranscripcion::ESTADO_EN_EDICION)->count(),
-                'enviadas' => AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
-                    ->where('estado', AsignacionTranscripcion::ESTADO_ENVIADA_REVISION)->count(),
-                'rechazadas' => AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
-                    ->where('estado', AsignacionTranscripcion::ESTADO_RECHAZADA)->count(),
-                'aprobadas' => AsignacionTranscripcion::where('id_transcriptor', $user->id_entrevistador)
-                    ->where('estado', AsignacionTranscripcion::ESTADO_APROBADA)->count(),
-            ];
+            $stats = $this->calcStatsTranscriptor($user->id_entrevistador);
 
             return view('procesamientos.edicion-transcriptor', compact('asignaciones', 'stats'));
         }
@@ -1565,6 +1569,10 @@ class ProcesamientoController extends Controller
 
         $asignacion->estado = AsignacionTranscripcion::ESTADO_ENVIADA_REVISION;
         $asignacion->fecha_envio_revision = now();
+        if (request()->filled('calificacion_audio')) {
+            $asignacion->calificacion_audio = (int) request('calificacion_audio');
+        }
+        $asignacion->observaciones_envio = request('observaciones_envio') ?: null;
         $asignacion->save();
 
         TrazaActividad::create([
