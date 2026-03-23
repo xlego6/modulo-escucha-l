@@ -436,7 +436,8 @@ $(document).ready(function() {
             areas_compatibles: $('#areas_compatibles').val() || [],
             observaciones_toma: $('#observaciones_toma').val(),
             tiene_anexos: $('input[name="tiene_anexos"]:checked').val(),
-            descripcion_anexos: $('#descripcion_anexos').val()
+            descripcion_anexos: $('#descripcion_anexos').val(),
+            nombre_entrevistador: $('#nombre_entrevistador').val()
         };
     }
 

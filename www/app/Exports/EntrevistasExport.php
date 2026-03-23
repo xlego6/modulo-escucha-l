@@ -253,7 +253,8 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             $entrevista->rel_entrevistador && $entrevista->rel_entrevistador->rel_usuario
                 ? $entrevista->rel_entrevistador->rel_usuario->name
                 : '',
-            $entrevista->nombre_entrevistador ?? '',
+            $entrevista->nombre_entrevistador
+                ?: ($entrevista->rel_entrevistador?->rel_usuario?->name ?? ''),
 
             // PASO 2: TESTIMONIANTES
             implode(' | ', array_filter($testimoniantes)),
