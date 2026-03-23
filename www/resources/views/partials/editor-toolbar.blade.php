@@ -90,6 +90,12 @@
         <button type="button" class="btn btn-outline-warning" onclick="editorInsert('[llanto]', '{{ $targetId }}')" title="Marcar llanto">
             <i class="fas fa-sad-tear"></i>
         </button>
+        <button type="button" class="btn btn-outline-warning" onclick="editorInsert('[Alias/Apodo]', '{{ $targetId }}')" title="Insertar Alias/Apodo">
+            <i class="fas fa-mask"></i>
+        </button>
+        <button type="button" class="btn btn-outline-warning" onclick="editorAction('lengua_indigena', '{{ $targetId }}')" title="Intervención en lengua indígena [hh:mm:ss - hh:mm:ss]">
+            <i class="fas fa-language"></i>
+        </button>
     </div>
     @endif
 
