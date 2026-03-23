@@ -149,6 +149,11 @@ function editorAction(action, targetId) {
             editorInsert('[' + ft + ' - ' + ft + '] ', targetId);
             break;
 
+        case 'lengua_indigena':
+            var lt = getAudioTime();
+            editorInsert('[' + lt + ' - ' + lt + ' Intervención en lengua indígena] ', targetId);
+            break;
+
         case 'paragraph':
             editorInsert('\n\n', targetId);
             break;
