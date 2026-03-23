@@ -203,11 +203,11 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 @endif
                 <div class="media-controls">
                     <div>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', -10)">
-                            <i class="fas fa-backward"></i> -10s
+                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', -5)">
+                            <i class="fas fa-backward"></i> -5s
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', 10)">
-                            +10s <i class="fas fa-forward"></i>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', 5)">
+                            +5s <i class="fas fa-forward"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="changeSpeed('media-{{ $adjunto->id_adjunto }}')">
                             <i class="fas fa-tachometer-alt"></i> <span class="speed-label">1x</span>
@@ -337,8 +337,8 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <ul class="list-unstyled mb-0 small">
                     <li><kbd>Ctrl</kbd> + <kbd>S</kbd> &mdash; Guardar borrador</li>
                     <li><kbd>Ctrl</kbd> + <kbd>Space</kbd> &mdash; Play/Pause</li>
-                    <li><kbd>Ctrl</kbd> + <kbd>←</kbd> &mdash; Retroceder 10s</li>
-                    <li><kbd>Ctrl</kbd> + <kbd>→</kbd> &mdash; Avanzar 10s</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>←</kbd> &mdash; Retroceder 5s</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>→</kbd> &mdash; Avanzar 5s</li>
                 </ul>
             </div>
         </div>
@@ -534,6 +534,7 @@ function enviarARevision() {
         return;
     }
 
+    guardarTiempoMedia();
     // Guardar borrador primero, luego abrir modal
     $.ajax({
         url: $('#formTranscripcion').attr('action'),
@@ -573,8 +574,28 @@ $(document).on('mouseenter', '#starRating .star', function() {
     $('#btnConfirmarEnvio').prop('disabled', false);
 });
 
+// Clave localStorage para preservar tiempo de reproducción
+var _draftTimeKey = 'draft_time_{{ $asignacion->id_asignacion }}';
+
+function guardarTiempoMedia() {
+    var m = $('audio, video').first()[0];
+    if (m && m.currentTime > 0) {
+        localStorage.setItem(_draftTimeKey, m.currentTime);
+    }
+}
+
+function restaurarTiempoMedia() {
+    var t = parseFloat(localStorage.getItem(_draftTimeKey) || '0');
+    if (t > 0) {
+        $('audio, video').first().on('loadedmetadata', function() {
+            this.currentTime = t;
+        });
+    }
+}
+
 // Auto-guardar cada 60 segundos
 setInterval(function() {
+    guardarTiempoMedia();
     var form = $('#formTranscripcion');
     $.ajax({
         url: form.attr('action'),
@@ -587,10 +608,19 @@ setInterval(function() {
 }, 60000);
 
 $(document).ready(function() {
+    // Restaurar tiempo de reproducción del borrador anterior
+    restaurarTiempoMedia();
+
+    // Guardar tiempo al enviar el formulario
+    $('#formTranscripcion').on('submit', function() {
+        guardarTiempoMedia();
+    });
+
     // Atajos de teclado
     $(document).on('keydown', function(e) {
         if (e.ctrlKey && e.key === 's') {
             e.preventDefault();
+            guardarTiempoMedia();
             $('#formTranscripcion').submit();
         }
         var getMedia = function() { return $('audio, video').first()[0]; };
@@ -602,12 +632,12 @@ $(document).ready(function() {
         if (e.ctrlKey && e.key === 'ArrowLeft') {
             e.preventDefault();
             var m = getMedia();
-            if (m) m.currentTime -= 10;
+            if (m) m.currentTime -= 5;
         }
         if (e.ctrlKey && e.key === 'ArrowRight') {
             e.preventDefault();
             var m = getMedia();
-            if (m) m.currentTime += 10;
+            if (m) m.currentTime += 5;
         }
     });
 

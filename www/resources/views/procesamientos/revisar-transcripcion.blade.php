@@ -192,7 +192,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
             <div class="media-item">
                 <label title="{{ $adjunto->nombre_original }}">{{ $adjunto->nombre_original }}</label>
                 @if(strpos($adjunto->tipo_mime, 'audio') !== false)
-                <audio controls preload="metadata">
+                <audio controls preload="metadata" id="media-{{ $adjunto->id_adjunto }}" class="w-100">
                     <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
                 </audio>
                 @elseif(strpos($adjunto->tipo_mime, 'video') !== false)
@@ -204,6 +204,16 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 </video>
                 <div class="flv-error-msg" id="flv-error-{{ $adjunto->id_adjunto }}" style="display:none; color:#ff6b6b; padding:8px; text-align:center; background:#1a1a1a;"></div>
                 @endif
+                <div class="d-flex justify-content-between mt-1">
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', -5)" title="Retroceder 5s">
+                            <i class="fas fa-backward"></i> -5s
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', 5)" title="Avanzar 5s">
+                            +5s <i class="fas fa-forward"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
             @endforeach
         </div>
@@ -502,6 +512,11 @@ document.querySelectorAll('video[data-flv-src]').forEach(function(videoEl) {
     player.attachMediaElement(videoEl);
     player.load();
 });
+function skipMedia(id, seconds) {
+    var media = document.getElementById(id);
+    if (media) media.currentTime = Math.max(0, media.currentTime + seconds);
+}
+
 // ── Resaltador de anotaciones ──────────────────────────────────────────────
 function resaltar(color) {
     var sel = window.getSelection();
@@ -567,6 +582,26 @@ function guardarAnotaciones() {
 }
 
 $(document).ready(function() {
+    // Atajos de teclado para reproductor
+    $(document).on('keydown', function(e) {
+        var getMedia = function() { return $('audio, video').first()[0]; };
+        if (e.ctrlKey && e.key === ' ') {
+            e.preventDefault();
+            var m = getMedia();
+            if (m) m.paused ? m.play() : m.pause();
+        }
+        if (e.ctrlKey && e.key === 'ArrowLeft') {
+            e.preventDefault();
+            var m = getMedia();
+            if (m) m.currentTime = Math.max(0, m.currentTime - 5);
+        }
+        if (e.ctrlKey && e.key === 'ArrowRight') {
+            e.preventDefault();
+            var m = getMedia();
+            if (m) m.currentTime += 5;
+        }
+    });
+
     // Confirmación antes de salir si hay cambios sin guardar
     var originalContent = $('#transcripcion').val();
     var hasChanges = false;

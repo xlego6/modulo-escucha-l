@@ -101,7 +101,9 @@
                             <tr>
                                 <th style="width: 45%">Entrevistador:</th>
                                 <td>
-                                    @if($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->rel_usuario)
+                                    @if($entrevista->nombre_entrevistador)
+                                        {{ $entrevista->nombre_entrevistador }}
+                                    @elseif($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->rel_usuario)
                                         {{ $entrevista->rel_entrevistador->rel_usuario->name }}
                                     @else
                                         <span class="text-muted">Sin asignar</span>

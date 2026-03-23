@@ -74,8 +74,14 @@
         font-size: 10.5pt;
         line-height: 1.7;
         text-align: justify;
-        white-space: pre-wrap;
+        text-align-last: left;
         word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    .texto-transcripcion p {
+        margin: 0 0 0.4em 0;
+        text-align: justify;
+        text-align-last: left;
     }
     .pie-pagina {
         position: fixed;

@@ -133,9 +133,20 @@ function editorAction(action, targetId) {
             break;
 
         case 'timestamp':
-            // Obtener tiempo del audio si existe
-            var audioTime = getAudioTime();
-            editorInsert('[' + audioTime + '] ', targetId);
+            editorInsert('[' + getAudioTime() + '] ', targetId);
+            break;
+
+        case 'duda':
+            editorInsert('[' + getAudioTime() + ' DUD] ', targetId);
+            break;
+
+        case 'nse':
+            editorInsert('[' + getAudioTime() + ' NSE] ', targetId);
+            break;
+
+        case 'fragmento':
+            var ft = getAudioTime();
+            editorInsert('[' + ft + ' - ' + ft + '] ', targetId);
             break;
 
         case 'paragraph':
@@ -242,19 +253,20 @@ function editorInsertCustomSpeaker(targetId) {
     }
 }
 
-// Obtener tiempo del audio (si hay reproductor)
+// Obtener tiempo del audio/video (si hay reproductor)
 function getAudioTime() {
-    var $audio = $('audio').first();
-    if ($audio.length && $audio[0].currentTime) {
-        var seconds = Math.floor($audio[0].currentTime);
+    var $media = $('audio, video').filter(function() { return !this.paused && this.currentTime > 0; }).first();
+    if (!$media.length) $media = $('audio, video').first();
+    if ($media.length) {
+        var seconds = Math.floor($media[0].currentTime);
         var h = Math.floor(seconds / 3600);
         var m = Math.floor((seconds % 3600) / 60);
         var s = seconds % 60;
-        return (h > 0 ? h.toString().padStart(2, '0') + ':' : '') +
+        return h.toString().padStart(2, '0') + ':' +
                m.toString().padStart(2, '0') + ':' +
                s.toString().padStart(2, '0');
     }
-    return '00:00';
+    return '00:00:00';
 }
 
 // Buscar siguiente

@@ -39,8 +39,17 @@
     {{-- Grupo: Transcripcion --}}
     <div class="btn-group btn-group-sm mr-2" role="group" title="Transcripcion">
         @if($showTimestamp)
-        <button type="button" class="btn btn-outline-info" onclick="editorAction('timestamp', '{{ $targetId }}')" title="Insertar marca de tiempo">
+        <button type="button" class="btn btn-outline-info" onclick="editorAction('timestamp', '{{ $targetId }}')" title="Insertar marca de tiempo [hh:mm:ss]">
             <i class="fas fa-clock"></i>
+        </button>
+        <button type="button" class="btn btn-outline-warning" onclick="editorAction('duda', '{{ $targetId }}')" title="Marcar duda [hh:mm:ss DUD]">
+            <i class="fas fa-question-circle"></i>
+        </button>
+        <button type="button" class="btn btn-outline-danger" onclick="editorAction('nse', '{{ $targetId }}')" title="Marcar no se entiende [hh:mm:ss NSE]">
+            <i class="fas fa-deaf"></i>
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="editorAction('fragmento', '{{ $targetId }}')" title="Insertar fragmento de audio [hh:mm:ss - hh:mm:ss]">
+            <i class="fas fa-film"></i>
         </button>
         @endif
         @if($showSpeakers)
