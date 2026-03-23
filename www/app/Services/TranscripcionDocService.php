@@ -193,9 +193,10 @@ class TranscripcionDocService
                 continue;
             }
 
-            // Párrafo normal (con markdown inline)
+            // Párrafo normal (con markdown inline) — justificado
             $inner = $this->lineaMarkdownAXml($linea);
-            $resultado .= "<w:p><w:r><w:t xml:space=\"preserve\">{$inner}</w:t></w:r></w:p>";
+            $resultado .= '<w:p><w:pPr><w:jc w:val="both"/></w:pPr>'
+                . "<w:r><w:t xml:space=\"preserve\">{$inner}</w:t></w:r></w:p>";
         }
 
         // Párrafo vacío final: la plantilla lo cierra con </w:t></w:r></w:p>
