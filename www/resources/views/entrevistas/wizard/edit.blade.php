@@ -336,10 +336,10 @@ $(document).ready(function() {
         if (step === 2) {
             $('.testimoniante-card').each(function(index) {
                 let card = $(this);
-                let tieneDocumento = card.find('.tiene-documento-radio:checked').val() === '1';
+                let tieneDocVal = card.find('.tiene-documento-radio:checked').val();
                 let observaciones = card.find('.observaciones-consentimiento').val();
 
-                if (!tieneDocumento && (!observaciones || observaciones.trim() === '')) {
+                if (tieneDocVal === '0' && (!observaciones || observaciones.trim() === '')) {
                     card.find('.observaciones-consentimiento').addClass('is-invalid');
                     alert('Testimoniante #' + (index + 1) + ': Las observaciones del consentimiento son obligatorias cuando no tiene documento de autorizacion.');
                     valid = false;
@@ -478,7 +478,13 @@ $(document).ready(function() {
                     considera_riesgo: card.find('[name="considera_riesgo_' + index + '"]:checked').val() || 0,
                     autoriza_datos_personales: card.find('[name="autoriza_datos_personales_' + index + '"]:checked').val() || 0,
                     autoriza_datos_sensibles: card.find('[name="autoriza_datos_sensibles_' + index + '"]:checked').val() || 0,
-                    observaciones: card.find('[name="observaciones_consentimiento_' + index + '"]').val()
+                    observaciones: card.find('[name="observaciones_consentimiento_' + index + '"]').val(),
+                    otro_uso: card.find('[name="otro_uso_' + index + '"]:checked').val() || 0,
+                    otro_uso_obs: card.find('[name="otro_uso_obs_' + index + '"]').val() || '',
+                    otro_riesgo: card.find('[name="otro_riesgo_' + index + '"]:checked').val() || 2,
+                    otro_riesgo_obs: card.find('[name="otro_riesgo_obs_' + index + '"]').val() || '',
+                    otro_anonimizar: card.find('[name="otro_anonimizar_' + index + '"]:checked').val() || 0,
+                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || ''
                 }
             });
         });
@@ -616,16 +622,51 @@ $(document).ready(function() {
         // Consentimiento
         if (persona.consentimiento) {
             let cons = persona.consentimiento;
-            card.find('[name="tiene_documento_' + index + '"][value="' + cons.tiene_documento + '"]').prop('checked', true).trigger('change');
-            card.find('[name="es_menor_edad_' + index + '"][value="' + cons.es_menor_edad + '"]').prop('checked', true);
-            card.find('[name="autoriza_entrevista_' + index + '"][value="' + cons.autoriza_entrevista + '"]').prop('checked', true);
-            card.find('[name="permite_grabacion_' + index + '"][value="' + cons.permite_grabacion + '"]').prop('checked', true);
-            card.find('[name="permite_procesamiento_' + index + '"][value="' + cons.permite_procesamiento + '"]').prop('checked', true);
-            card.find('[name="permite_uso_' + index + '"][value="' + cons.permite_uso + '"]').prop('checked', true);
-            card.find('[name="considera_riesgo_' + index + '"][value="' + cons.considera_riesgo + '"]').prop('checked', true);
-            card.find('[name="autoriza_datos_personales_' + index + '"][value="' + cons.autoriza_datos_personales + '"]').prop('checked', true);
-            card.find('[name="autoriza_datos_sensibles_' + index + '"][value="' + cons.autoriza_datos_sensibles + '"]').prop('checked', true);
-            card.find('[name="observaciones_consentimiento_' + index + '"]').val(cons.observaciones);
+            let obs = cons.observaciones || '';
+            let esOtro = obs.indexOf('[CONSENTIMIENTO_OTRO]') !== -1;
+
+            if (esOtro) {
+                // Detectar consentimiento "Otro" por marcador en observaciones
+                card.find('[name="tiene_documento_' + index + '"][value="2"]').prop('checked', true).trigger('change');
+
+                // Extraer respuestas del marcador
+                let usoMatch = obs.match(/\[Uso otros fines: (Si|No)\]/);
+                let riesgoMatch = obs.match(/\[Riesgo seguridad: (Si|No|En blanco)\]/);
+                let anonMatch = obs.match(/\[Anonimizacion: (Si|No)\]/);
+
+                if (usoMatch) {
+                    let usoVal = usoMatch[1] === 'Si' ? '1' : '0';
+                    card.find('[name="otro_uso_' + index + '"][value="' + usoVal + '"]').prop('checked', true);
+                }
+                if (riesgoMatch) {
+                    let riesgoVal = riesgoMatch[1] === 'Si' ? '1' : (riesgoMatch[1] === 'No' ? '0' : '2');
+                    card.find('[name="otro_riesgo_' + index + '"][value="' + riesgoVal + '"]').prop('checked', true);
+                }
+                if (anonMatch) {
+                    let anonVal = anonMatch[1] === 'Si' ? '1' : '0';
+                    card.find('[name="otro_anonimizar_' + index + '"][value="' + anonVal + '"]').prop('checked', true);
+                }
+
+                // Extraer observaciones individuales
+                let usoObsMatch = obs.match(/\[Uso otros fines obs\] (.*?)(?=\n\[|$)/s);
+                let riesgoObsMatch = obs.match(/\[Riesgo seguridad obs\] (.*?)(?=\n\[|$)/s);
+                let anonObsMatch = obs.match(/\[Anonimizacion obs\] (.*?)(?=\n\[|$)/s);
+
+                if (usoObsMatch) card.find('[name="otro_uso_obs_' + index + '"]').val(usoObsMatch[1].trim());
+                if (riesgoObsMatch) card.find('[name="otro_riesgo_obs_' + index + '"]').val(riesgoObsMatch[1].trim());
+                if (anonObsMatch) card.find('[name="otro_anonimizar_obs_' + index + '"]').val(anonObsMatch[1].trim());
+            } else {
+                card.find('[name="tiene_documento_' + index + '"][value="' + cons.tiene_documento + '"]').prop('checked', true).trigger('change');
+                card.find('[name="es_menor_edad_' + index + '"][value="' + cons.es_menor_edad + '"]').prop('checked', true);
+                card.find('[name="autoriza_entrevista_' + index + '"][value="' + cons.autoriza_entrevista + '"]').prop('checked', true);
+                card.find('[name="permite_grabacion_' + index + '"][value="' + cons.permite_grabacion + '"]').prop('checked', true);
+                card.find('[name="permite_procesamiento_' + index + '"][value="' + cons.permite_procesamiento + '"]').prop('checked', true);
+                card.find('[name="permite_uso_' + index + '"][value="' + cons.permite_uso + '"]').prop('checked', true);
+                card.find('[name="considera_riesgo_' + index + '"][value="' + cons.considera_riesgo + '"]').prop('checked', true);
+                card.find('[name="autoriza_datos_personales_' + index + '"][value="' + cons.autoriza_datos_personales + '"]').prop('checked', true);
+                card.find('[name="autoriza_datos_sensibles_' + index + '"][value="' + cons.autoriza_datos_sensibles + '"]').prop('checked', true);
+                card.find('[name="observaciones_consentimiento_' + index + '"]').val(cons.observaciones);
+            }
         }
     }
 
@@ -641,21 +682,30 @@ $(document).ready(function() {
     function inicializarConsentimiento(card) {
         let radioTieneDoc = card.find('.tiene-documento-radio');
         let preguntasDiv = card.find('.preguntas-consentimiento');
+        let preguntasOtroDiv = card.find('.preguntas-consentimiento-otro');
         let observaciones = card.find('.observaciones-consentimiento');
         let observacionesLabel = card.find('.observaciones-label');
         let observacionesAyuda = card.find('.observaciones-ayuda');
 
         // Función para actualizar la visibilidad
         function actualizarConsentimiento() {
-            let tieneDocumento = card.find('.tiene-documento-radio:checked').val() === '1';
+            let val = card.find('.tiene-documento-radio:checked').val();
 
-            if (tieneDocumento) {
+            if (val === '1') {
                 preguntasDiv.slideDown();
+                preguntasOtroDiv.slideUp();
+                observaciones.removeAttr('required');
+                observacionesLabel.removeClass('required-field');
+                observacionesAyuda.hide();
+            } else if (val === '2') {
+                preguntasDiv.slideUp();
+                preguntasOtroDiv.slideDown();
                 observaciones.removeAttr('required');
                 observacionesLabel.removeClass('required-field');
                 observacionesAyuda.hide();
             } else {
                 preguntasDiv.slideUp();
+                preguntasOtroDiv.slideUp();
                 observaciones.attr('required', 'required');
                 observacionesLabel.addClass('required-field');
                 observacionesAyuda.show();
@@ -689,19 +739,28 @@ $(document).ready(function() {
     // Delegación de eventos para radio de consentimiento (para elementos dinámicos)
     $(document).on('change', '.tiene-documento-radio', function() {
         let card = $(this).closest('.testimoniante-card');
-        let tieneDocumento = $(this).val() === '1';
+        let val = card.find('.tiene-documento-radio:checked').val();
         let preguntasDiv = card.find('.preguntas-consentimiento');
+        let preguntasOtroDiv = card.find('.preguntas-consentimiento-otro');
         let observaciones = card.find('.observaciones-consentimiento');
         let observacionesLabel = card.find('.observaciones-label');
         let observacionesAyuda = card.find('.observaciones-ayuda');
 
-        if (tieneDocumento) {
+        if (val === '1') {
             preguntasDiv.slideDown();
+            preguntasOtroDiv.slideUp();
+            observaciones.removeAttr('required');
+            observacionesLabel.removeClass('required-field');
+            observacionesAyuda.hide();
+        } else if (val === '2') {
+            preguntasDiv.slideUp();
+            preguntasOtroDiv.slideDown();
             observaciones.removeAttr('required');
             observacionesLabel.removeClass('required-field');
             observacionesAyuda.hide();
         } else {
             preguntasDiv.slideUp();
+            preguntasOtroDiv.slideUp();
             observaciones.attr('required', 'required');
             observacionesLabel.addClass('required-field');
             observacionesAyuda.show();

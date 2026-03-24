@@ -188,11 +188,15 @@
                                     <input type="radio" class="custom-control-input tiene-documento-radio" id="tiene_documento___INDEX___no" name="tiene_documento___INDEX__" value="0" checked>
                                     <label class="custom-control-label" for="tiene_documento___INDEX___no">No</label>
                                 </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input tiene-documento-radio" id="tiene_documento___INDEX___otro" name="tiene_documento___INDEX__" value="2">
+                                    <label class="custom-control-label" for="tiene_documento___INDEX___otro">Otro</label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Preguntas de consentimiento (visibles solo si tiene documento = Si) -->
+                    <!-- Preguntas de consentimiento DADH (visibles solo si tiene documento = Si) -->
                     <div class="col-md-12 preguntas-consentimiento" style="display: none;">
                         <div class="row">
                             <div class="col-md-6">
@@ -313,6 +317,71 @@
                                             <label class="custom-control-label" for="autoriza_datos_sensibles___INDEX___no">No</label>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preguntas de consentimiento OTRO (visibles solo si tiene documento = Otro) -->
+                    <div class="col-md-12 preguntas-consentimiento-otro" style="display: none;">
+                        <div class="alert alert-warning py-2 mb-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Consentimiento informado diferente al formato DADH. Responda las siguientes preguntas segun el documento disponible.
+                        </div>
+                        <div class="row">
+                            <!-- Pregunta 1: Uso en otras actividades -->
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>1. La persona autoriza que su testimonio sea utilizado en otras actividades del CNMH (exposiciones, piezas comunicativas, documentales, entre otros) diferentes al proposito original (sentencia, investigacion, iniciativa, etc.)?</label>
+                                    <div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" class="custom-control-input" id="otro_uso___INDEX___si" name="otro_uso___INDEX__" value="1">
+                                            <label class="custom-control-label" for="otro_uso___INDEX___si">Si</label>
+                                        </div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" class="custom-control-input" id="otro_uso___INDEX___no" name="otro_uso___INDEX__" value="0" checked>
+                                            <label class="custom-control-label" for="otro_uso___INDEX___no">No</label>
+                                        </div>
+                                    </div>
+                                    <textarea class="form-control mt-2" name="otro_uso_obs___INDEX__" rows="1" placeholder="Observaciones (opcional)"></textarea>
+                                </div>
+                            </div>
+                            <!-- Pregunta 2: Riesgo seguridad -->
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>2. Se indica que el testimonio pone en riesgo el derecho a la vida, la seguridad, intimidad y la privacidad?</label>
+                                    <div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" class="custom-control-input" id="otro_riesgo___INDEX___si" name="otro_riesgo___INDEX__" value="1">
+                                            <label class="custom-control-label" for="otro_riesgo___INDEX___si">Si</label>
+                                        </div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" class="custom-control-input" id="otro_riesgo___INDEX___no" name="otro_riesgo___INDEX__" value="0">
+                                            <label class="custom-control-label" for="otro_riesgo___INDEX___no">No</label>
+                                        </div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" class="custom-control-input" id="otro_riesgo___INDEX___blanco" name="otro_riesgo___INDEX__" value="2" checked>
+                                            <label class="custom-control-label" for="otro_riesgo___INDEX___blanco">En blanco</label>
+                                        </div>
+                                    </div>
+                                    <textarea class="form-control mt-2" name="otro_riesgo_obs___INDEX__" rows="1" placeholder="Observaciones (opcional)"></textarea>
+                                </div>
+                            </div>
+                            <!-- Pregunta 3: Solicita anonimizacion -->
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>3. Solicita anonimizacion u ocultamiento de informacion del testimonio?</label>
+                                    <div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" class="custom-control-input" id="otro_anonimizar___INDEX___si" name="otro_anonimizar___INDEX__" value="1">
+                                            <label class="custom-control-label" for="otro_anonimizar___INDEX___si">Si</label>
+                                        </div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" class="custom-control-input" id="otro_anonimizar___INDEX___no" name="otro_anonimizar___INDEX__" value="0" checked>
+                                            <label class="custom-control-label" for="otro_anonimizar___INDEX___no">No</label>
+                                        </div>
+                                    </div>
+                                    <textarea class="form-control mt-2" name="otro_anonimizar_obs___INDEX__" rows="1" placeholder="Observaciones (opcional)"></textarea>
                                 </div>
                             </div>
                         </div>

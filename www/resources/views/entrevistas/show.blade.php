@@ -357,9 +357,100 @@
                             <!-- Consentimiento Informado -->
                             @if($pe->rel_consentimiento)
                             <hr>
-                            <h6><i class="fas fa-file-signature mr-2"></i>Consentimiento Informado</h6>
+                            @php
+                                $obsConsent = $pe->rel_consentimiento->observaciones ?? '';
+                                $esConsentimientoOtro = str_contains($obsConsent, '[CONSENTIMIENTO_OTRO]');
+                            @endphp
+                            <h6>
+                                <i class="fas fa-file-signature mr-2"></i>Consentimiento Informado
+                                @if($esConsentimientoOtro)
+                                    <span class="badge badge-warning ml-2">Otro</span>
+                                @endif
+                            </h6>
                             <div class="row">
                                 <div class="col-md-12">
+                                    @if($esConsentimientoOtro)
+                                    {{-- Vista para consentimiento tipo "Otro" --}}
+                                    @php
+                                        preg_match('/\[Uso otros fines: (Si|No)\]/', $obsConsent, $usoM);
+                                        preg_match('/\[Riesgo seguridad: (Si|No|En blanco)\]/', $obsConsent, $riesgoM);
+                                        preg_match('/\[Anonimizacion: (Si|No)\]/', $obsConsent, $anonM);
+                                        preg_match('/\[Uso otros fines obs\] (.+?)(?=\n\[|$)/s', $obsConsent, $usoObsM);
+                                        preg_match('/\[Riesgo seguridad obs\] (.+?)(?=\n\[|$)/s', $obsConsent, $riesgoObsM);
+                                        preg_match('/\[Anonimizacion obs\] (.+?)(?=\n\[|$)/s', $obsConsent, $anonObsM);
+                                    @endphp
+                                    <table class="table table-sm table-bordered">
+                                        <tr>
+                                            <td style="width: 50%"><strong>Tipo de consentimiento:</strong></td>
+                                            <td><span class="badge badge-warning">Otro (diferente a DADH)</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Autoriza uso en otras actividades del CNMH:</strong></td>
+                                            <td>
+                                                @if(isset($usoM[1]))
+                                                    {!! $usoM[1] === 'Si' ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}
+                                                @else
+                                                    <span class="badge badge-secondary">N/A</span>
+                                                @endif
+                                                @if(!empty($usoObsM[1]))
+                                                    <br><small class="text-muted">{{ trim($usoObsM[1]) }}</small>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Pone en riesgo la vida, seguridad, intimidad y privacidad:</strong></td>
+                                            <td>
+                                                @if(isset($riesgoM[1]))
+                                                    @if($riesgoM[1] === 'Si')
+                                                        <span class="badge badge-danger">Si</span>
+                                                    @elseif($riesgoM[1] === 'No')
+                                                        <span class="badge badge-secondary">No</span>
+                                                    @else
+                                                        <span class="badge badge-warning">En blanco</span>
+                                                    @endif
+                                                @else
+                                                    <span class="badge badge-secondary">N/A</span>
+                                                @endif
+                                                @if(!empty($riesgoObsM[1]))
+                                                    <br><small class="text-muted">{{ trim($riesgoObsM[1]) }}</small>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Solicita anonimizacion u ocultamiento:</strong></td>
+                                            <td>
+                                                @if(isset($anonM[1]))
+                                                    {!! $anonM[1] === 'Si' ? '<span class="badge badge-warning">Si</span>' : '<span class="badge badge-secondary">No</span>' !!}
+                                                @else
+                                                    <span class="badge badge-secondary">N/A</span>
+                                                @endif
+                                                @if(!empty($anonObsM[1]))
+                                                    <br><small class="text-muted">{{ trim($anonObsM[1]) }}</small>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td colspan="2"><small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Campos DADH mapeados automaticamente</small></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Autoriza ser entrevistado:</strong></td>
+                                            <td>{!! $pe->rel_consentimiento->autoriza_ser_entrevistado ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Considera riesgo seguridad:</strong></td>
+                                            <td>{!! $pe->rel_consentimiento->considera_riesgo_seguridad ? '<span class="badge badge-danger">Si</span>' : '<span class="badge badge-secondary">No</span>' !!}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Autoriza datos personales sin anonimizar:</strong></td>
+                                            <td>{!! $pe->rel_consentimiento->autoriza_datos_personales_sin_anonimizar ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Autoriza datos sensibles sin anonimizar:</strong></td>
+                                            <td>{!! $pe->rel_consentimiento->autoriza_datos_sensibles_sin_anonimizar ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}</td>
+                                        </tr>
+                                    </table>
+                                    @else
+                                    {{-- Vista original para consentimiento DADH --}}
                                     <table class="table table-sm table-bordered">
                                         <tr>
                                             <td style="width: 50%">
@@ -414,6 +505,7 @@
                                         </tr>
                                         @endif
                                     </table>
+                                    @endif
                                 </div>
                             </div>
                             @endif
