@@ -597,6 +597,118 @@ class AdjuntoController extends Controller
     }
 
     /**
+     * Subir archivo de audio/video, convertir a .m4a con ffmpeg y guardar solo el convertido.
+     * Acepta archivos hasta 2GB. Util para archivos grandes o formatos pesados.
+     */
+    public function subirConvertido(Request $request, $id_entrevista)
+    {
+        $request->validate([
+            'archivo' => 'required|file|max:2097152', // 2GB max
+            'id_tipo' => 'required|integer',
+        ]);
+
+        $entrevista = Entrevista::findOrFail($id_entrevista);
+        $user = Auth::user();
+
+        $archivo = $request->file('archivo');
+        $nombre_original = $archivo->getClientOriginalName();
+        $nombre_sin_ext = pathinfo($nombre_original, PATHINFO_FILENAME);
+
+        // Guardar archivo temporal
+        $codigo = $entrevista->entrevista_codigo ?? 'SIN-CODIGO';
+        $carpeta = 'adjuntos/' . Str::slug($codigo);
+        $tmpNombre = time() . '_' . Str::random(8) . '_tmp.' . $archivo->getClientOriginalExtension();
+        $tmpRuta = $archivo->storeAs($carpeta, $tmpNombre, 'public');
+
+        if (!$tmpRuta) {
+            return response()->json(['message' => 'Error al guardar el archivo temporal.'], 500);
+        }
+
+        $tmpAbsoluto = Storage::disk('public')->path($tmpRuta);
+
+        // Convertir a .m4a con ffmpeg
+        $ffmpeg = trim(shell_exec('which ffmpeg 2>/dev/null') ?? '') ?: '/usr/bin/ffmpeg';
+        $m4aNombre = time() . '_' . Str::random(8) . '.m4a';
+        $m4aRuta = $carpeta . '/' . $m4aNombre;
+        $m4aAbsoluto = Storage::disk('public')->path($m4aRuta);
+
+        $cmd = sprintf(
+            '%s -hide_banner -loglevel error -i %s -vn -c:a aac -b:a 64k -ar 22050 -ac 1 -y %s 2>&1',
+            escapeshellcmd($ffmpeg),
+            escapeshellarg($tmpAbsoluto),
+            escapeshellarg($m4aAbsoluto)
+        );
+
+        exec($cmd, $output, $returnCode);
+
+        // Eliminar archivo temporal original
+        Storage::disk('public')->delete($tmpRuta);
+
+        if ($returnCode !== 0 || !file_exists($m4aAbsoluto) || filesize($m4aAbsoluto) === 0) {
+            // Limpiar archivo convertido si existe pero esta vacio
+            if (file_exists($m4aAbsoluto)) {
+                @unlink($m4aAbsoluto);
+            }
+            $error = implode("\n", $output);
+            return response()->json(['message' => 'Error en la conversion: ' . Str::limit($error, 200)], 500);
+        }
+
+        $tamano = filesize($m4aAbsoluto);
+        $md5 = md5_file($m4aAbsoluto);
+        $nombreConvertido = $nombre_sin_ext . '.m4a';
+
+        DB::beginTransaction();
+        try {
+            $adjunto = Adjunto::create([
+                'id_e_ind_fvt' => $id_entrevista,
+                'ubicacion' => $m4aRuta,
+                'nombre_original' => $nombreConvertido,
+                'tipo_mime' => 'audio/mp4',
+                'id_tipo' => $request->id_tipo,
+                'tamano' => $tamano,
+                'tamano_bruto' => $tamano,
+                'md5' => $md5,
+                'existe_archivo' => 1,
+            ]);
+
+            // Extraer duracion
+            $duracion = self::extraerDuracion($m4aAbsoluto);
+            if ($duracion) {
+                $adjunto->duracion = $duracion;
+                $adjunto->save();
+            }
+
+            TrazaActividad::create([
+                'fecha_hora' => now(),
+                'id_usuario' => $user->id,
+                'accion' => 'subir_adjunto',
+                'objeto' => 'adjunto',
+                'id_registro' => $adjunto->id_adjunto,
+                'codigo' => $entrevista->entrevista_codigo,
+                'referencia' => 'Subida con conversion a m4a: ' . $nombre_original,
+                'ip' => $request->ip(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Archivo convertido y subido exitosamente.',
+                'nombre_original' => $nombre_original,
+                'nombre_convertido' => $nombreConvertido,
+                'tamano' => $tamano,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (file_exists($m4aAbsoluto)) {
+                @unlink($m4aAbsoluto);
+            }
+            return response()->json(['message' => 'Error al guardar: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Extraer duración en segundos de un archivo de audio/video usando ffprobe.
      * Devuelve null si ffprobe no está disponible o el archivo no tiene duración.
      */
