@@ -174,7 +174,7 @@ function fmtDur($seg) {
             <input type="hidden" name="tipo" value="transcripcion">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-5">
+                    <div class="col-md-4">
                         <div class="form-group mb-0">
                             <label class="text-sm font-weight-bold">Transcriptor(es)</label>
                             <select name="ids[]" id="sel-transcriptores" class="form-control select2" multiple>
@@ -187,7 +187,7 @@ function fmtDur($seg) {
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group mb-0">
                             <label class="text-sm font-weight-bold">Dependencia</label>
                             <select name="dependencia" class="form-control">
@@ -201,11 +201,34 @@ function fmtDur($seg) {
                             </select>
                         </div>
                     </div>
+                    <div class="col-md-2">
+                        <div class="form-group mb-0">
+                            <label class="text-sm font-weight-bold">Estado</label>
+                            <select name="estado" class="form-control">
+                                <option value="">-- Todos --</option>
+                                @php
+                                    $opcionesEstado = [
+                                        'asignada' => 'Asignada',
+                                        'en_edicion' => 'En edicion',
+                                        'enviada_revision' => 'En revision',
+                                        'rechazada' => 'Rechazada',
+                                        'aprobada' => 'Aprobada',
+                                    ];
+                                @endphp
+                                @foreach($opcionesEstado as $val => $label)
+                                    <option value="{{ $val }}"
+                                        {{ $filtroEstado == $val && $tipo === 'transcripcion' ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary mr-2">
                             <i class="fas fa-search mr-1"></i>Ver detalle
                         </button>
-                        @if(($tipo === 'transcripcion') && (!empty($filtroIds) || !empty($filtroDependencia)))
+                        @if(($tipo === 'transcripcion') && (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado)))
                             <a href="{{ route('procesamientos.index') }}?tipo=transcripcion" class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i>
                             </a>
@@ -442,7 +465,7 @@ function fmtDur($seg) {
             <input type="hidden" name="tipo" value="anonimizacion">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-5">
+                    <div class="col-md-4">
                         <div class="form-group mb-0">
                             <label class="text-sm font-weight-bold">Anonimizador(es)</label>
                             <select name="ids[]" id="sel-anonimizadores" class="form-control select2" multiple>
@@ -455,7 +478,7 @@ function fmtDur($seg) {
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group mb-0">
                             <label class="text-sm font-weight-bold">Dependencia</label>
                             <select name="dependencia" class="form-control">
@@ -469,11 +492,34 @@ function fmtDur($seg) {
                             </select>
                         </div>
                     </div>
+                    <div class="col-md-2">
+                        <div class="form-group mb-0">
+                            <label class="text-sm font-weight-bold">Estado</label>
+                            <select name="estado" class="form-control">
+                                <option value="">-- Todos --</option>
+                                @php
+                                    $opcionesEstadoAnon = [
+                                        'asignada' => 'Asignada',
+                                        'en_edicion' => 'En edicion',
+                                        'enviada_revision' => 'En revision',
+                                        'rechazada' => 'Rechazada',
+                                        'aprobada' => 'Aprobada',
+                                    ];
+                                @endphp
+                                @foreach($opcionesEstadoAnon as $val => $label)
+                                    <option value="{{ $val }}"
+                                        {{ $filtroEstado == $val && $tipo === 'anonimizacion' ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-danger mr-2">
                             <i class="fas fa-search mr-1"></i>Ver detalle
                         </button>
-                        @if(($tipo === 'anonimizacion') && (!empty($filtroIds) || !empty($filtroDependencia)))
+                        @if(($tipo === 'anonimizacion') && (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado)))
                             <a href="{{ route('procesamientos.index') }}?tipo=anonimizacion" class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i>
                             </a>
