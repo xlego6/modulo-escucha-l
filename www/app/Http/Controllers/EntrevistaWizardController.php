@@ -242,19 +242,74 @@ class EntrevistaWizardController extends Controller
                 $procesados[] = $pe->id_persona_entrevistada;
 
                 // Guardar consentimiento informado
-                $consentimientoData = [
-                    'id_persona_entrevistada' => $pe->id_persona_entrevistada,
-                    'tiene_documento_autorizacion' => $datos['consentimiento']['tiene_documento'] ?? 0,
-                    'es_menor_edad' => $datos['consentimiento']['es_menor_edad'] ?? 0,
-                    'autoriza_ser_entrevistado' => $datos['consentimiento']['autoriza_entrevista'] ?? 0,
-                    'permite_grabacion' => $datos['consentimiento']['permite_grabacion'] ?? 0,
-                    'permite_procesamiento_misional' => $datos['consentimiento']['permite_procesamiento'] ?? 0,
-                    'permite_uso_conservacion_consulta' => $datos['consentimiento']['permite_uso'] ?? 0,
-                    'considera_riesgo_seguridad' => $datos['consentimiento']['considera_riesgo'] ?? 0,
-                    'autoriza_datos_personales_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_personales'] ?? 0,
-                    'autoriza_datos_sensibles_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_sensibles'] ?? 0,
-                    'observaciones' => $datos['consentimiento']['observaciones'] ?? null,
-                ];
+                $tieneDoc = $datos['consentimiento']['tiene_documento'] ?? 0;
+
+                if ($tieneDoc == 2) {
+                    // Consentimiento "Otro": mapear 3 preguntas simplificadas a campos DADH
+                    $otroUso = (int)($datos['consentimiento']['otro_uso'] ?? 0);
+                    $otroRiesgo = (int)($datos['consentimiento']['otro_riesgo'] ?? 2);
+                    $otroAnonimizar = (int)($datos['consentimiento']['otro_anonimizar'] ?? 0);
+
+                    // Pregunta 1 (Si): autoriza entrevista, grabacion, procesamiento, uso = SI
+                    $autorizaEntrevista = $otroUso ? 1 : 0;
+                    $permiteGrabacion = $otroUso ? 1 : 0;
+                    $permiteProcesamiento = $otroUso ? 1 : 0;
+                    $permiteUso = $otroUso ? 1 : 0;
+
+                    // Pregunta 2: riesgo seguridad (Si=1, No=0, En blanco=2 -> mapeado a Si)
+                    $consideraRiesgo = ($otroRiesgo == 1 || $otroRiesgo == 2) ? 1 : 0;
+
+                    // Pregunta 3: solicita anonimizacion (logica inversa)
+                    $autorizaDatosPersonales = $otroAnonimizar ? 0 : 1;
+                    $autorizaDatosSensibles = $otroAnonimizar ? 0 : 1;
+
+                    // Construir observaciones con marcador
+                    $obsPartes = ['[CONSENTIMIENTO_OTRO]'];
+
+                    $usoLabel = $otroUso ? 'Si' : 'No';
+                    $riesgoLabel = $otroRiesgo == 1 ? 'Si' : ($otroRiesgo == 0 ? 'No' : 'En blanco');
+                    $anonLabel = $otroAnonimizar ? 'Si' : 'No';
+
+                    $obsPartes[] = "[Uso otros fines: {$usoLabel}]";
+                    $otroUsoObs = trim($datos['consentimiento']['otro_uso_obs'] ?? '');
+                    if ($otroUsoObs) $obsPartes[] = "[Uso otros fines obs] {$otroUsoObs}";
+
+                    $obsPartes[] = "[Riesgo seguridad: {$riesgoLabel}]";
+                    $otroRiesgoObs = trim($datos['consentimiento']['otro_riesgo_obs'] ?? '');
+                    if ($otroRiesgoObs) $obsPartes[] = "[Riesgo seguridad obs] {$otroRiesgoObs}";
+
+                    $obsPartes[] = "[Anonimizacion: {$anonLabel}]";
+                    $otroAnonObs = trim($datos['consentimiento']['otro_anonimizar_obs'] ?? '');
+                    if ($otroAnonObs) $obsPartes[] = "[Anonimizacion obs] {$otroAnonObs}";
+
+                    $consentimientoData = [
+                        'id_persona_entrevistada' => $pe->id_persona_entrevistada,
+                        'tiene_documento_autorizacion' => 1,
+                        'es_menor_edad' => 0,
+                        'autoriza_ser_entrevistado' => $autorizaEntrevista,
+                        'permite_grabacion' => $permiteGrabacion,
+                        'permite_procesamiento_misional' => $permiteProcesamiento,
+                        'permite_uso_conservacion_consulta' => $permiteUso,
+                        'considera_riesgo_seguridad' => $consideraRiesgo,
+                        'autoriza_datos_personales_sin_anonimizar' => $autorizaDatosPersonales,
+                        'autoriza_datos_sensibles_sin_anonimizar' => $autorizaDatosSensibles,
+                        'observaciones' => implode("\n", $obsPartes),
+                    ];
+                } else {
+                    $consentimientoData = [
+                        'id_persona_entrevistada' => $pe->id_persona_entrevistada,
+                        'tiene_documento_autorizacion' => $tieneDoc,
+                        'es_menor_edad' => $datos['consentimiento']['es_menor_edad'] ?? 0,
+                        'autoriza_ser_entrevistado' => $datos['consentimiento']['autoriza_entrevista'] ?? 0,
+                        'permite_grabacion' => $datos['consentimiento']['permite_grabacion'] ?? 0,
+                        'permite_procesamiento_misional' => $datos['consentimiento']['permite_procesamiento'] ?? 0,
+                        'permite_uso_conservacion_consulta' => $datos['consentimiento']['permite_uso'] ?? 0,
+                        'considera_riesgo_seguridad' => $datos['consentimiento']['considera_riesgo'] ?? 0,
+                        'autoriza_datos_personales_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_personales'] ?? 0,
+                        'autoriza_datos_sensibles_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_sensibles'] ?? 0,
+                        'observaciones' => $datos['consentimiento']['observaciones'] ?? null,
+                    ];
+                }
 
                 ConsentimientoInformado::updateOrCreate(
                     ['id_persona_entrevistada' => $pe->id_persona_entrevistada],
