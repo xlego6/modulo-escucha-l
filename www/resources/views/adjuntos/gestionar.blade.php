@@ -423,7 +423,13 @@
                             <input type="file" class="custom-file-input" id="archivo" name="archivo" required>
                             <label class="custom-file-label" for="archivo" data-browse="Buscar">Seleccionar archivo...</label>
                         </div>
-                        <small class="text-muted">Maximo 500MB. Formatos: audio, video, PDF, imagenes, documentos.</small>
+                        <small class="text-muted">Maximo 500MB. Archivos de audio/video mayores se convertiran automaticamente a .m4a (hasta 2GB).</small>
+                    </div>
+
+                    <!-- Aviso de conversion automatica -->
+                    <div id="conversion-info" class="alert alert-info py-2 mb-2" style="display:none;">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        <span id="conversion-info-text"></span>
                     </div>
 
                     <!-- Indicador de progreso -->
@@ -441,6 +447,9 @@
                 <div class="card-footer">
                     <button type="submit" class="btn btn-success btn-block" id="btn-subir">
                         <i class="fas fa-upload"></i> Subir Archivo
+                    </button>
+                    <button type="button" class="btn btn-warning btn-block mt-2" id="btn-convertir" style="display:none;">
+                        <i class="fas fa-exchange-alt"></i> Convertir a .m4a y subir
                     </button>
                 </div>
             </form>
@@ -717,10 +726,48 @@ $(document).ready(function() {
         return bytes + ' bytes';
     }
 
-    // Subida con indicador de progreso
-    $('#form-subir-archivo').on('submit', function(e) {
-        e.preventDefault();
+    // Detectar tipo de archivo seleccionado y mostrar opciones
+    var _esMediaFile = false;
+    var _supera500mb = false;
+    var _extensionesMedia = ['mp3','mp4','m4a','wav','flac','ogg','wma','aac','avi','mov','mkv','wmv','flv','webm','3gp','opus','amr'];
 
+    $('#archivo').on('change', function() {
+        var file = this.files[0];
+        _esMediaFile = false;
+        _supera500mb = false;
+        $('#btn-convertir').hide();
+        $('#conversion-info').hide();
+
+        if (!file) return;
+
+        var ext = file.name.split('.').pop().toLowerCase();
+        var tipo = file.type || '';
+        _esMediaFile = tipo.startsWith('audio/') || tipo.startsWith('video/') || _extensionesMedia.indexOf(ext) !== -1;
+        _supera500mb = file.size > 524288000; // 500MB
+
+        if (_esMediaFile && !_supera500mb) {
+            // Audio/video <= 500MB: mostrar boton de conversion como opcion
+            $('#btn-convertir').show();
+            $('#conversion-info').show();
+            $('#conversion-info-text').text('Archivo de audio/video detectado. Puede subirlo directamente o convertirlo a .m4a (mas liviano).');
+        } else if (_supera500mb && _esMediaFile) {
+            // Audio/video > 500MB: conversion obligatoria
+            $('#btn-convertir').show();
+            $('#btn-subir').hide();
+            $('#conversion-info').show().removeClass('alert-info').addClass('alert-warning');
+            $('#conversion-info-text').text('El archivo supera 500MB (' + formatBytes(file.size) + '). Se convertira automaticamente a .m4a antes de guardarse.');
+        } else if (_supera500mb && !_esMediaFile) {
+            // No media > 500MB: no se puede subir
+            $('#conversion-info').show().removeClass('alert-info').addClass('alert-danger');
+            $('#conversion-info-text').text('El archivo supera 500MB y no es audio/video. No se puede subir.');
+            $('#btn-subir').prop('disabled', true);
+        } else {
+            $('#btn-subir').show().prop('disabled', false);
+        }
+    });
+
+    // Funcion para enviar archivo (normal o conversion)
+    function enviarArchivo(url, textoSubiendo, textoConvertiendo) {
         var fileInput = document.getElementById('archivo');
         var tipoSelect = document.getElementById('id_tipo');
 
@@ -733,15 +780,16 @@ $(document).ready(function() {
             return;
         }
 
-        var formData = new FormData(this);
+        var formData = new FormData(document.getElementById('form-subir-archivo'));
         var fileSize = fileInput.files[0].size;
         var startTime = Date.now();
 
-        // Mostrar barra de progreso, deshabilitar boton
+        // Mostrar barra de progreso, deshabilitar botones
         $('#upload-progress-container').show();
-        $('#btn-subir').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Subiendo...');
+        $('#btn-subir').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> ' + textoSubiendo);
+        $('#btn-convertir').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> ' + textoSubiendo);
         $('#upload-progress-bar').css('width', '0%').removeClass('bg-danger').addClass('bg-success progress-bar-animated');
-        $('#upload-status-text').text('Subiendo archivo...');
+        $('#upload-status-text').text(textoSubiendo);
         $('#upload-percent-text').text('0%');
         $('#upload-detail-text').text('');
 
@@ -753,7 +801,6 @@ $(document).ready(function() {
                 $('#upload-progress-bar').css('width', percent + '%').attr('aria-valuenow', percent);
                 $('#upload-percent-text').text(percent + '%');
 
-                // Calcular velocidad y tiempo restante
                 var elapsed = (Date.now() - startTime) / 1000;
                 if (elapsed > 0.5) {
                     var speed = evt.loaded / elapsed;
@@ -771,9 +818,9 @@ $(document).ready(function() {
                 }
 
                 if (percent >= 100) {
-                    $('#upload-status-text').text('Procesando archivo en el servidor...');
+                    $('#upload-status-text').text(textoConvertiendo || 'Procesando archivo en el servidor...');
                     $('#upload-progress-bar').removeClass('progress-bar-animated');
-                    $('#upload-detail-text').text('');
+                    $('#upload-detail-text').text('Esto puede tardar varios minutos para archivos grandes.');
                 }
             }
         });
@@ -784,10 +831,7 @@ $(document).ready(function() {
                 $('#upload-progress-bar').css('width', '100%');
                 $('#upload-percent-text').text('100%');
                 $('#upload-detail-text').text('');
-                // Recargar pagina para mostrar el nuevo adjunto
-                setTimeout(function() {
-                    window.location.reload();
-                }, 500);
+                setTimeout(function() { window.location.reload(); }, 500);
             } else {
                 var msg = 'Error al subir el archivo.';
                 try {
@@ -798,7 +842,7 @@ $(document).ready(function() {
                 $('#upload-progress-bar').removeClass('bg-success progress-bar-animated').addClass('bg-danger').css('width', '100%');
                 $('#upload-percent-text').text('Error');
                 $('#upload-detail-text').text('');
-                $('#btn-subir').prop('disabled', false).html('<i class="fas fa-upload"></i> Subir Archivo');
+                resetBotonesSubida();
             }
         });
 
@@ -807,12 +851,49 @@ $(document).ready(function() {
             $('#upload-progress-bar').removeClass('bg-success progress-bar-animated').addClass('bg-danger').css('width', '100%');
             $('#upload-percent-text').text('Error');
             $('#upload-detail-text').text('');
-            $('#btn-subir').prop('disabled', false).html('<i class="fas fa-upload"></i> Subir Archivo');
+            resetBotonesSubida();
         });
 
-        xhr.open('POST', '{{ route("adjuntos.subir", $entrevista->id_e_ind_fvt) }}');
+        xhr.open('POST', url);
         xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
         xhr.send(formData);
+    }
+
+    function resetBotonesSubida() {
+        $('#btn-subir').prop('disabled', false).html('<i class="fas fa-upload"></i> Subir Archivo');
+        $('#btn-convertir').prop('disabled', false).html('<i class="fas fa-exchange-alt"></i> Convertir a .m4a y subir');
+        if (_supera500mb && _esMediaFile) {
+            $('#btn-subir').hide();
+        }
+    }
+
+    // Subida normal
+    $('#form-subir-archivo').on('submit', function(e) {
+        e.preventDefault();
+
+        // Si supera 500MB y es media, forzar conversion
+        if (_supera500mb && _esMediaFile) {
+            enviarArchivo(
+                '{{ route("adjuntos.subir_convertido", $entrevista->id_e_ind_fvt) }}',
+                'Subiendo archivo...',
+                'Convirtiendo a .m4a en el servidor... (puede tardar varios minutos)'
+            );
+        } else {
+            enviarArchivo(
+                '{{ route("adjuntos.subir", $entrevista->id_e_ind_fvt) }}',
+                'Subiendo archivo...',
+                'Procesando archivo en el servidor...'
+            );
+        }
+    });
+
+    // Boton de conversion manual
+    $('#btn-convertir').on('click', function() {
+        enviarArchivo(
+            '{{ route("adjuntos.subir_convertido", $entrevista->id_e_ind_fvt) }}',
+            'Subiendo archivo...',
+            'Convirtiendo a .m4a en el servidor... (puede tardar varios minutos)'
+        );
     });
 
     // Funcion para obtener fecha/hora actual formateada
