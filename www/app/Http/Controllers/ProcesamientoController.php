@@ -64,14 +64,15 @@ class ProcesamientoController extends Controller
         // Filtros aplicados
         $filtroIds = array_filter((array)$request->get('ids', []));
         $filtroDependencia = $request->get('dependencia');
+        $filtroEstado = $request->get('estado');
 
         // Stats y listado detalle si hay filtro activo
         $detalleStats = null;
         $detalleAsignaciones = collect();
 
-        if (!empty($filtroIds) || !empty($filtroDependencia)) {
+        if (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado)) {
             $detalleStats = $this->calcDetalleStats($tipo, $filtroIds, $filtroDependencia);
-            $detalleAsignaciones = $this->calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia);
+            $detalleAsignaciones = $this->calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia, $filtroEstado);
         }
 
         // Trabajos en cola
@@ -85,7 +86,7 @@ class ProcesamientoController extends Controller
             'tipo',
             'statsTranscripcion', 'statsAnonimizacion',
             'transcriptores', 'anonimizadores', 'dependencias',
-            'filtroIds', 'filtroDependencia',
+            'filtroIds', 'filtroDependencia', 'filtroEstado',
             'detalleStats', 'detalleAsignaciones',
             'trabajosEnCola', 'trabajosProcesando',
             'servicios'
@@ -231,7 +232,7 @@ class ProcesamientoController extends Controller
         return $stats;
     }
 
-    private function calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia)
+    private function calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia, $filtroEstado = null)
     {
         $table = $tipo === 'transcripcion'
             ? 'esclarecimiento.asignacion_transcripcion'
@@ -273,6 +274,10 @@ class ProcesamientoController extends Controller
             $query->whereIn('at.' . $personaCol, (array)$filtroIds);
         } elseif (!empty($filtroDependencia)) {
             $query->where('e.id_dependencia_origen', $filtroDependencia);
+        }
+
+        if (!empty($filtroEstado)) {
+            $query->where('at.estado', $filtroEstado);
         }
 
         return $query->get();

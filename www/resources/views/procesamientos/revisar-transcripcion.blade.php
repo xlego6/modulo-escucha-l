@@ -581,7 +581,39 @@ function guardarAnotaciones() {
     });
 }
 
+// Clave localStorage para preservar tiempo de reproducción
+var _draftTimeKey = 'draft_time_revision_{{ $asignacion->id_asignacion }}';
+
+function guardarTiempoMedia() {
+    var m = $('audio, video').first()[0];
+    if (m && m.currentTime > 0) {
+        localStorage.setItem(_draftTimeKey, m.currentTime);
+    }
+}
+
+function restaurarTiempoMedia() {
+    var t = parseFloat(localStorage.getItem(_draftTimeKey) || '0');
+    if (t > 0) {
+        $('audio, video').first().on('loadedmetadata', function() {
+            this.currentTime = t;
+        });
+    }
+}
+
 $(document).ready(function() {
+    // Restaurar tiempo de reproducción
+    restaurarTiempoMedia();
+
+    // Guardar tiempo al enviar formularios
+    $('#formTranscripcion').on('submit', function() {
+        guardarTiempoMedia();
+    });
+
+    // Auto-guardar tiempo cada 30 segundos
+    setInterval(function() {
+        guardarTiempoMedia();
+    }, 30000);
+
     // Atajos de teclado para reproductor
     $(document).on('keydown', function(e) {
         var getMedia = function() { return $('audio, video').first()[0]; };
