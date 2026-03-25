@@ -397,6 +397,89 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Prueba de Daño -->
+            <div class="prueba-dano-section mt-3" style="background-color: #f8d7da; padding: 15px; border-radius: 5px;">
+                <h6><i class="fas fa-exclamation-triangle mr-2"></i>Prueba de Daño</h6>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>1. ¿El testimonio afecta derechos privados (a la vida, seguridad, a la integridad; secretos comerciales o profesionales - Art. 18 Ley 1712 de 2014)?</label>
+                            <div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_privados___INDEX___si" name="prueba_dano_derechos_privados___INDEX__" value="1">
+                                    <label class="custom-control-label" for="prueba_dano_privados___INDEX___si">Si</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_privados___INDEX___no" name="prueba_dano_derechos_privados___INDEX__" value="0">
+                                    <label class="custom-control-label" for="prueba_dano_privados___INDEX___no">No</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_privados___INDEX___ns" name="prueba_dano_derechos_privados___INDEX__" value="2" checked>
+                                    <label class="custom-control-label" for="prueba_dano_privados___INDEX___ns">No sabe</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>2. ¿El testimonio afecta intereses publicos (a la defensa y seguridad nacional; las relaciones internacionales; procesos judiciales o disciplinarios abiertos; derechos de infancia y adolescencia - Art. 19 Ley 1712 de 2014)?</label>
+                            <div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_publicos___INDEX___si" name="prueba_dano_intereses_publicos___INDEX__" value="1">
+                                    <label class="custom-control-label" for="prueba_dano_publicos___INDEX___si">Si</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_publicos___INDEX___no" name="prueba_dano_intereses_publicos___INDEX__" value="0">
+                                    <label class="custom-control-label" for="prueba_dano_publicos___INDEX___no">No</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_publicos___INDEX___ns" name="prueba_dano_intereses_publicos___INDEX__" value="2" checked>
+                                    <label class="custom-control-label" for="prueba_dano_publicos___INDEX___ns">No sabe</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>3. ¿El testimonio tiene informacion de inteligencia y contrainteligencia (Ley 1621 de 2013)?</label>
+                            <div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_inteligencia___INDEX___si" name="prueba_dano_inteligencia___INDEX__" value="1">
+                                    <label class="custom-control-label" for="prueba_dano_inteligencia___INDEX___si">Si</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_inteligencia___INDEX___no" name="prueba_dano_inteligencia___INDEX__" value="0">
+                                    <label class="custom-control-label" for="prueba_dano_inteligencia___INDEX___no">No</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_inteligencia___INDEX___ns" name="prueba_dano_inteligencia___INDEX__" value="2" checked>
+                                    <label class="custom-control-label" for="prueba_dano_inteligencia___INDEX___ns">No sabe</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>4. ¿El testimonio fue realizado a poblacion de Niños, Niñas y adolescentes?</label>
+                            <div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_nna___INDEX___si" name="prueba_dano_nna___INDEX__" value="1">
+                                    <label class="custom-control-label" for="prueba_dano_nna___INDEX___si">Si</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_nna___INDEX___no" name="prueba_dano_nna___INDEX__" value="0">
+                                    <label class="custom-control-label" for="prueba_dano_nna___INDEX___no">No</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" class="custom-control-input" id="prueba_dano_nna___INDEX___ns" name="prueba_dano_nna___INDEX__" value="2" checked>
+                                    <label class="custom-control-label" for="prueba_dano_nna___INDEX___ns">No sabe</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

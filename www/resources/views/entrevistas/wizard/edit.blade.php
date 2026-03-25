@@ -126,13 +126,21 @@ $(document).ready(function() {
                     'considera_riesgo' => $pe->rel_consentimiento->considera_riesgo_seguridad ? 1 : 0,
                     'autoriza_datos_personales' => $pe->rel_consentimiento->autoriza_datos_personales_sin_anonimizar ? 1 : 0,
                     'autoriza_datos_sensibles' => $pe->rel_consentimiento->autoriza_datos_sensibles_sin_anonimizar ? 1 : 0,
-                    'observaciones' => $pe->rel_consentimiento->observaciones ?? ''
+                    'observaciones' => $pe->rel_consentimiento->observaciones ?? '',
+                    'prueba_dano_derechos_privados' => $pe->rel_consentimiento->prueba_dano_derechos_privados,
+                    'prueba_dano_intereses_publicos' => $pe->rel_consentimiento->prueba_dano_intereses_publicos,
+                    'prueba_dano_inteligencia' => $pe->rel_consentimiento->prueba_dano_inteligencia,
+                    'prueba_dano_nna' => $pe->rel_consentimiento->prueba_dano_nna,
                 ] : null
             ];
         })->toArray()) !!},
         contenido: {!! json_encode($entrevista->rel_contenido ? [
             'fecha_hechos_inicial' => $entrevista->rel_contenido->fecha_hechos_inicial,
             'fecha_hechos_final' => $entrevista->rel_contenido->fecha_hechos_final,
+            'fecha_hechos_inicial_dia_conocido' => $entrevista->rel_contenido->fecha_hechos_inicial_dia_conocido ?? true,
+            'fecha_hechos_inicial_mes_conocido' => $entrevista->rel_contenido->fecha_hechos_inicial_mes_conocido ?? true,
+            'fecha_hechos_final_dia_conocido' => $entrevista->rel_contenido->fecha_hechos_final_dia_conocido ?? true,
+            'fecha_hechos_final_mes_conocido' => $entrevista->rel_contenido->fecha_hechos_final_mes_conocido ?? true,
             'poblaciones' => $entrevista->rel_contenido->rel_poblaciones->pluck('id_item')->toArray() ?? [],
             'ocupaciones' => $entrevista->rel_contenido->rel_ocupaciones->pluck('id_item')->toArray() ?? [],
             'sexos' => $entrevista->rel_contenido->rel_sexos->pluck('id_item')->toArray() ?? [],
@@ -237,6 +245,19 @@ $(document).ready(function() {
                 }
                 if (entrevistaData.contenido.fecha_hechos_final) {
                     $('#fecha_hechos_final').val(entrevistaData.contenido.fecha_hechos_final);
+                }
+                // Checkboxes de fecha sin información
+                if (!entrevistaData.contenido.fecha_hechos_inicial_dia_conocido) {
+                    $('#fecha_hechos_inicial_dia_si').prop('checked', true);
+                }
+                if (!entrevistaData.contenido.fecha_hechos_inicial_mes_conocido) {
+                    $('#fecha_hechos_inicial_mes_si').prop('checked', true);
+                }
+                if (!entrevistaData.contenido.fecha_hechos_final_dia_conocido) {
+                    $('#fecha_hechos_final_dia_si').prop('checked', true);
+                }
+                if (!entrevistaData.contenido.fecha_hechos_final_mes_conocido) {
+                    $('#fecha_hechos_final_mes_si').prop('checked', true);
                 }
                 $('#contenido_poblaciones').val(entrevistaData.contenido.poblaciones).trigger('change');
                 $('#contenido_ocupaciones').val(entrevistaData.contenido.ocupaciones).trigger('change');
@@ -430,6 +451,10 @@ $(document).ready(function() {
             modalidades: modalidades,
             fecha_toma_inicial: $('#fecha_toma_inicial').val(),
             fecha_toma_final: $('#fecha_toma_final').val(),
+            fecha_toma_inicial_dia_conocido: !$('#fecha_toma_inicial_dia_si').is(':checked'),
+            fecha_toma_inicial_mes_conocido: !$('#fecha_toma_inicial_mes_si').is(':checked'),
+            fecha_toma_final_dia_conocido: !$('#fecha_toma_final_dia_si').is(':checked'),
+            fecha_toma_final_mes_conocido: !$('#fecha_toma_final_mes_si').is(':checked'),
             idiomas: $('#id_idioma').val() || [],
             detalle_idiomas: $('#detalle_idiomas').val(),
             necesidades_reparacion: necesidades,
@@ -484,7 +509,11 @@ $(document).ready(function() {
                     otro_riesgo: card.find('[name="otro_riesgo_' + index + '"]:checked').val() || 2,
                     otro_riesgo_obs: card.find('[name="otro_riesgo_obs_' + index + '"]').val() || '',
                     otro_anonimizar: card.find('[name="otro_anonimizar_' + index + '"]:checked').val() || 0,
-                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || ''
+                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || '',
+                    prueba_dano_derechos_privados: card.find('[name="prueba_dano_derechos_privados_' + index + '"]:checked').val(),
+                    prueba_dano_intereses_publicos: card.find('[name="prueba_dano_intereses_publicos_' + index + '"]:checked').val(),
+                    prueba_dano_inteligencia: card.find('[name="prueba_dano_inteligencia_' + index + '"]:checked').val(),
+                    prueba_dano_nna: card.find('[name="prueba_dano_nna_' + index + '"]:checked').val()
                 }
             });
         });
@@ -510,6 +539,10 @@ $(document).ready(function() {
         return {
             fecha_hechos_inicial: $('#fecha_hechos_inicial').val(),
             fecha_hechos_final: $('#fecha_hechos_final').val(),
+            fecha_hechos_inicial_dia_conocido: !$('#fecha_hechos_inicial_dia_si').is(':checked'),
+            fecha_hechos_inicial_mes_conocido: !$('#fecha_hechos_inicial_mes_si').is(':checked'),
+            fecha_hechos_final_dia_conocido: !$('#fecha_hechos_final_dia_si').is(':checked'),
+            fecha_hechos_final_mes_conocido: !$('#fecha_hechos_final_mes_si').is(':checked'),
             contenido_poblaciones: $('#contenido_poblaciones').val() || [],
             contenido_ocupaciones: $('#contenido_ocupaciones').val() || [],
             contenido_sexos: $('#contenido_sexos').val() || [],
@@ -666,6 +699,20 @@ $(document).ready(function() {
                 card.find('[name="autoriza_datos_personales_' + index + '"][value="' + cons.autoriza_datos_personales + '"]').prop('checked', true);
                 card.find('[name="autoriza_datos_sensibles_' + index + '"][value="' + cons.autoriza_datos_sensibles + '"]').prop('checked', true);
                 card.find('[name="observaciones_consentimiento_' + index + '"]').val(cons.observaciones);
+            }
+
+            // Prueba de daño (siempre se carga, independiente del tipo de consentimiento)
+            if (cons.prueba_dano_derechos_privados !== null && cons.prueba_dano_derechos_privados !== undefined) {
+                card.find('[name="prueba_dano_derechos_privados_' + index + '"][value="' + cons.prueba_dano_derechos_privados + '"]').prop('checked', true);
+            }
+            if (cons.prueba_dano_intereses_publicos !== null && cons.prueba_dano_intereses_publicos !== undefined) {
+                card.find('[name="prueba_dano_intereses_publicos_' + index + '"][value="' + cons.prueba_dano_intereses_publicos + '"]').prop('checked', true);
+            }
+            if (cons.prueba_dano_inteligencia !== null && cons.prueba_dano_inteligencia !== undefined) {
+                card.find('[name="prueba_dano_inteligencia_' + index + '"][value="' + cons.prueba_dano_inteligencia + '"]').prop('checked', true);
+            }
+            if (cons.prueba_dano_nna !== null && cons.prueba_dano_nna !== undefined) {
+                card.find('[name="prueba_dano_nna_' + index + '"][value="' + cons.prueba_dano_nna + '"]').prop('checked', true);
             }
         }
     }

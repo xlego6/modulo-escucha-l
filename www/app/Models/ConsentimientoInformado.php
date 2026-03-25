@@ -21,6 +21,10 @@ class ConsentimientoInformado extends Model
         'autoriza_datos_personales_sin_anonimizar',
         'autoriza_datos_sensibles_sin_anonimizar',
         'observaciones',
+        'prueba_dano_derechos_privados',
+        'prueba_dano_intereses_publicos',
+        'prueba_dano_inteligencia',
+        'prueba_dano_nna',
     ];
 
     protected $casts = [

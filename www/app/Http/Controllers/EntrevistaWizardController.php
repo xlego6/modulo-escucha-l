@@ -294,6 +294,10 @@ class EntrevistaWizardController extends Controller
                         'autoriza_datos_personales_sin_anonimizar' => $autorizaDatosPersonales,
                         'autoriza_datos_sensibles_sin_anonimizar' => $autorizaDatosSensibles,
                         'observaciones' => implode("\n", $obsPartes),
+                        'prueba_dano_derechos_privados' => isset($datos['consentimiento']['prueba_dano_derechos_privados']) ? (int)$datos['consentimiento']['prueba_dano_derechos_privados'] : null,
+                        'prueba_dano_intereses_publicos' => isset($datos['consentimiento']['prueba_dano_intereses_publicos']) ? (int)$datos['consentimiento']['prueba_dano_intereses_publicos'] : null,
+                        'prueba_dano_inteligencia' => isset($datos['consentimiento']['prueba_dano_inteligencia']) ? (int)$datos['consentimiento']['prueba_dano_inteligencia'] : null,
+                        'prueba_dano_nna' => isset($datos['consentimiento']['prueba_dano_nna']) ? (int)$datos['consentimiento']['prueba_dano_nna'] : null,
                     ];
                 } else {
                     $consentimientoData = [
@@ -308,6 +312,10 @@ class EntrevistaWizardController extends Controller
                         'autoriza_datos_personales_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_personales'] ?? 0,
                         'autoriza_datos_sensibles_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_sensibles'] ?? 0,
                         'observaciones' => $datos['consentimiento']['observaciones'] ?? null,
+                        'prueba_dano_derechos_privados' => isset($datos['consentimiento']['prueba_dano_derechos_privados']) ? (int)$datos['consentimiento']['prueba_dano_derechos_privados'] : null,
+                        'prueba_dano_intereses_publicos' => isset($datos['consentimiento']['prueba_dano_intereses_publicos']) ? (int)$datos['consentimiento']['prueba_dano_intereses_publicos'] : null,
+                        'prueba_dano_inteligencia' => isset($datos['consentimiento']['prueba_dano_inteligencia']) ? (int)$datos['consentimiento']['prueba_dano_inteligencia'] : null,
+                        'prueba_dano_nna' => isset($datos['consentimiento']['prueba_dano_nna']) ? (int)$datos['consentimiento']['prueba_dano_nna'] : null,
                     ];
                 }
 
@@ -384,6 +392,10 @@ class EntrevistaWizardController extends Controller
                 [
                     'fecha_hechos_inicial' => $request->fecha_hechos_inicial,
                     'fecha_hechos_final' => $request->fecha_hechos_final,
+                    'fecha_hechos_inicial_dia_conocido' => $request->fecha_hechos_inicial_dia_conocido ?? true,
+                    'fecha_hechos_inicial_mes_conocido' => $request->fecha_hechos_inicial_mes_conocido ?? true,
+                    'fecha_hechos_final_dia_conocido' => $request->fecha_hechos_final_dia_conocido ?? true,
+                    'fecha_hechos_final_mes_conocido' => $request->fecha_hechos_final_mes_conocido ?? true,
                     'responsables_individuales' => $request->responsables_individuales,
                     'temas_abordados' => $request->temas_abordados,
                     'otras_poblaciones_mencionadas' => $request->otras_poblaciones_mencionadas,
@@ -446,6 +458,10 @@ class EntrevistaWizardController extends Controller
             'descripcion_anexos' => $request->descripcion_anexos,
             'observaciones_toma' => $request->observaciones_toma,
             'nombre_entrevistador' => $request->nombre_entrevistador,
+            'fecha_toma_inicial_dia_conocido' => $request->fecha_toma_inicial_dia_conocido ?? true,
+            'fecha_toma_inicial_mes_conocido' => $request->fecha_toma_inicial_mes_conocido ?? true,
+            'fecha_toma_final_dia_conocido' => $request->fecha_toma_final_dia_conocido ?? true,
+            'fecha_toma_final_mes_conocido' => $request->fecha_toma_final_mes_conocido ?? true,
         ];
     }
 
