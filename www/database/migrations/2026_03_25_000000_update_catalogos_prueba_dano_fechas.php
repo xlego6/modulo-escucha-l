@@ -144,16 +144,21 @@ class UpdateCatalogosPruebaDanoFechas extends Migration
 
         // =============================================
         // 5. GEO - "Sin Información" para departamento y municipio
+        // Usa como padre el primer registro de nivel 1 (macroterritorio)
         // =============================================
         DB::statement("
             INSERT INTO catalogos.geo (id_padre, nivel, descripcion, codigo)
-            SELECT 0, 2, 'Sin Información', 'SI'
+            SELECT (SELECT id_geo FROM catalogos.geo WHERE nivel = 1 ORDER BY id_geo LIMIT 1),
+                   2, 'Sin Información', 'SI'
             WHERE NOT EXISTS (
                 SELECT 1 FROM catalogos.geo WHERE nivel = 2 AND descripcion = 'Sin Información'
             )
+            AND EXISTS (
+                SELECT 1 FROM catalogos.geo WHERE nivel = 1
+            )
         ");
 
-        // Obtener el id_geo del departamento "Sin Información"
+        // Obtener el id_geo del departamento "Sin Información" como padre del municipio
         DB::statement("
             INSERT INTO catalogos.geo (id_padre, nivel, descripcion, codigo)
             SELECT g.id_geo, 3, 'Sin Información', 'SI'
