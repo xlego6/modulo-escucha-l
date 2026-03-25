@@ -145,6 +145,16 @@
                 <div class="form-group">
                     <label for="fecha_toma_inicial" class="required-field">Fecha Inicial de Toma</label>
                     <input type="date" class="form-control" id="fecha_toma_inicial" name="fecha_toma_inicial" required>
+                    <div class="mt-1">
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_toma_inicial_dia_si" name="fecha_toma_inicial_dia_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_toma_inicial_dia_si"><small>Dia sin informacion</small></label>
+                        </div>
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_toma_inicial_mes_si" name="fecha_toma_inicial_mes_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_toma_inicial_mes_si"><small>Mes sin informacion</small></label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -152,6 +162,16 @@
                 <div class="form-group">
                     <label for="fecha_toma_final" class="required-field">Fecha Final de Toma</label>
                     <input type="date" class="form-control" id="fecha_toma_final" name="fecha_toma_final" required>
+                    <div class="mt-1">
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_toma_final_dia_si" name="fecha_toma_final_dia_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_toma_final_dia_si"><small>Dia sin informacion</small></label>
+                        </div>
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_toma_final_mes_si" name="fecha_toma_final_mes_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_toma_final_mes_si"><small>Mes sin informacion</small></label>
+                        </div>
+                    </div>
                 </div>
             </div>
 

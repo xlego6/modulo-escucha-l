@@ -15,6 +15,16 @@
                     <label for="fecha_hechos_inicial">Fecha Inicial de los Hechos</label>
                     <input type="date" class="form-control" id="fecha_hechos_inicial" name="fecha_hechos_inicial">
                     <small class="form-text text-muted">Fecha del hecho mas antiguo mencionado</small>
+                    <div class="mt-1">
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_hechos_inicial_dia_si" name="fecha_hechos_inicial_dia_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_hechos_inicial_dia_si"><small>Dia sin informacion</small></label>
+                        </div>
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_hechos_inicial_mes_si" name="fecha_hechos_inicial_mes_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_hechos_inicial_mes_si"><small>Mes sin informacion</small></label>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-md-6">
@@ -22,6 +32,16 @@
                     <label for="fecha_hechos_final">Fecha Final de los Hechos</label>
                     <input type="date" class="form-control" id="fecha_hechos_final" name="fecha_hechos_final">
                     <small class="form-text text-muted">Fecha del hecho mas reciente mencionado</small>
+                    <div class="mt-1">
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_hechos_final_dia_si" name="fecha_hechos_final_dia_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_hechos_final_dia_si"><small>Dia sin informacion</small></label>
+                        </div>
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_hechos_final_mes_si" name="fecha_hechos_final_mes_conocido" value="0">
+                            <label class="custom-control-label" for="fecha_hechos_final_mes_si"><small>Mes sin informacion</small></label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -148,7 +168,7 @@
             <!-- Hechos victimizantes -->
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Hecho(s) Victimizante(s) y de Resistencia Mencionado(s)</label>
+                    <label>Hecho(s) Victimizante(s) Mencionado(s)</label>
                     <select class="form-control select2-paso3" id="contenido_hechos" name="contenido_hechos[]" multiple>
                         @foreach($catalogos['hechos_victimizantes'] as $id => $descripcion)
                         <option value="{{ $id }}">{{ $descripcion }}</option>

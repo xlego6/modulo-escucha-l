@@ -20,6 +20,10 @@ class ContenidoTestimonio extends Model
         'detalle_grupos_etnicos',
         'otros_hechos_victimizantes',
         'detalle_resistencias',
+        'fecha_hechos_inicial_dia_conocido',
+        'fecha_hechos_inicial_mes_conocido',
+        'fecha_hechos_final_dia_conocido',
+        'fecha_hechos_final_mes_conocido',
     ];
 
     public function rel_entrevista()

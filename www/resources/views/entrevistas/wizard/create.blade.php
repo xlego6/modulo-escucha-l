@@ -299,13 +299,18 @@ $(document).ready(function() {
             modalidades: modalidades,
             fecha_toma_inicial: $('#fecha_toma_inicial').val(),
             fecha_toma_final: $('#fecha_toma_final').val(),
+            fecha_toma_inicial_dia_conocido: !$('#fecha_toma_inicial_dia_si').is(':checked'),
+            fecha_toma_inicial_mes_conocido: !$('#fecha_toma_inicial_mes_si').is(':checked'),
+            fecha_toma_final_dia_conocido: !$('#fecha_toma_final_dia_si').is(':checked'),
+            fecha_toma_final_mes_conocido: !$('#fecha_toma_final_mes_si').is(':checked'),
             idiomas: $('#id_idioma').val() || [],
             detalle_idiomas: $('#detalle_idiomas').val(),
             necesidades_reparacion: necesidades,
             areas_compatibles: $('#areas_compatibles').val() || [],
             observaciones_toma: $('#observaciones_toma').val(),
             tiene_anexos: $('input[name="tiene_anexos"]:checked').val(),
-            descripcion_anexos: $('#descripcion_anexos').val()
+            descripcion_anexos: $('#descripcion_anexos').val(),
+            nombre_entrevistador: $('#nombre_entrevistador').val()
         };
     }
 
@@ -352,7 +357,11 @@ $(document).ready(function() {
                     otro_riesgo: card.find('[name="otro_riesgo_' + index + '"]:checked').val() || 2,
                     otro_riesgo_obs: card.find('[name="otro_riesgo_obs_' + index + '"]').val() || '',
                     otro_anonimizar: card.find('[name="otro_anonimizar_' + index + '"]:checked').val() || 0,
-                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || ''
+                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || '',
+                    prueba_dano_derechos_privados: card.find('[name="prueba_dano_derechos_privados_' + index + '"]:checked').val(),
+                    prueba_dano_intereses_publicos: card.find('[name="prueba_dano_intereses_publicos_' + index + '"]:checked').val(),
+                    prueba_dano_inteligencia: card.find('[name="prueba_dano_inteligencia_' + index + '"]:checked').val(),
+                    prueba_dano_nna: card.find('[name="prueba_dano_nna_' + index + '"]:checked').val()
                 }
             });
         });
@@ -378,6 +387,10 @@ $(document).ready(function() {
         return {
             fecha_hechos_inicial: $('#fecha_hechos_inicial').val(),
             fecha_hechos_final: $('#fecha_hechos_final').val(),
+            fecha_hechos_inicial_dia_conocido: !$('#fecha_hechos_inicial_dia_si').is(':checked'),
+            fecha_hechos_inicial_mes_conocido: !$('#fecha_hechos_inicial_mes_si').is(':checked'),
+            fecha_hechos_final_dia_conocido: !$('#fecha_hechos_final_dia_si').is(':checked'),
+            fecha_hechos_final_mes_conocido: !$('#fecha_hechos_final_mes_si').is(':checked'),
             contenido_poblaciones: $('#contenido_poblaciones').val() || [],
             contenido_ocupaciones: $('#contenido_ocupaciones').val() || [],
             contenido_sexos: $('#contenido_sexos').val() || [],

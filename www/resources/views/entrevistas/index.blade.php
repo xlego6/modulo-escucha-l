@@ -72,7 +72,7 @@
                     <th style="width: 120px">Codigo</th>
                     <th>Titulo</th>
                     <th style="width: 100px">Fecha</th>
-                    <th style="width: 150px">Entrevistador</th>
+                    <th style="width: 180px">Entrevistador / Carga</th>
                     <th style="width: 80px">Duracion</th>
                     <th style="width: 120px">Acciones</th>
                 </tr>
@@ -88,10 +88,13 @@
                     <td>{{ \Illuminate\Support\Str::limit($entrevista->titulo, 60) }}</td>
                     <td>{{ $entrevista->fmt_fecha }}</td>
                     <td>
-                        @if($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->rel_usuario)
-                            {{ $entrevista->rel_entrevistador->rel_usuario->name }}
+                        @if($entrevista->nombre_entrevistador)
+                            {{ $entrevista->nombre_entrevistador }}
                         @else
                             <span class="text-muted">Sin asignar</span>
+                        @endif
+                        @if($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->rel_usuario)
+                            <br><small class="text-muted"><i class="fas fa-upload fa-xs"></i> {{ $entrevista->rel_entrevistador->rel_usuario->name }}</small>
                         @endif
                     </td>
                     <td>

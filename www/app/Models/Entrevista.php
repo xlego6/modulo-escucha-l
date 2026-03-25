@@ -52,6 +52,10 @@ class Entrevista extends Model
         'observaciones_toma',
         'detalle_idiomas',
         'nombre_entrevistador',
+        'fecha_toma_inicial_dia_conocido',
+        'fecha_toma_inicial_mes_conocido',
+        'fecha_toma_final_dia_conocido',
+        'fecha_toma_final_mes_conocido',
     ];
 
     protected $casts = [
