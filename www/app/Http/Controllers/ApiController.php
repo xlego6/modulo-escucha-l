@@ -29,6 +29,15 @@ class ApiController extends Controller
             ->orderBy('descripcion')
             ->pluck('descripcion', 'id_geo');
 
+        // Agregar opción "Sin Información" al final de cualquier listado de municipios
+        $sinInfo = Geo::where('nivel', 3)
+            ->where('descripcion', 'Sin Información')
+            ->first();
+
+        if ($sinInfo && !$municipios->has($sinInfo->id_geo)) {
+            $municipios->put($sinInfo->id_geo, 'Sin Información');
+        }
+
         return response()->json($municipios);
     }
 
