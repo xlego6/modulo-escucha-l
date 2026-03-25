@@ -509,6 +509,75 @@
                                 </div>
                             </div>
                             @endif
+
+                            <!-- Prueba de Daño -->
+                            @if($pe->rel_consentimiento)
+                            <hr>
+                            @php
+                                $cons = $pe->rel_consentimiento;
+                                $dPriv  = $cons->prueba_dano_derechos_privados;
+                                $dPub   = $cons->prueba_dano_intereses_publicos;
+                                $dIntel = $cons->prueba_dano_inteligencia;
+                                $dNna   = $cons->prueba_dano_nna;
+
+                                // Calcular clasificacion
+                                $esNS = fn($v) => ($v === null || $v == 2);
+                                if ($dIntel == 1) {
+                                    $clasifDano = 'Inteligencia y Contrainteligencia';
+                                    $clasifColor = 'danger';
+                                } elseif ($esNS($dPriv) && $esNS($dPub) && $esNS($dIntel) && $esNS($dNna)) {
+                                    $clasifDano = 'Pendiente de Calificacion';
+                                    $clasifColor = 'warning';
+                                } elseif ($dPriv == 1 && ($dPub == 1 || $dNna == 1)) {
+                                    $clasifDano = 'Publica-Clasificada y Publica-Reservada';
+                                    $clasifColor = 'secondary';
+                                } elseif ($dPriv == 1) {
+                                    $clasifDano = 'Publica-Clasificada';
+                                    $clasifColor = 'secondary';
+                                } elseif ($dPub == 1 || $dNna == 1) {
+                                    $clasifDano = 'Publica-Reservada';
+                                    $clasifColor = 'secondary';
+                                } else {
+                                    $clasifDano = 'Publica-Publica';
+                                    $clasifColor = 'success';
+                                }
+
+                                $badgeDano = function($v) {
+                                    if ($v === null) return '<span class="badge badge-light border">Sin respuesta</span>';
+                                    if ($v == 1) return '<span class="badge badge-danger">Si</span>';
+                                    if ($v == 0) return '<span class="badge badge-secondary">No</span>';
+                                    return '<span class="badge badge-warning">No sabe</span>';
+                                };
+                            @endphp
+                            <h6><i class="fas fa-exclamation-triangle mr-2 text-danger"></i>Prueba de Dano</h6>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <table class="table table-sm table-bordered">
+                                        <tr>
+                                            <td style="width:72%"><strong>1. Afecta derechos privados (Art. 18 Ley 1712 de 2014):</strong></td>
+                                            <td>{!! $badgeDano($dPriv) !!}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>2. Afecta intereses publicos (Art. 19 Ley 1712 de 2014):</strong></td>
+                                            <td>{!! $badgeDano($dPub) !!}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>3. Informacion de inteligencia y contrainteligencia (Ley 1621 de 2013):</strong></td>
+                                            <td>{!! $badgeDano($dIntel) !!}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>4. Realizado a Ninos, Ninas y Adolescentes (NNA):</strong></td>
+                                            <td>{!! $badgeDano($dNna) !!}</td>
+                                        </tr>
+                                        <tr class="table-{{ $clasifColor }}">
+                                            <td><strong>Clasificacion:</strong></td>
+                                            <td><strong>{{ $clasifDano }}</strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            @endif
+
                             @endif
                         </div>
                     </div>

@@ -126,7 +126,25 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             // PASO 2: TESTIMONIANTES
             'Testimoniante(s)',
             'Tipo(s) Testimoniante',
-            'Consentimiento Completo',
+
+            // CONSENTIMIENTO - una columna por pregunta
+            'Cons: Tipo Documento',
+            'Cons: Es Menor de Edad',
+            'Cons: Autoriza Entrevista',
+            'Cons: Permite Grabacion',
+            'Cons: Permite Proc. Misional',
+            'Cons: Permite Uso/Conserv./Consulta',
+            'Cons: Riesgo de Seguridad',
+            'Cons: Autoriza Datos Personales',
+            'Cons: Autoriza Datos Sensibles',
+            'Cons: Observaciones',
+
+            // PRUEBA DE DAÑO
+            'P. Dano: Afecta Derechos Privados',
+            'P. Dano: Afecta Intereses Publicos',
+            'P. Dano: Inteligencia/Contraintelig.',
+            'P. Dano: NNA',
+            'Clasificacion Prueba de Dano',
 
             // PASO 3: CONTENIDO
             'Fecha Hechos Inicial',
@@ -166,28 +184,79 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
         // Necesidades de reparacion
         $necesidades = $entrevista->rel_necesidades_reparacion->pluck('descripcion')->implode(', ');
 
-        // Testimoniantes
+        // Testimoniantes y consentimientos
         $testimoniantes = [];
         $tiposTestimoniante = [];
-        $consentimientoCompleto = true;
 
-        foreach ($entrevista->rel_personas_entrevistadas as $pe) {
+        $consTipoDoc    = [];
+        $consMenorEdad  = [];
+        $consAutoriza   = [];
+        $consGrabacion  = [];
+        $consProc       = [];
+        $consUso        = [];
+        $consRiesgo     = [];
+        $consDatosP     = [];
+        $consDatosS     = [];
+        $consObs        = [];
+
+        $danoPriva      = [];
+        $danoPubli      = [];
+        $danoIntelig    = [];
+        $danoNna        = [];
+
+        foreach ($entrevista->rel_personas_entrevistadas as $i => $pe) {
+            $num = 'P' . ($i + 1);
+
             if ($pe->rel_persona) {
-                $testimoniantes[] = trim($pe->rel_persona->primer_nombre . ' ' . $pe->rel_persona->segundo_nombre . ' ' . $pe->rel_persona->primer_apellido . ' ' . $pe->rel_persona->segundo_apellido);
+                $testimoniantes[] = trim(
+                    $pe->rel_persona->primer_nombre . ' ' .
+                    $pe->rel_persona->segundo_nombre . ' ' .
+                    $pe->rel_persona->primer_apellido . ' ' .
+                    $pe->rel_persona->segundo_apellido
+                );
             }
             $tiposTestimoniante[] = $pe->fmt_tipo;
 
-            // Verificar consentimiento
-            if ($pe->rel_consentimiento) {
-                $cons = $pe->rel_consentimiento;
-                if (!$cons->tiene_documento_autorizacion || !$cons->autoriza_ser_entrevistado ||
-                    !$cons->permite_grabacion || !$cons->permite_procesamiento_misional) {
-                    $consentimientoCompleto = false;
+            $cons = $pe->rel_consentimiento;
+
+            if ($cons) {
+                $obs = $cons->observaciones ?? '';
+                $esOtro = str_contains($obs, '[CONSENTIMIENTO_OTRO]');
+
+                // Tipo de documento
+                if ($esOtro) {
+                    $consTipoDoc[] = "{$num}: Otro";
+                } elseif ($cons->tiene_documento_autorizacion) {
+                    $consTipoDoc[] = "{$num}: Si";
+                } else {
+                    $consTipoDoc[] = "{$num}: No";
                 }
-            } else {
-                $consentimientoCompleto = false;
+
+                // Campos booleanos (solo aplican si tiene documento)
+                $tieneDoc = $cons->tiene_documento_autorizacion;
+                $consMenorEdad[] = $num . ': ' . $this->formatBool($tieneDoc ? $cons->es_menor_edad : null);
+                $consAutoriza[]  = $num . ': ' . $this->formatBool($tieneDoc ? $cons->autoriza_ser_entrevistado : null);
+                $consGrabacion[] = $num . ': ' . $this->formatBool($tieneDoc ? $cons->permite_grabacion : null);
+                $consProc[]      = $num . ': ' . $this->formatBool($tieneDoc ? $cons->permite_procesamiento_misional : null);
+                $consUso[]       = $num . ': ' . $this->formatBool($tieneDoc ? $cons->permite_uso_conservacion_consulta : null);
+                $consRiesgo[]    = $num . ': ' . $this->formatBool($tieneDoc ? $cons->considera_riesgo_seguridad : null);
+                $consDatosP[]    = $num . ': ' . $this->formatBool($tieneDoc ? $cons->autoriza_datos_personales_sin_anonimizar : null);
+                $consDatosS[]    = $num . ': ' . $this->formatBool($tieneDoc ? $cons->autoriza_datos_sensibles_sin_anonimizar : null);
+
+                // Observaciones (limpiar el marcador OTRO para el excel)
+                $obsLimpia = $esOtro ? trim(str_replace('[CONSENTIMIENTO_OTRO]', '', $obs)) : $obs;
+                if ($obsLimpia) $consObs[] = "{$num}: {$obsLimpia}";
+
+                // Prueba de daño
+                $danoPriva[]   = $num . ': ' . $this->formatDano($cons->prueba_dano_derechos_privados);
+                $danoPubli[]   = $num . ': ' . $this->formatDano($cons->prueba_dano_intereses_publicos);
+                $danoIntelig[] = $num . ': ' . $this->formatDano($cons->prueba_dano_inteligencia);
+                $danoNna[]     = $num . ': ' . $this->formatDano($cons->prueba_dano_nna);
             }
         }
+
+        // Clasificacion prueba de daño: la más restrictiva entre todos los consentimientos
+        $clasificacion = $this->clasificacionEntrevista($entrevista->rel_personas_entrevistadas);
 
         // Contenido del testimonio
         $contenido = $entrevista->rel_contenido;
@@ -205,20 +274,10 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             return $adj->rel_tipo ? $adj->rel_tipo->descripcion : 'Sin tipo';
         })->unique()->implode(', ');
 
-        // Contar por tipo
-        $adjuntosAudio = $adjuntos->filter(function ($adj) {
-            return $adj->es_audio;
-        })->count();
+        $adjuntosAudio = $adjuntos->filter(fn($adj) => $adj->es_audio)->count();
+        $adjuntosVideo = $adjuntos->filter(fn($adj) => $adj->es_video)->count();
+        $adjuntosDocumento = $adjuntos->filter(fn($adj) => $adj->es_documento)->count();
 
-        $adjuntosVideo = $adjuntos->filter(function ($adj) {
-            return $adj->es_video;
-        })->count();
-
-        $adjuntosDocumento = $adjuntos->filter(function ($adj) {
-            return $adj->es_documento;
-        })->count();
-
-        // Duracion total en minutos
         $duracionTotal = $adjuntos->sum('duracion');
         $duracionMinutos = $duracionTotal > 0 ? round($duracionTotal / 60, 2) : '';
 
@@ -259,7 +318,25 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             // PASO 2: TESTIMONIANTES
             implode(' | ', array_filter($testimoniantes)),
             implode(' | ', array_unique(array_filter($tiposTestimoniante))),
-            $consentimientoCompleto ? 'Si' : 'No',
+
+            // CONSENTIMIENTO
+            implode(' | ', $consTipoDoc),
+            implode(' | ', $consMenorEdad),
+            implode(' | ', $consAutoriza),
+            implode(' | ', $consGrabacion),
+            implode(' | ', $consProc),
+            implode(' | ', $consUso),
+            implode(' | ', $consRiesgo),
+            implode(' | ', $consDatosP),
+            implode(' | ', $consDatosS),
+            implode(' | ', $consObs),
+
+            // PRUEBA DE DAÑO
+            implode(' | ', $danoPriva),
+            implode(' | ', $danoPubli),
+            implode(' | ', $danoIntelig),
+            implode(' | ', $danoNna),
+            $clasificacion,
 
             // PASO 3: CONTENIDO
             $contenido ? $contenido->fecha_hechos_inicial : '',
@@ -288,14 +365,90 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
         ];
     }
 
+    // -------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------
+
+    /** Convierte boolean DB a Si/No/- */
+    private function formatBool($value): string
+    {
+        if ($value === null) return '-';
+        return $value ? 'Si' : 'No';
+    }
+
+    /** Convierte campo prueba de daño (1/0/2/null) a Si/No/No sabe/- */
+    private function formatDano($value): string
+    {
+        if ($value === null) return '-';
+        if ($value == 1) return 'Si';
+        if ($value == 0) return 'No';
+        return 'No sabe'; // 2
+    }
+
+    /**
+     * Calcula la clasificacion de prueba de daño para UN consentimiento.
+     * Retorna par [string clasificacion, int prioridad].
+     * Prioridad: 5=Inteligencia > 4=Clasificada+Reservada > 3=Reservada > 2=Clasificada > 1=Publica > 0=Pendiente
+     */
+    private function calcularClasificacion($privados, $publicos, $inteligencia, $nna): array
+    {
+        // Pregunta 3 SI → categoría superior
+        if ($inteligencia == 1) {
+            return ['Inteligencia y Contrainteligencia', 5];
+        }
+
+        // Todos "no sabe" o sin respuesta
+        $esNS = fn($v) => ($v === null || $v == 2);
+        if ($esNS($privados) && $esNS($publicos) && $esNS($inteligencia) && $esNS($nna)) {
+            return ['Pendiente de Calificacion', 0];
+        }
+
+        $si1 = ($privados == 1);
+        $si2o4 = ($publicos == 1 || $nna == 1);
+
+        if ($si1 && $si2o4) return ['Publica-Clasificada y Publica-Reservada', 4];
+        if ($si1)           return ['Publica-Clasificada', 2];
+        if ($si2o4)         return ['Publica-Reservada', 3];
+
+        return ['Publica-Publica', 1];
+    }
+
+    /**
+     * Agrega la clasificación de prueba de daño de todas las personas de la entrevista.
+     * Devuelve la clasificación de mayor prioridad.
+     */
+    private function clasificacionEntrevista($personas): string
+    {
+        $maxPrioridad = -1;
+        $maxClasif = '';
+
+        foreach ($personas as $pe) {
+            $cons = $pe->rel_consentimiento;
+            if (!$cons) continue;
+
+            [$clasif, $prioridad] = $this->calcularClasificacion(
+                $cons->prueba_dano_derechos_privados,
+                $cons->prueba_dano_intereses_publicos,
+                $cons->prueba_dano_inteligencia,
+                $cons->prueba_dano_nna
+            );
+
+            if ($prioridad > $maxPrioridad) {
+                $maxPrioridad = $prioridad;
+                $maxClasif = $clasif;
+            }
+        }
+
+        return $maxClasif;
+    }
+
     public function styles(Worksheet $sheet)
     {
-        // Estilo para encabezado
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'EBC01A'] // Color principal del proyecto
+                'startColor' => ['rgb' => 'EBC01A']
             ],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
