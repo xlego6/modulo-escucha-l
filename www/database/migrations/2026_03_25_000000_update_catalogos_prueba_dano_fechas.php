@@ -7,6 +7,22 @@ class UpdateCatalogosPruebaDanoFechas extends Migration
 {
     public function up()
     {
+        // Sincronizar secuencia de cat_item para evitar conflictos de PK
+        DB::statement("
+            SELECT setval(
+                pg_get_serial_sequence('catalogos.cat_item', 'id_item'),
+                COALESCE((SELECT MAX(id_item) FROM catalogos.cat_item), 1)
+            )
+        ");
+
+        // Sincronizar secuencia de geo para evitar conflictos de PK
+        DB::statement("
+            SELECT setval(
+                pg_get_serial_sequence('catalogos.geo', 'id_geo'),
+                COALESCE((SELECT MAX(id_geo) FROM catalogos.geo), 1)
+            )
+        ");
+
         // =============================================
         // 1. CATÁLOGOS - Población (id_cat = 9)
         // Completar listado si no existen
