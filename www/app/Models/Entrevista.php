@@ -87,6 +87,10 @@ class Entrevista extends Model
         return $this->belongsTo(Geo::class, 'entrevista_lugar', 'id_geo');
     }
 
+    public function rel_territorio() {
+        return $this->belongsTo(Geo::class, 'id_territorio', 'id_geo');
+    }
+
     public function rel_lugar_hechos() {
         return $this->belongsTo(Geo::class, 'hechos_lugar', 'id_geo');
     }
@@ -126,6 +130,10 @@ class Entrevista extends Model
 
     public function rel_idiomas() {
         return $this->belongsToMany(CatItem::class, 'esclarecimiento.entrevista_idioma', 'id_e_ind_fvt', 'id_idioma', 'id_e_ind_fvt', 'id_item');
+    }
+
+    public function rel_areas_compatibles() {
+        return $this->belongsToMany(CatItem::class, 'esclarecimiento.entrevista_area_compatible', 'id_e_ind_fvt', 'id_area', 'id_e_ind_fvt', 'id_item');
     }
 
     // Relación Paso 3 - Contenido
