@@ -105,6 +105,7 @@ class MapaController extends Controller
             INNER JOIN catalogos.geo muni ON e.entrevista_lugar = muni.id_geo
             INNER JOIN catalogos.geo depto ON muni.id_padre = depto.id_geo AND depto.nivel = 2
             WHERE e.id_activo = 1 AND e.entrevista_lugar IS NOT NULL
+                AND depto.descripcion != 'Sin Información'
             GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
             ORDER BY total DESC
         ");
@@ -130,6 +131,7 @@ class MapaController extends Controller
             )
             WHERE e.id_activo = 1
                 AND depto.nivel = 2
+                AND depto.descripcion != 'Sin Información'
                 AND (p.id_lugar_nacimiento_depto IS NOT NULL OR p.id_lugar_residencia_depto IS NOT NULL)
             GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
             ORDER BY total DESC
@@ -153,6 +155,7 @@ class MapaController extends Controller
             INNER JOIN catalogos.geo depto ON cl.id_departamento = depto.id_geo
             WHERE e.id_activo = 1
                 AND depto.nivel = 2
+                AND depto.descripcion != 'Sin Información'
                 AND cl.id_departamento IS NOT NULL
             GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
             ORDER BY total DESC
