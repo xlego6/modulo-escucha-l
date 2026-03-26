@@ -238,6 +238,11 @@ $(document).ready(function() {
                 allowClear: true
             });
 
+            // Select2 AJAX para tesauro (solo inicializar una vez)
+            if (!$('#temas_tesauro').data('select2')) {
+                inicializarTesauro();
+            }
+
             // Pre-cargar datos del contenido
             if (entrevistaData.contenido) {
                 if (entrevistaData.contenido.fecha_hechos_inicial) {
@@ -270,7 +275,23 @@ $(document).ready(function() {
                 $('#contenido_hechos').val(entrevistaData.contenido.hechos).trigger('change');
                 $('#contenido_responsables').val(entrevistaData.contenido.responsables).trigger('change');
                 $('#responsables_individuales').val(entrevistaData.contenido.responsables_individuales);
-                $('#temas_abordados').val(entrevistaData.contenido.temas_abordados);
+                // Pre-cargar temas del tesauro (JSON guardado)
+                if (entrevistaData.contenido.temas_abordados) {
+                    try {
+                        let temas = JSON.parse(entrevistaData.contenido.temas_abordados);
+                        if (Array.isArray(temas)) {
+                            temas.forEach(function(t) {
+                                let opt = new Option(t.text, t.id, true, true);
+                                $('#temas_tesauro').append(opt);
+                            });
+                            $('#temas_tesauro').trigger('change');
+                            $('#temas_abordados').val(entrevistaData.contenido.temas_abordados);
+                        }
+                    } catch(e) {
+                        // Valor legado (texto plano) — mostrarlo en campo oculto
+                        $('#temas_abordados').val(entrevistaData.contenido.temas_abordados);
+                    }
+                }
                 $('#otras_poblaciones_mencionadas').val(entrevistaData.contenido.otras_poblaciones_mencionadas);
                 $('#otras_ocupaciones_mencionadas').val(entrevistaData.contenido.otras_ocupaciones_mencionadas);
                 $('#detalle_grupos_etnicos').val(entrevistaData.contenido.detalle_grupos_etnicos);
@@ -951,6 +972,44 @@ $(document).ready(function() {
             muniSelect.empty().append('<option value="">-- Seleccione Municipio --</option>');
         }
     });
+
+    // === TESAURO DDHH ===
+    function inicializarTesauro() {
+        $('#temas_tesauro').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Escriba para buscar en el Tesauro de DDHH...',
+            allowClear: true,
+            minimumInputLength: 2,
+            language: {
+                inputTooShort: function() { return 'Escriba al menos 2 caracteres'; },
+                searching: function() { return 'Buscando...'; },
+                noResults: function() { return 'No se encontraron términos'; },
+                errorLoading: function() { return 'No se pudo conectar al Tesauro'; },
+            },
+            ajax: {
+                url: '{{ route("api.tesauro") }}',
+                dataType: 'json',
+                delay: 350,
+                data: function(params) { return { q: params.term }; },
+                processResults: function(data) { return { results: data.results || [] }; },
+                error: function() {
+                    $('#tesauro-status').html('<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Sin conexión al Tesauro</span>');
+                },
+                success: function() {
+                    $('#tesauro-status').html('');
+                }
+            }
+        });
+
+        // Serializar selección a JSON oculto antes de enviar
+        $('#temas_tesauro').on('change', function() {
+            let seleccionados = $(this).select2('data').map(function(item) {
+                return { id: item.id, text: item.text };
+            });
+            $('#temas_abordados').val(seleccionados.length ? JSON.stringify(seleccionados) : '');
+        });
+    }
 });
 </script>
 @endsection

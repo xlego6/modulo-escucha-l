@@ -46,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('api/municipios', [ApiController::class, 'municipios'])->name('api.municipios');
     Route::get('api/tipos-testimonio', [ApiController::class, 'tiposTestimonio'])->name('api.tipos_testimonio');
     Route::get('api/buscar-personas', [ApiController::class, 'buscarPersonas'])->name('api.buscar_personas');
+    Route::get('api/tesauro', [ApiController::class, 'buscarTesauro'])->name('api.tesauro');
 
     // Adjuntos: ver/reproducir (accesible para todos los autenticados sin compromiso)
     Route::get('adjuntos/ver/{id}', [AdjuntoController::class, 'ver'])->name('adjuntos.ver');

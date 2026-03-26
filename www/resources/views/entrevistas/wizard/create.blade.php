@@ -133,6 +133,11 @@ $(document).ready(function() {
                 placeholder: 'Seleccione opciones...',
                 allowClear: true
             });
+
+            // Select2 AJAX para tesauro (solo inicializar una vez)
+            if (!$('#temas_tesauro').data('select2')) {
+                inicializarTesauro();
+            }
         }
 
         currentStep = step;
@@ -661,6 +666,44 @@ $(document).ready(function() {
             muniSelect.empty().append('<option value="">-- Seleccione Municipio --</option>');
         }
     });
+
+    // === TESAURO DDHH ===
+    function inicializarTesauro() {
+        $('#temas_tesauro').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Escriba para buscar en el Tesauro de DDHH...',
+            allowClear: true,
+            minimumInputLength: 2,
+            language: {
+                inputTooShort: function() { return 'Escriba al menos 2 caracteres'; },
+                searching: function() { return 'Buscando...'; },
+                noResults: function() { return 'No se encontraron términos'; },
+                errorLoading: function() { return 'No se pudo conectar al Tesauro'; },
+            },
+            ajax: {
+                url: '{{ route("api.tesauro") }}',
+                dataType: 'json',
+                delay: 350,
+                data: function(params) { return { q: params.term }; },
+                processResults: function(data) { return { results: data.results || [] }; },
+                error: function() {
+                    $('#tesauro-status').html('<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Sin conexión al Tesauro</span>');
+                },
+                success: function() {
+                    $('#tesauro-status').html('');
+                }
+            }
+        });
+
+        // Serializar selección a JSON oculto antes de enviar
+        $('#temas_tesauro').on('change', function() {
+            let seleccionados = $(this).select2('data').map(function(item) {
+                return { id: item.id, text: item.text };
+            });
+            $('#temas_abordados').val(seleccionados.length ? JSON.stringify(seleccionados) : '');
+        });
+    }
 });
 </script>
 @endsection
