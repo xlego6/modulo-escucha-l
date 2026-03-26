@@ -242,12 +242,19 @@
                 </div>
             </div>
 
-            <!-- Temas abordados -->
+            <!-- Temas del Tesauro -->
             <div class="col-md-12">
                 <div class="form-group">
-                    <label for="temas_abordados" class="required-field">Temas Abordados en el Testimonio</label>
-                    <textarea class="form-control" id="temas_abordados" name="temas_abordados" rows="3" required placeholder="Ingrese los temas principales abordados..."></textarea>
-                    <small class="form-text text-muted">Tematicas que aborda el testimonio segun el Tesauro de Derechos Humanos del CNMH</small>
+                    <label for="temas_tesauro" class="required-field">Temas Abordados en el Testimonio (Tesauro DDHH)</label>
+                    <select id="temas_tesauro" name="temas_tesauro[]" multiple class="form-control select2-tesauro" style="width:100%">
+                        {{-- Los options se cargan dinámicamente vía AJAX o al editar --}}
+                    </select>
+                    <small class="form-text text-muted">
+                        Escriba al menos 2 caracteres para buscar en el Tesauro de Derechos Humanos del CNMH.
+                        <span id="tesauro-status" class="ml-2"></span>
+                    </small>
+                    {{-- Campo oculto que almacena el JSON final para enviar al servidor --}}
+                    <input type="hidden" id="temas_abordados" name="temas_abordados" value="">
                 </div>
             </div>
         </div>

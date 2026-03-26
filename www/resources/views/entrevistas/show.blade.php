@@ -831,9 +831,21 @@
                     <hr>
                     <div class="row">
                         <div class="col-md-12">
-                            <strong>Temas Abordados:</strong><br>
-                            <div class="callout callout-info">
-                                {!! nl2br(e($entrevista->rel_contenido->temas_abordados)) !!}
+                            <strong>Temas Abordados (Tesauro DDHH):</strong><br>
+                            <div class="mt-1">
+                                @php
+                                    $temas = json_decode($entrevista->rel_contenido->temas_abordados, true);
+                                @endphp
+                                @if(is_array($temas))
+                                    @foreach($temas as $tema)
+                                        <span class="badge badge-info mr-1 mb-1" style="font-size:0.85em">{{ $tema['text'] }}</span>
+                                    @endforeach
+                                @else
+                                    {{-- Valor legado (texto plano) --}}
+                                    <div class="callout callout-info">
+                                        {!! nl2br(e($entrevista->rel_contenido->temas_abordados)) !!}
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>

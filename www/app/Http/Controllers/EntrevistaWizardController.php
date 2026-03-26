@@ -366,7 +366,7 @@ class EntrevistaWizardController extends Controller
             'id_e_ind_fvt' => 'required|integer',
             'fecha_hechos_inicial' => 'nullable|date',
             'fecha_hechos_final' => 'nullable|date|after_or_equal:fecha_hechos_inicial',
-            'temas_abordados' => 'required|string',
+            'temas_abordados' => 'nullable|string',
         ]);
 
         // Verificar que la entrevista existe

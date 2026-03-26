@@ -272,10 +272,15 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
         $responsables   = $contenido ? $contenido->rel_responsables->pluck('descripcion')->implode(', ') : '';
         $practicas      = $contenido ? $contenido->rel_practicas_resistencia->pluck('descripcion')->implode(', ') : '';
 
-        // Temas abordados: reemplazar saltos de línea por |
+        // Temas abordados: JSON del tesauro → texto plano separado por |
         $temas = '';
         if ($contenido && $contenido->temas_abordados) {
-            $temas = trim(preg_replace('/[\r\n]+/', ' | ', $contenido->temas_abordados), ' | ');
+            $decoded = json_decode($contenido->temas_abordados, true);
+            if (is_array($decoded)) {
+                $temas = implode(' | ', array_column($decoded, 'text'));
+            } else {
+                $temas = trim(preg_replace('/[\r\n]+/', ' | ', $contenido->temas_abordados), ' | ');
+            }
         }
 
         // Adjuntos

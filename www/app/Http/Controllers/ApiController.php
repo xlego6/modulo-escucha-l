@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Geo;
 use App\Models\CatItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class ApiController extends Controller
 {
@@ -83,5 +85,59 @@ class ApiController extends Controller
         });
 
         return response()->json($personas);
+    }
+
+    /**
+     * Proxy de búsqueda al Tesauro de DDHH del CNMH (TemaTres)
+     * Formato Select2: { results: [{id, text}, ...] }
+     */
+    public function buscarTesauro(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+
+        if (strlen($q) < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $cacheKey = 'tesauro_search_' . md5($q);
+
+        $results = Cache::remember($cacheKey, 3600, function () use ($q) {
+            try {
+                $response = Http::timeout(6)->get(
+                    'https://tesauro.centrodememoriahistorica.gov.co/vocab/services.php',
+                    ['task' => 'search', 'arg' => $q, 'output' => 'json']
+                );
+
+                if (!$response->successful()) {
+                    return [];
+                }
+
+                $data = $response->json();
+                $results = [];
+
+                if (!empty($data['result']) && is_array($data['result'])) {
+                    foreach ($data['result'] as $term) {
+                        if (!empty($term['string']) && empty($term['no_term_string'])) {
+                            $results[] = [
+                                'id'   => $term['term_id'],
+                                'text' => $term['string'],
+                            ];
+                        }
+                    }
+                }
+
+                return $results;
+            } catch (\Exception $e) {
+                return null; // null = no cachear el error
+            }
+        });
+
+        // Si falló la conexión, no devolver caché vacía
+        if ($results === null) {
+            Cache::forget($cacheKey);
+            return response()->json(['results' => [], 'error' => 'No se pudo conectar al Tesauro.']);
+        }
+
+        return response()->json(['results' => $results]);
     }
 }
