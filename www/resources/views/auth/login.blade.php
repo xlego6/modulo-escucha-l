@@ -67,7 +67,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('login') }}" method="post">
+            <form id="loginForm" action="{{ route('login') }}" method="post">
                 @csrf
                 <div class="input-group mb-3">
                     <input type="email" name="email" class="form-control" placeholder="Correo electronico" value="{{ old('email') }}" required autofocus>
@@ -93,7 +93,7 @@
                         </div>
                     </div>
                     <div class="col-4">
-                        <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+                        <button id="loginSubmitBtn" type="submit" class="btn btn-primary btn-block">Ingresar</button>
                     </div>
                 </div>
             </form>
@@ -104,5 +104,25 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('loginForm');
+    var submitBtn = document.getElementById('loginSubmitBtn');
+
+    if (!form || !submitBtn) {
+        return;
+    }
+
+    form.addEventListener('submit', function () {
+        if (form.dataset.submitted === '1') {
+            return false;
+        }
+
+        form.dataset.submitted = '1';
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Ingresando...';
+    });
+});
+</script>
 </body>
 </html>
