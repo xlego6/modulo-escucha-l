@@ -104,14 +104,6 @@ class LoginController extends Controller
     {
         $user = Auth::user();
 
-        // Si usuario deshabilitado
-        if ((int) $user->id_nivel === 99) {
-            Auth::logout();
-            return back()->withErrors([
-                'email' => 'Usuario deshabilitado.',
-            ])->onlyInput('email');
-        }
-
         // Si no tiene perfil, se crea automáticamente con nivel Entrevistador
         if (!$user->tiene_perfil()) {
             $numero = (Entrevistador::max('numero_entrevistador') ?? 0) + 1;
@@ -132,6 +124,14 @@ class LoginController extends Controller
                 'referencia'  => 'Perfil creado automáticamente en primer acceso (directorio activo)',
                 'ip'          => $request->ip(),
             ]);
+        }
+
+        // Si usuario deshabilitado (verificar después de crear perfil si aplica)
+        if ((int) $user->id_nivel === 99) {
+            Auth::logout();
+            return back()->withErrors([
+                'email' => 'Usuario deshabilitado.',
+            ])->onlyInput('email');
         }
 
         $request->session()->regenerate();
