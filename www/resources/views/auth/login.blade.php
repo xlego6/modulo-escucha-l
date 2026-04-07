@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>REPOSITORIO TESTIMONIAL DEL CNMH</title>
+    <title>MÓDULO DE ESCUCHA CNMH</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -53,7 +53,9 @@
     <div class="login-logo mb-4 text-center">
         <img src="{{ asset('img/logo-cnmh.png') }}" alt="CNMH" class="login-logo-img">
         <br>
-        <span class="login-logo-title">REPOSITORIO TESTIMONIAL<br>DEL CNMH</span>
+        <span class="login-logo-title">MÓDULO DE ESCUCHA<br>CNMH</span>
+        <br>
+        <small class="text-muted" style="font-family: 'Barlow', sans-serif; font-size: 0.95rem; letter-spacing: 1px;">Sistema de escucha CNMH</small>
     </div>
     <div class="card">
         <div class="card-body login-card-body">
