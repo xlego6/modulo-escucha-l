@@ -491,7 +491,7 @@ class ProcesamientoController extends Controller
                                 TrazaActividad::create([
                                     'fecha_hora'  => now(),
                                     'id_usuario'  => $cached['user_id'],
-                                    'accion'      => 'iniciar_transcripcion',
+                                    'accion'      => 'completar_transcripcion',
                                     'objeto'      => 'adjunto',
                                     'id_registro' => $cached['adjunto_id'],
                                     'codigo'      => $cached['codigo'],
@@ -509,6 +509,22 @@ class ProcesamientoController extends Controller
                     }
                 }
 
+                // Registrar error si el job falló (solo una vez)
+                if ($status === 'failed' && !($cached['error_traced'] ?? false)) {
+                    TrazaActividad::create([
+                        'fecha_hora'  => now(),
+                        'id_usuario'  => $cached['user_id'],
+                        'accion'      => 'error_transcripcion',
+                        'objeto'      => 'adjunto',
+                        'id_registro' => $cached['adjunto_id'],
+                        'codigo'      => $cached['codigo'],
+                        'referencia'  => ($cached['nombre'] ?? '') . ': ' . ($jobStatus['error'] ?? 'Error desconocido'),
+                        'ip'          => $cached['ip'],
+                    ]);
+                    $cached['error_traced'] = true;
+                    Cache::put("transcripcion_job_{$jobId}", $cached, now()->addDays(2));
+                }
+
                 $resultados[$jobId] = [
                     'status'            => $status,
                     'saved'             => $cached['saved'],
@@ -523,6 +539,20 @@ class ProcesamientoController extends Controller
                 ];
 
             } catch (\Exception $e) {
+                if (!($cached['error_traced'] ?? false)) {
+                    TrazaActividad::create([
+                        'fecha_hora'  => now(),
+                        'id_usuario'  => $cached['user_id'],
+                        'accion'      => 'error_transcripcion',
+                        'objeto'      => 'adjunto',
+                        'id_registro' => $cached['adjunto_id'],
+                        'codigo'      => $cached['codigo'],
+                        'referencia'  => ($cached['nombre'] ?? '') . ': ' . $e->getMessage(),
+                        'ip'          => $cached['ip'],
+                    ]);
+                    $cached['error_traced'] = true;
+                    Cache::put("transcripcion_job_{$jobId}", $cached, now()->addDays(2));
+                }
                 $resultados[$jobId] = [
                     'status' => 'error',
                     'error'  => $e->getMessage(),
@@ -568,7 +598,7 @@ class ProcesamientoController extends Controller
                         TrazaActividad::create([
                             'fecha_hora'  => now(),
                             'id_usuario'  => $firstCached['user_id'],
-                            'accion'      => 'iniciar_transcripcion',
+                            'accion'      => 'completar_transcripcion',
                             'objeto'      => 'entrevista',
                             'id_registro' => $entrevistaId,
                             'codigo'      => $firstCached['codigo'],
@@ -632,33 +662,34 @@ class ProcesamientoController extends Controller
                     continue;
                 }
 
-                $primerAudio = $audios->first();
-                $audioPath = Storage::disk('public')->path($primerAudio->ubicacion);
+                foreach ($audios as $audio) {
+                    $audioPath = Storage::disk('public')->path($audio->ubicacion);
 
-                if (!file_exists($audioPath)) {
-                    $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => null, 'status' => 'error', 'error' => 'Archivo de audio no encontrado en el servidor'];
-                    continue;
+                    if (!file_exists($audioPath)) {
+                        $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => null, 'status' => 'error', 'error' => 'Archivo no encontrado: ' . $audio->nombre_original];
+                        continue;
+                    }
+
+                    $jobId = 'lote_' . $id . '_' . $audio->id_adjunto . '_' . time();
+                    $asyncResult = $this->procesamientoService->transcribeAsync($audioPath, $jobId, $withDiarization, $hfToken);
+
+                    if (!($asyncResult['success'] ?? false)) {
+                        $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => null, 'status' => 'error', 'error' => $asyncResult['error'] ?? 'Error al enviar ' . $audio->nombre_original];
+                        continue;
+                    }
+
+                    Cache::put("transcripcion_job_{$jobId}", [
+                        'entrevista_id' => $id,
+                        'adjunto_id'    => $audio->id_adjunto,
+                        'nombre'        => $audio->nombre_original,
+                        'codigo'        => $codigo,
+                        'saved'         => false,
+                        'user_id'       => Auth::id(),
+                        'ip'            => $request->ip(),
+                    ], now()->addDays(2));
+
+                    $jobs[] = ['id' => $id, 'codigo' => $codigo, 'audio' => $audio->nombre_original, 'job_id' => $jobId, 'status' => 'queued'];
                 }
-
-                $jobId = 'lote_' . $id . '_' . time();
-                $asyncResult = $this->procesamientoService->transcribeAsync($audioPath, $jobId, $withDiarization, $hfToken);
-
-                if (!($asyncResult['success'] ?? false)) {
-                    $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => null, 'status' => 'error', 'error' => $asyncResult['error'] ?? 'Error al enviar al servicio de transcripcion'];
-                    continue;
-                }
-
-                // Guardar mapping job_id → entrevista en cache para cuando se recupere el resultado
-                Cache::put("transcripcion_job_{$jobId}", [
-                    'entrevista_id' => $id,
-                    'adjunto_id'    => $primerAudio->id_adjunto,
-                    'codigo'        => $codigo,
-                    'saved'         => false,
-                    'user_id'       => Auth::id(),
-                    'ip'            => $request->ip(),
-                ], now()->addDays(2));
-
-                $jobs[] = ['id' => $id, 'codigo' => $codigo, 'job_id' => $jobId, 'status' => 'queued'];
 
             } catch (\Exception $e) {
                 $jobs[] = ['id' => $id, 'codigo' => '?', 'job_id' => null, 'status' => 'error', 'error' => $e->getMessage()];
@@ -694,18 +725,25 @@ class ProcesamientoController extends Controller
                     $texto = trim($jobStatus['text'] ?? '');
 
                     if (!empty($texto)) {
+                        $adjunto = Adjunto::find($cached['adjunto_id']);
+                        if ($adjunto) {
+                            $adjunto->texto_extraido = $texto;
+                            $adjunto->texto_extraido_at = now();
+                            $adjunto->save();
+                        }
+
                         $entrevista = Entrevista::find($cached['entrevista_id']);
                         if ($entrevista) {
-                            $entrevista->guardarTranscripcionAutomatizada($texto);
+                            $this->regenerarTranscripcionCompleta($entrevista);
 
                             TrazaActividad::create([
                                 'fecha_hora'  => now(),
                                 'id_usuario'  => $cached['user_id'],
-                                'accion'      => 'iniciar_transcripcion',
-                                'objeto'      => 'entrevista',
-                                'id_registro' => $entrevista->id_e_ind_fvt,
+                                'accion'      => 'completar_transcripcion',
+                                'objeto'      => 'adjunto',
+                                'id_registro' => $cached['adjunto_id'],
                                 'codigo'      => $cached['codigo'],
-                                'referencia'  => 'Transcripcion automatica (lote)',
+                                'referencia'  => 'Transcripcion automatica (lote): ' . ($cached['nombre'] ?? ''),
                                 'ip'          => $cached['ip'],
                             ]);
 
@@ -717,6 +755,22 @@ class ProcesamientoController extends Controller
                         $status = 'failed';
                         $jobStatus['error'] = 'El audio no contiene voz detectable';
                     }
+                }
+
+                // Registrar error si el job falló (solo una vez)
+                if ($status === 'failed' && !($cached['error_traced'] ?? false)) {
+                    TrazaActividad::create([
+                        'fecha_hora'  => now(),
+                        'id_usuario'  => $cached['user_id'],
+                        'accion'      => 'error_transcripcion',
+                        'objeto'      => 'adjunto',
+                        'id_registro' => $cached['adjunto_id'],
+                        'codigo'      => $cached['codigo'],
+                        'referencia'  => ($cached['nombre'] ?? '') . ': ' . ($jobStatus['error'] ?? 'Error desconocido'),
+                        'ip'          => $cached['ip'],
+                    ]);
+                    $cached['error_traced'] = true;
+                    Cache::put("transcripcion_job_{$jobId}", $cached, now()->addDays(2));
                 }
 
                 $resultados[$jobId] = [
@@ -732,6 +786,20 @@ class ProcesamientoController extends Controller
                 ];
 
             } catch (\Exception $e) {
+                if (!($cached['error_traced'] ?? false)) {
+                    TrazaActividad::create([
+                        'fecha_hora'  => now(),
+                        'id_usuario'  => $cached['user_id'],
+                        'accion'      => 'error_transcripcion',
+                        'objeto'      => 'adjunto',
+                        'id_registro' => $cached['adjunto_id'],
+                        'codigo'      => $cached['codigo'],
+                        'referencia'  => ($cached['nombre'] ?? '') . ': ' . $e->getMessage(),
+                        'ip'          => $cached['ip'],
+                    ]);
+                    $cached['error_traced'] = true;
+                    Cache::put("transcripcion_job_{$jobId}", $cached, now()->addDays(2));
+                }
                 $resultados[$jobId] = [
                     'id'     => $cached['entrevista_id'],
                     'codigo' => $cached['codigo'],

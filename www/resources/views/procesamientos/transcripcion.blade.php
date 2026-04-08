@@ -20,7 +20,7 @@
                 <div id="resultado-loading" class="text-center py-4">
                     <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
                     <h5>Transcribiendo audio en segundo plano...</h5>
-                    <p class="text-muted">El servidor esta procesando. Esta pagina consulta el estado automaticamente cada 10 segundos.</p>
+                    <p class="text-muted" id="ind-estado-msg">El servidor esta procesando. Esta pagina consulta el estado automaticamente cada 10 segundos.</p>
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 100%"></div>
                     </div>
@@ -58,6 +58,22 @@
                         <strong>Error en la transcripcion</strong>
                     </div>
                     <p id="res-error-mensaje" class="text-danger"></p>
+                </div>
+
+                <div class="card card-outline card-secondary collapsed-card mt-3">
+                    <div class="card-header py-2">
+                        <h3 class="card-title text-sm"><i class="fas fa-list mr-2"></i>Registro de actividad</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0" style="display: none; max-height: 200px; overflow-y: auto;">
+                        <ul class="list-group list-group-flush" id="ind-log">
+                            <!-- Log entries -->
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -472,6 +488,11 @@ $(document).ready(function() {
 
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
+        limpiarEstadoInd();
+        indLog = [];
+        $('#ind-log').empty();
+        indLogEntry('info', 'Iniciando transcripcion de entrevista ' + codigo + '...');
+
         $.ajax({
             url: '{{ url("procesamientos/transcripcion") }}/' + id + '/iniciar',
             method: 'POST',
@@ -483,14 +504,19 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success && response.job_ids && response.job_ids.length > 0) {
-                    pollIndividualEstado(response.job_ids, {
+                    var ctx = {
                         tipo: 'entrevista',
                         entrevistaId: id,
                         codigo: codigo,
                         btn: btn,
                         row: row,
                         totalAudios: response.total_audios
-                    });
+                    };
+                    indJobIds = response.job_ids;
+                    indCtx = {tipo: ctx.tipo, entrevistaId: ctx.entrevistaId, codigo: ctx.codigo, totalAudios: ctx.totalAudios};
+                    indLogEntry('info', response.job_ids.length + ' audio(s) enviado(s) al servidor.');
+                    guardarEstadoInd();
+                    pollIndividualEstado(response.job_ids, ctx);
                 } else {
                     $('#resultado-loading').hide();
                     mostrarError(response.error || 'No se pudieron enviar los trabajos');
@@ -513,6 +539,7 @@ $(document).ready(function() {
 
     // Polling generico para transcripciones individuales (entrevista completa o adjunto suelto)
     var individualPollTimer = null;
+    var indJobsTracked = {}; // {jobId: lastStatus} para detectar cambios
     function pollIndividualEstado(jobIds, ctx) {
         $.ajax({
             url: '{{ url("procesamientos/transcripcion/individual/estado") }}',
@@ -529,20 +556,37 @@ $(document).ready(function() {
                 var errores = [];
 
                 $.each(resultados, function(jobId, r) {
+                    var estadoAnterior = indJobsTracked[jobId];
+
                     if (r.status === 'completed' && r.saved) {
                         algunoExitoso = true;
                         if (r.text) textoFinal += (textoFinal ? '\n\n' : '') + r.text;
                         totalCaracteres += r.text_length || 0;
                         maxHablantes = Math.max(maxHablantes, r.speakers_count || 0);
                         if (r.diarization_error) diarizacionError = r.diarization_error;
+                        if (estadoAnterior !== 'completed') {
+                            var label = r.nombre || ctx.nombre || ctx.codigo || '';
+                            indLogEntry('success', 'Completado: ' + label + ' (' + (r.text_length || 0).toLocaleString() + ' caracteres, ' + (r.speakers_count || 0) + ' hablante(s))');
+                            if (r.diarization_error) indLogEntry('warning', 'Diarizacion: ' + r.diarization_error);
+                        }
                     } else if (r.status === 'failed' || r.status === 'error') {
                         errores.push(r.error || 'Error desconocido');
+                        if (estadoAnterior !== 'failed' && estadoAnterior !== 'error') {
+                            indLogEntry('danger', 'Error: ' + (r.error || 'Error desconocido'));
+                        }
                     } else {
                         todosTerminados = false;
+                        if (r.status === 'processing' && estadoAnterior === 'queued') {
+                            indLogEntry('info', (r.nombre || ctx.nombre || ctx.codigo || '') + ': transcribiendo...');
+                        }
                     }
+                    indJobsTracked[jobId] = r.status;
                 });
 
+                guardarEstadoInd();
+
                 if (!todosTerminados) {
+                    $('#ind-estado-msg').text('El servidor esta procesando. Proxima consulta en 10 segundos...');
                     individualPollTimer = setTimeout(function() {
                         pollIndividualEstado(jobIds, ctx);
                     }, 10000);
@@ -550,9 +594,11 @@ $(document).ready(function() {
                 }
 
                 // Todos terminaron
+                limpiarEstadoInd();
                 $('#resultado-loading').hide();
 
                 if (algunoExitoso) {
+                    indLogEntry('success', 'Transcripcion completada. ' + totalCaracteres.toLocaleString() + ' caracteres totales.');
                     $('#card-resultado').removeClass('card-primary card-danger').addClass('card-success');
                     $('#resultado-exito').show();
                     $('#res-codigo').text(ctx.nombre || ctx.codigo || '');
@@ -579,7 +625,7 @@ $(document).ready(function() {
                         $badge.removeClass('badge-secondary').addClass('badge-success')
                               .html('<i class="fas fa-check mr-1"></i>Transcrito');
 
-                        ctx.btn.removeClass('btn-primary').addClass('btn-success')
+                        if (ctx.btn) ctx.btn.removeClass('btn-primary').addClass('btn-success')
                            .html('<i class="fas fa-check"></i>').prop('disabled', false);
 
                         // Recalcular estado entrevista padre
@@ -603,11 +649,11 @@ $(document).ready(function() {
                                    .html('<i class="fas fa-check mr-1"></i>Transcrito');
                         });
                         var hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
-                        ctx.row.find('td:nth-child(4)').html(
+                        if (ctx.row) ctx.row.find('td:nth-child(4)').html(
                             '<span class="badge badge-success d-block mb-1"><i class="fas fa-check mr-1"></i>Transcrita</span>' +
                             '<small class="text-muted">' + hoy + '</small>'
                         );
-                        ctx.btn.removeClass('btn-primary').addClass('btn-success')
+                        if (ctx.btn) ctx.btn.removeClass('btn-primary').addClass('btn-success')
                            .html('<i class="fas fa-check"></i>').prop('disabled', true);
                     }
 
@@ -618,12 +664,15 @@ $(document).ready(function() {
                         );
                     }
                 } else {
+                    indLogEntry('danger', 'Todos los archivos fallaron.');
                     mostrarError(errores.join('; ') || 'Todos los archivos fallaron');
-                    ctx.btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
+                    if (ctx.btn) ctx.btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
                 }
             },
             error: function() {
                 // Error de red en el polling — reintentar
+                indLogEntry('warning', 'Error de conexion. Reintentando en 15 segundos...');
+                guardarEstadoInd();
                 individualPollTimer = setTimeout(function() {
                     pollIndividualEstado(jobIds, ctx);
                 }, 15000);
@@ -666,6 +715,11 @@ $(document).ready(function() {
 
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
+        limpiarEstadoInd();
+        indLog = [];
+        $('#ind-log').empty();
+        indLogEntry('info', 'Iniciando transcripcion de: ' + nombre);
+
         $.ajax({
             url: '{{ url("procesamientos/transcripcion/adjunto") }}/' + idAdjunto,
             method: 'POST',
@@ -677,13 +731,18 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success && response.job_id) {
-                    pollIndividualEstado([response.job_id], {
+                    var ctx = {
                         tipo: 'adjunto',
                         entrevistaId: entrevistaId,
                         adjuntoId: idAdjunto,
                         nombre: nombre,
                         btn: btn
-                    });
+                    };
+                    indJobIds = [response.job_id];
+                    indCtx = {tipo: ctx.tipo, entrevistaId: ctx.entrevistaId, adjuntoId: ctx.adjuntoId, nombre: ctx.nombre};
+                    indLogEntry('info', 'Trabajo enviado al servidor.');
+                    guardarEstadoInd();
+                    pollIndividualEstado([response.job_id], ctx);
                 } else {
                     $('#resultado-loading').hide();
                     mostrarError(response.error || 'No se pudo enviar el trabajo');
@@ -712,8 +771,9 @@ $(document).ready(function() {
         iniciarProcesamientoLote(ids);
     });
 
-    // Restaurar estado de lote previo si existe
+    // Restaurar estado de sesiones previas si existe
     restaurarEstadoLote();
+    restaurarEstadoInd();
 
     // Cancelar lote (detiene el polling local; el servidor sigue procesando)
     $('#btn-cancelar-lote').on('click', function() {
@@ -733,6 +793,10 @@ var loteExitosos = 0;
 var loteErrores = 0;
 var loteJobs = []; // [{id, codigo, job_id, status}]
 var loteLog = []; // [{tipo, mensaje, hora}]
+
+var indJobIds = [];
+var indCtx = null; // {tipo, entrevistaId, adjuntoId, nombre, codigo, totalAudios}
+var indLog = [];
 
 function iniciarProcesamientoLote(ids) {
     loteExitosos = 0;
@@ -921,11 +985,12 @@ function actualizarProgreso(procesados, total) {
 function addLogEntry(tipo, mensaje) {
     var hora = new Date().toLocaleTimeString();
     loteLog.push({tipo: tipo, mensaje: mensaje, hora: hora});
-    renderLogEntry(tipo, mensaje, hora);
+    renderLogEntry(tipo, mensaje, hora, '#lote-log');
     guardarEstadoLote();
 }
 
-function renderLogEntry(tipo, mensaje, hora) {
+function renderLogEntry(tipo, mensaje, hora, selector) {
+    selector = selector || '#lote-log';
     var iconClass = {
         'info': 'fas fa-info-circle text-info',
         'success': 'fas fa-check-circle text-success',
@@ -936,11 +1001,72 @@ function renderLogEntry(tipo, mensaje, hora) {
                '<i class="' + (iconClass[tipo] || iconClass['info']) + ' mr-2"></i>' +
                '<small class="text-muted mr-2">' + hora + '</small>' +
                mensaje + '</li>';
-    $('#lote-log').append(html);
+    $(selector).append(html);
 
     // Auto-scroll
-    var container = $('#lote-log').parent();
+    var container = $(selector).parent();
     container.scrollTop(container[0].scrollHeight);
+}
+
+function indLogEntry(tipo, mensaje) {
+    var hora = new Date().toLocaleTimeString();
+    indLog.push({tipo: tipo, mensaje: mensaje, hora: hora});
+    renderLogEntry(tipo, mensaje, hora, '#ind-log');
+}
+
+function guardarEstadoInd() {
+    if (!indCtx || !indJobIds.length) return;
+    try {
+        localStorage.setItem('ind_transcripcion', JSON.stringify({
+            jobIds: indJobIds,
+            ctx: indCtx,
+            log: indLog,
+            ts: Date.now()
+        }));
+    } catch(e) {}
+}
+
+function limpiarEstadoInd() {
+    try { localStorage.removeItem('ind_transcripcion'); } catch(e) {}
+}
+
+function restaurarEstadoInd() {
+    try {
+        var raw = localStorage.getItem('ind_transcripcion');
+        if (!raw) return;
+        var estado = JSON.parse(raw);
+        if (!estado.jobIds || !estado.jobIds.length || (Date.now() - estado.ts) > 86400000) {
+            limpiarEstadoInd();
+            return;
+        }
+
+        indJobIds = estado.jobIds;
+        indCtx = estado.ctx;
+        indLog = estado.log || [];
+
+        // Restaurar log en panel
+        indLog.forEach(function(entry) {
+            renderLogEntry(entry.tipo, entry.mensaje, entry.hora, '#ind-log');
+        });
+
+        $('#diarization-warning').remove();
+        $('#panel-resultado').show();
+        $('#resultado-loading').show();
+        $('#resultado-exito, #resultado-error').hide();
+        $('#card-resultado').removeClass('card-success card-danger').addClass('card-primary');
+        $('html, body').animate({ scrollTop: 0 }, 300);
+
+        indLogEntry('info', 'Sesion retomada tras recargar la pagina.');
+        $('#ind-estado-msg').text('Retomando seguimiento...');
+
+        // ctx sin refs DOM — btn/row no disponibles tras recarga, se omiten
+        var ctx = indCtx;
+        individualPollTimer = setTimeout(function() {
+            pollIndividualEstado(indJobIds, ctx);
+        }, 2000);
+    } catch(e) {
+        limpiarEstadoInd();
+    }
 }
 
 function guardarEstadoLote() {
@@ -986,7 +1112,7 @@ function restaurarEstadoLote() {
 
         // Restaurar log
         loteLog.forEach(function(entry) {
-            renderLogEntry(entry.tipo, entry.mensaje, entry.hora);
+            renderLogEntry(entry.tipo, entry.mensaje, entry.hora, '#lote-log');
         });
 
         $('#panel-lote').show();

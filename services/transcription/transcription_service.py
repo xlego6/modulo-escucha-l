@@ -492,7 +492,22 @@ def get_service():
 def api_status():
     """Estado del servicio"""
     svc = get_service()
-    return jsonify(svc.get_status())
+    status = svc.get_status()
+    status['queue_size'] = job_queue.qsize()
+    status['jobs'] = {
+        jid: {k: v for k, v in info.items() if k != 'text'}
+        for jid, info in job_status.items()
+    }
+    return jsonify(status)
+
+
+@app.route('/jobs', methods=['GET'])
+def api_jobs():
+    """Lista todos los trabajos y su estado actual"""
+    return jsonify({
+        jid: {k: v for k, v in info.items() if k != 'text'}
+        for jid, info in job_status.items()
+    })
 
 
 @app.route('/transcribe', methods=['POST'])
