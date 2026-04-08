@@ -19,6 +19,7 @@ use App\Http\Controllers\MapaController;
 use App\Http\Controllers\ProcesamientoController;
 use App\Http\Controllers\AyudaController;
 use App\Http\Controllers\RolController;
+use App\Http\Controllers\ImportacionMasivaController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -75,6 +76,19 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['nivel:estadisticas'])->group(function () {
             Route::get('estadisticas', [EstadisticaController::class, 'index'])->name('estadisticas.index');
             Route::get('estadisticas/datos', [EstadisticaController::class, 'datos'])->name('estadisticas.datos');
+        });
+
+        // Importación masiva: Solo Admin(1)
+        Route::middleware(['nivel:importacion'])->group(function () {
+            Route::get('importacion-masiva',                              [ImportacionMasivaController::class, 'index'])->name('importacion.index');
+            Route::get('importacion-masiva/crear',                        [ImportacionMasivaController::class, 'create'])->name('importacion.create');
+            Route::post('importacion-masiva/subir',                       [ImportacionMasivaController::class, 'subir'])->name('importacion.subir');
+            Route::get('importacion-masiva/{id}/mapear',                  [ImportacionMasivaController::class, 'mapear'])->name('importacion.mapear');
+            Route::post('importacion-masiva/{id}/mapear',                 [ImportacionMasivaController::class, 'guardarMapeos'])->name('importacion.guardar_mapeos');
+            Route::get('importacion-masiva/{id}/confirmar',               [ImportacionMasivaController::class, 'confirmar'])->name('importacion.confirmar');
+            Route::post('importacion-masiva/{id}/procesar',               [ImportacionMasivaController::class, 'procesar'])->name('importacion.procesar');
+            Route::get('importacion-masiva/{id}/monitor',                 [ImportacionMasivaController::class, 'monitor'])->name('importacion.monitor');
+            Route::get('importacion-masiva/{id}/estado',                  [ImportacionMasivaController::class, 'estado'])->name('importacion.estado');
         });
 
         // Exportar Excel: Solo Admin(1)

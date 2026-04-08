@@ -129,6 +129,16 @@
                     </li>
                     @endif
 
+                    {{-- Importación masiva --}}
+                    @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'importacion'))
+                    <li class="nav-item">
+                        <a href="{{ route('importacion.index') }}" class="nav-link {{ request()->routeIs('importacion.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-file-import"></i>
+                            <p>Importación masiva</p>
+                        </a>
+                    </li>
+                    @endif
+
                     {{-- Exportar Excel --}}
                     @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'exportar'))
                     <li class="nav-item">

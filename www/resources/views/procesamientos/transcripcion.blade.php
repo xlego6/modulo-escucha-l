@@ -124,7 +124,7 @@
                 </div>
             </div>
             <div class="card-footer" id="lote-footer" style="display: none;">
-                <button class="btn btn-secondary" onclick="$('#panel-lote').slideUp(); location.reload();">
+                <button class="btn btn-secondary" onclick="limpiarEstadoLote(); $('#panel-lote').slideUp(); location.reload();">
                     <i class="fas fa-check mr-2"></i>Cerrar y Actualizar
                 </button>
             </div>
@@ -712,6 +712,9 @@ $(document).ready(function() {
         iniciarProcesamientoLote(ids);
     });
 
+    // Restaurar estado de lote previo si existe
+    restaurarEstadoLote();
+
     // Cancelar lote (detiene el polling local; el servidor sigue procesando)
     $('#btn-cancelar-lote').on('click', function() {
         if (window.lotePollTimer) {
@@ -729,11 +732,14 @@ $(document).ready(function() {
 var loteExitosos = 0;
 var loteErrores = 0;
 var loteJobs = []; // [{id, codigo, job_id, status}]
+var loteLog = []; // [{tipo, mensaje, hora}]
 
 function iniciarProcesamientoLote(ids) {
     loteExitosos = 0;
     loteErrores = 0;
     loteJobs = [];
+    loteLog = [];
+    limpiarEstadoLote();
     $('#lote-procesados, #lote-exitosos, #lote-errores').text('0');
     $('#lote-total').text(ids.length);
     $('#lote-progress-bar').css('width', '0%');
@@ -768,6 +774,7 @@ function iniciarProcesamientoLote(ids) {
             }
 
             loteJobs = response.jobs;
+            guardarEstadoLote();
 
             // Marcar errores inmediatos (archivo no encontrado, etc.)
             loteJobs.forEach(function(job) {
@@ -885,6 +892,7 @@ function pollLoteEstado() {
             var procesados = loteExitosos + loteErrores;
             $('#lote-procesados').text(procesados);
             actualizarProgreso(procesados, loteJobs.length);
+            guardarEstadoLote();
 
             if (hayPendientes) {
                 var pendientesCount = loteJobs.filter(function(j) {
@@ -911,13 +919,19 @@ function actualizarProgreso(procesados, total) {
 }
 
 function addLogEntry(tipo, mensaje) {
+    var hora = new Date().toLocaleTimeString();
+    loteLog.push({tipo: tipo, mensaje: mensaje, hora: hora});
+    renderLogEntry(tipo, mensaje, hora);
+    guardarEstadoLote();
+}
+
+function renderLogEntry(tipo, mensaje, hora) {
     var iconClass = {
         'info': 'fas fa-info-circle text-info',
         'success': 'fas fa-check-circle text-success',
         'warning': 'fas fa-exclamation-triangle text-warning',
         'danger': 'fas fa-times-circle text-danger'
     };
-    var hora = new Date().toLocaleTimeString();
     var html = '<li class="list-group-item py-1 px-2 text-sm">' +
                '<i class="' + (iconClass[tipo] || iconClass['info']) + ' mr-2"></i>' +
                '<small class="text-muted mr-2">' + hora + '</small>' +
@@ -927,6 +941,74 @@ function addLogEntry(tipo, mensaje) {
     // Auto-scroll
     var container = $('#lote-log').parent();
     container.scrollTop(container[0].scrollHeight);
+}
+
+function guardarEstadoLote() {
+    try {
+        localStorage.setItem('lote_transcripcion', JSON.stringify({
+            jobs: loteJobs,
+            exitosos: loteExitosos,
+            errores: loteErrores,
+            log: loteLog,
+            ts: Date.now()
+        }));
+    } catch(e) {}
+}
+
+function limpiarEstadoLote() {
+    try { localStorage.removeItem('lote_transcripcion'); } catch(e) {}
+}
+
+function restaurarEstadoLote() {
+    try {
+        var raw = localStorage.getItem('lote_transcripcion');
+        if (!raw) return;
+        var estado = JSON.parse(raw);
+        // Descartar si es de más de 24 horas o no tiene jobs
+        if (!estado.jobs || !estado.jobs.length || (Date.now() - estado.ts) > 86400000) {
+            limpiarEstadoLote();
+            return;
+        }
+
+        loteJobs = estado.jobs;
+        loteExitosos = estado.exitosos || 0;
+        loteErrores = estado.errores || 0;
+        loteLog = estado.log || [];
+
+        // Restaurar contadores y barra
+        var total = loteJobs.length;
+        var procesados = loteExitosos + loteErrores;
+        $('#lote-total').text(total);
+        $('#lote-procesados').text(procesados);
+        $('#lote-exitosos').text(loteExitosos);
+        $('#lote-errores').text(loteErrores);
+        actualizarProgreso(procesados, total);
+
+        // Restaurar log
+        loteLog.forEach(function(entry) {
+            renderLogEntry(entry.tipo, entry.mensaje, entry.hora);
+        });
+
+        $('#panel-lote').show();
+        $('html, body').animate({ scrollTop: 0 }, 300);
+
+        var pendientes = loteJobs.filter(function(j) {
+            return j.job_id !== null && j.status !== 'completed' && j.status !== 'failed' && j.status !== 'error';
+        });
+
+        if (pendientes.length > 0) {
+            addLogEntry('info', 'Sesión retomada tras recargar la página — ' + pendientes.length + ' trabajo(s) pendiente(s).');
+            $('#lote-mensaje').text('Retomando seguimiento de ' + pendientes.length + ' trabajo(s) pendiente(s)...');
+            window.lotePollTimer = setTimeout(pollLoteEstado, 2000);
+        } else {
+            var msg = 'Procesamiento completado: ' + loteExitosos + ' exitoso(s), ' + loteErrores + ' error(es)';
+            $('#lote-status').html('<i class="fas fa-check-circle text-success mr-2"></i><span>' + msg + '</span>');
+            $('#lote-mensaje').text(msg);
+            $('#lote-footer').show();
+        }
+    } catch(e) {
+        limpiarEstadoLote();
+    }
 }
 
 function finalizarLote() {
