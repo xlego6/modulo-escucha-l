@@ -37,6 +37,38 @@
 
     <form method="POST" action="{{ route('importacion.subir') }}" enctype="multipart/form-data">
         @csrf
+        <input type="hidden" name="modo" id="modo_hidden" value="crear">
+
+        <!-- Selector de modo -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card card-outline card-dark">
+                    <div class="card-header"><h3 class="card-title">Modo de importación</h3></div>
+                    <div class="card-body pb-2">
+                        <div class="d-flex">
+                            <div class="custom-control custom-radio mr-4">
+                                <input type="radio" id="modo_crear" name="modo" class="custom-control-input" value="crear" checked>
+                                <label class="custom-control-label" for="modo_crear">
+                                    <strong>Crear expedientes nuevos</strong>
+                                    <small class="text-muted d-block">El sistema genera un código nuevo por cada fila del CSV.</small>
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="modo_actualizar" name="modo" class="custom-control-input" value="actualizar">
+                                <label class="custom-control-label" for="modo_actualizar">
+                                    <strong>Actualizar expedientes existentes</strong>
+                                    <small class="text-muted d-block">
+                                        El CSV debe incluir el código de entrevista en la <strong>columna 79</strong>
+                                        (p.&nbsp;ej. <code>TES-0001-001</code>). Se actualizan metadatos y se agregan archivos nuevos.
+                                    </small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Columna izquierda: CSV y entrevistador -->
             <div class="col-md-6">
@@ -57,8 +89,8 @@
                             </small>
                         </div>
 
-                        <div class="form-group">
-                            <label for="id_entrevistador">Entrevistador para asignar expedientes <span class="text-danger">*</span></label>
+                        <div class="form-group" id="grupo_entrevistador">
+                            <label for="id_entrevistador">Entrevistador para asignar expedientes <span class="text-danger js-req-marker">*</span></label>
                             <select class="form-control select2" id="id_entrevistador" name="id_entrevistador" required>
                                 <option value="">— Seleccionar —</option>
                                 @foreach($entrevistadores as $ent)
@@ -229,6 +261,21 @@ document.getElementById('mappings-container').addEventListener('click', function
         e.target.closest('.mapping-row').remove();
     }
 });
+
+// Modo crear/actualizar
+function aplicarModo(modo) {
+    var $grp = $('#grupo_entrevistador');
+    var $sel = $('#id_entrevistador');
+    if (modo === 'actualizar') {
+        $grp.hide();
+        $sel.prop('required', false);
+    } else {
+        $grp.show();
+        $sel.prop('required', true);
+    }
+}
+$('input[name="modo"]').on('change', function () { aplicarModo(this.value); });
+aplicarModo($('input[name="modo"]:checked').val());
 
 // Select2
 $(document).ready(function () {

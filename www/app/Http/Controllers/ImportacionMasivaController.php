@@ -51,13 +51,16 @@ class ImportacionMasivaController extends Controller
 
     public function subir(Request $request)
     {
+        $modo = $request->input('modo', 'crear');
+
         $request->validate([
-            'archivo_csv'              => 'required|file|mimes:csv,txt|max:20480',
-            'id_entrevistador'         => 'required|integer|exists:esclarecimiento.entrevistador,id_entrevistador',
-            'path_mappings'            => 'nullable|array',
-            'path_mappings.*.unc'      => 'nullable|string|max:500',
-            'path_mappings.*.linux'    => 'nullable|string|max:500',
+            'archivo_csv'               => 'required|file|mimes:csv,txt|max:20480',
+            'id_entrevistador'          => ($modo === 'crear' ? 'required' : 'nullable') . '|integer|exists:esclarecimiento.entrevistador,id_entrevistador',
+            'path_mappings'             => 'nullable|array',
+            'path_mappings.*.unc'       => 'nullable|string|max:500',
+            'path_mappings.*.linux'     => 'nullable|string|max:500',
             'tratamiento_transcripcion' => 'nullable|in:adjunto,automatizada,ambos',
+            'modo'                      => 'nullable|in:crear,actualizar',
         ]);
 
         // Guardar CSV en storage temporal
@@ -120,11 +123,12 @@ class ImportacionMasivaController extends Controller
             'estado'           => ImportacionMasiva::ESTADO_MAPEANDO,
             'total_expedientes' => count($expedientes),
             'configuracion'    => [
-                'path_mappings'              => $mappings,
-                'id_entrevistador'           => (int) $request->id_entrevistador,
-                'mapeos_catalogos'           => [],
-                'mapeos_geo'                 => [],
-                'tratamiento_transcripcion'  => $request->input('tratamiento_transcripcion', 'automatizada'),
+                'path_mappings'             => $mappings,
+                'id_entrevistador'          => (int) $request->id_entrevistador,
+                'mapeos_catalogos'          => [],
+                'mapeos_geo'                => [],
+                'tratamiento_transcripcion' => $request->input('tratamiento_transcripcion', 'automatizada'),
+                'modo'                      => $modo,
             ],
         ]);
 
@@ -140,7 +144,7 @@ class ImportacionMasivaController extends Controller
                 ],
                 'filas_originales' => $exp['filas_originales'],
                 'archivos'         => $exp['archivos_resueltos'],
-                'advertencias'     => $this->generarAdvertencias($exp),
+                'advertencias'     => $this->generarAdvertencias($exp, $modo),
             ]);
         }
 
@@ -344,35 +348,39 @@ class ImportacionMasivaController extends Controller
         }
     }
 
-    private function generarAdvertencias(array $exp): array
+    private function generarAdvertencias(array $exp, string $modo = 'crear'): array
     {
         $advertencias = [];
-        $datos = $exp['datos']; // array indexado de columnas raw
+        $datos = $exp['datos'];
 
-        $camposRequeridos = [
-            8  => 'Título',
-            12 => 'Tipo de testimonio',
-            13 => 'Formato del testimonio',
-            17 => 'Modalidad',
-            18 => 'Fecha toma inicial',
-            19 => 'Fecha toma final',
-        ];
-
-        foreach ($camposRequeridos as $col => $etiqueta) {
-            $val = trim($datos[$col] ?? '');
-            if ($val === '' || strtolower($val) === 'n/a') {
-                $advertencias[] = "Campo requerido faltante: $etiqueta";
+        if ($modo === 'actualizar') {
+            // En modo actualizar lo único indispensable es el código de entrevista (col 79)
+            $codigo = trim($datos[79] ?? '');
+            if ($codigo === '') {
+                $advertencias[] = 'Columna 79 (código entrevista) vacía — este expediente no se puede actualizar';
+            }
+        } else {
+            $camposRequeridos = [
+                8  => 'Título',
+                12 => 'Tipo de testimonio',
+                13 => 'Formato del testimonio',
+                17 => 'Modalidad',
+                18 => 'Fecha toma inicial',
+                19 => 'Fecha toma final',
+            ];
+            foreach ($camposRequeridos as $col => $etiqueta) {
+                $val = trim($datos[$col] ?? '');
+                if ($val === '' || strtolower($val) === 'n/a') {
+                    $advertencias[] = "Campo requerido faltante: $etiqueta";
+                }
+            }
+            if (empty($exp['personas'])) {
+                $advertencias[] = 'No se detectaron datos de testimoniante(s)';
             }
         }
 
-        // Verificar que hay al menos un archivo
         if (empty($exp['archivos_csv'])) {
             $advertencias[] = 'No se encontraron rutas de archivos en este expediente';
-        }
-
-        // Sin personas
-        if (empty($exp['personas'])) {
-            $advertencias[] = 'No se detectaron datos de testimoniante(s)';
         }
 
         return $advertencias;
