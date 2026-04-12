@@ -260,8 +260,28 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
             $carpetaStorage = 'adjuntos/' . $entrevista->entrevista_codigo;
             Storage::disk('public')->makeDirectory($carpetaStorage);
 
+            // Pasada 1: todos los archivos excepto transcripciones .txt
+            // Se construye un mapa fila_idx → Adjunto de audio para usarlo en la pasada 2.
+            $audioAdjuntos = [];
             foreach ($archivos as $arch) {
-                $this->procesarArchivo($arch, $entrevista, $carpetaStorage, $svc, $tratamientoTranscripcion);
+                if ($arch['id_tipo'] === 313) continue;
+                $adj = $this->procesarArchivo($arch, $entrevista, $carpetaStorage, $svc, $tratamientoTranscripcion);
+                if ($adj && $arch['id_tipo'] === 310) {
+                    $audioAdjuntos[$arch['fila_idx'] ?? count($audioAdjuntos)] = $adj;
+                }
+            }
+
+            // Pasada 2: transcripciones (.txt u otros tipos 313)
+            $hayTranscripciones = false;
+            foreach ($archivos as $arch) {
+                if ($arch['id_tipo'] !== 313) continue;
+                $this->procesarArchivo($arch, $entrevista, $carpetaStorage, $svc, $tratamientoTranscripcion, $audioAdjuntos);
+                $hayTranscripciones = true;
+            }
+
+            // Regenerar transcripción consolidada (id_tipo 312) a partir de los texto_extraido individuales
+            if ($hayTranscripciones && in_array($tratamientoTranscripcion, ['automatizada', 'ambos'])) {
+                $this->regenerarTranscripcionCompleta($entrevista);
             }
 
             // ------------------------------------------------------------------
@@ -303,11 +323,26 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
     // Helpers de archivos
     // -------------------------------------------------------------------------
 
-    private function procesarArchivo(array $arch, Entrevista $entrevista, string $carpetaStorage, ImportacionMasivaService $svc, string $tratamientoTranscripcion = 'automatizada'): void
-    {
+    /**
+     * Procesa un archivo del expediente.
+     *
+     * Para archivos de audio (id_tipo 310) retorna el Adjunto creado, para que
+     * la pasada de transcripciones pueda asociarlos por fila_idx.
+     * Para el resto retorna null.
+     *
+     * $audioAdjuntos: mapa [fila_idx => Adjunto] construido en la pasada 1.
+     */
+    private function procesarArchivo(
+        array $arch,
+        Entrevista $entrevista,
+        string $carpetaStorage,
+        ImportacionMasivaService $svc,
+        string $tratamientoTranscripcion = 'automatizada',
+        array $audioAdjuntos = []
+    ): ?Adjunto {
         if (!($arch['existe'] ?? false) || ($arch['es_directorio'] ?? false)) {
             Log::warning("ImportacionJob: archivo no encontrado o es directorio: " . ($arch['ruta_linux'] ?? $arch['ruta']));
-            return;
+            return null;
         }
 
         $rutaFuente = $arch['ruta_linux'];
@@ -318,40 +353,96 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
         // Archivos de transcripción (col. 77): tratamiento configurable
         if ($idTipo === 313) {
             if ($tratamientoTranscripcion === 'automatizada' || $tratamientoTranscripcion === 'ambos') {
-                $this->ingestarComoTranscripcionAutomatizada($rutaFuente, $entrevista);
+                // Buscar el Adjunto de audio del mismo renglón del CSV
+                $filaIdx       = $arch['fila_idx'] ?? null;
+                $audioAdjunto  = ($filaIdx !== null && isset($audioAdjuntos[$filaIdx]))
+                    ? $audioAdjuntos[$filaIdx]
+                    : null;
+                $this->ingestarComoTranscripcionAutomatizada($rutaFuente, $entrevista, $audioAdjunto);
             }
             if ($tratamientoTranscripcion === 'adjunto' || $tratamientoTranscripcion === 'ambos') {
                 $this->copiarDirecto($rutaFuente, $entrevista, $carpetaStorage, $idTipo, $tamano);
             }
-            return;
+            return null;
         }
 
         if ($convertir && $idTipo === 310) {
             $this->copiarConvertirM4a($rutaFuente, $entrevista, $carpetaStorage);
-        } else {
-            $this->copiarDirecto($rutaFuente, $entrevista, $carpetaStorage, $idTipo, $tamano);
+            // Devolver el adjunto recién creado para el mapa de pares
+            return Adjunto::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+                ->where('id_tipo', 310)
+                ->latest('id_adjunto')
+                ->first();
         }
+
+        return $this->copiarDirecto($rutaFuente, $entrevista, $carpetaStorage, $idTipo, $tamano);
     }
 
     /**
-     * Lee el contenido de un archivo de texto y lo guarda como transcripción automatizada.
+     * Lee el .txt y guarda su contenido como transcripción automatizada.
+     *
+     * Si se proporciona $audioAdjunto, el texto se guarda en ese adjunto de audio
+     * (texto_extraido), igual que hace Whisper. Así cada audio conserva su propia
+     * transcripción y la vista las muestra individualmente.
+     *
+     * Si no hay adjunto de audio asociado (caso fallback), llama directamente a
+     * guardarTranscripcionAutomatizada() para guardar el texto consolidado.
      */
-    private function ingestarComoTranscripcionAutomatizada(string $rutaFuente, Entrevista $entrevista): void
-    {
+    private function ingestarComoTranscripcionAutomatizada(
+        string $rutaFuente,
+        Entrevista $entrevista,
+        ?Adjunto $audioAdjunto = null
+    ): void {
         $contenido = file_get_contents($rutaFuente);
         if ($contenido === false) {
             throw new \RuntimeException("No se pudo leer el archivo de transcripción: $rutaFuente");
         }
 
-        // Detectar y eliminar BOM UTF-8 si existe
         if (str_starts_with($contenido, "\xEF\xBB\xBF")) {
             $contenido = substr($contenido, 3);
         }
 
-        $entrevista->guardarTranscripcionAutomatizada(trim($contenido), basename($rutaFuente));
+        $contenido = trim($contenido);
+
+        if ($audioAdjunto) {
+            // Guardar en el adjunto del audio correspondiente, igual que Whisper
+            $audioAdjunto->texto_extraido    = $contenido;
+            $audioAdjunto->texto_extraido_at = now();
+            $audioAdjunto->save();
+        } else {
+            // Fallback: sin audio asociado, guardar directo en el adjunto consolidado
+            $entrevista->guardarTranscripcionAutomatizada($contenido, basename($rutaFuente));
+        }
     }
 
-    private function copiarDirecto(string $rutaFuente, Entrevista $entrevista, string $carpetaStorage, int $idTipo, int $tamano): void
+    /**
+     * Concatena el texto_extraido de todos los audios del expediente y actualiza
+     * el adjunto de transcripción automatizada consolidada (id_tipo 312).
+     * Replica la lógica de ProcesamientoController::regenerarTranscripcionCompleta().
+     */
+    private function regenerarTranscripcionCompleta(Entrevista $entrevista): void
+    {
+        $adjuntos = Adjunto::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+            ->where(function ($q) {
+                $q->where('tipo_mime', 'like', '%audio%')
+                  ->orWhere('tipo_mime', 'like', '%video%');
+            })
+            ->whereNotNull('texto_extraido')
+            ->orderBy('id_adjunto')
+            ->get();
+
+        if ($adjuntos->count() > 1) {
+            $textoCompleto = '';
+            foreach ($adjuntos as $adj) {
+                $textoCompleto .= "\n\n=== {$adj->nombre_original} ===\n\n" . $adj->texto_extraido;
+            }
+            $entrevista->guardarTranscripcionAutomatizada(trim($textoCompleto));
+        } elseif ($adjuntos->count() === 1) {
+            $entrevista->guardarTranscripcionAutomatizada($adjuntos->first()->texto_extraido);
+        }
+    }
+
+    private function copiarDirecto(string $rutaFuente, Entrevista $entrevista, string $carpetaStorage, int $idTipo, int $tamano): ?Adjunto
     {
         $ext          = strtolower(pathinfo($rutaFuente, PATHINFO_EXTENSION));
         $nombreDest   = time() . '_' . Str::random(8) . '.' . $ext;
@@ -368,7 +459,7 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
         // Verificar duplicado por hash en este expediente
         if (Adjunto::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)->where('md5', $md5)->exists()) {
             @unlink($rutaDest);
-            return;
+            return null;
         }
 
         $adjunto = Adjunto::create([
@@ -390,6 +481,8 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
                 $adjunto->save();
             }
         }
+
+        return $adjunto;
     }
 
     private function copiarConvertirM4a(string $rutaFuente, Entrevista $entrevista, string $carpetaStorage): void
