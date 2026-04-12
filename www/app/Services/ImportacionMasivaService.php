@@ -167,13 +167,15 @@ class ImportacionMasivaService
                 }
             }
 
+            // El índice de fila dentro del grupo se captura ANTES de agregar
+            $filaIdx = count($grupos[$id_csv]['filas_originales']);
             $grupos[$id_csv]['filas_originales'][] = $fila;
 
             // Extraer persona(s) de esta fila
             $this->extraerPersonas($grupos[$id_csv], $fila);
 
-            // Extraer rutas de archivo de esta fila
-            $this->extraerArchivos($grupos[$id_csv], $fila);
+            // Extraer rutas de archivo de esta fila (con índice para preservar pareja audio↔transcripción)
+            $this->extraerArchivos($grupos[$id_csv], $fila, $filaIdx);
         }
 
         fclose($handle);
@@ -254,8 +256,11 @@ class ImportacionMasivaService
 
     /**
      * Extrae las rutas de archivo de una fila y las añade al grupo.
+     *
+     * $filaIdx: índice de la fila dentro del grupo (0-based). Permite al job
+     * emparejar cada transcripción con el audio del mismo renglón del CSV.
      */
-    private function extraerArchivos(array &$grupo, array $fila): void
+    private function extraerArchivos(array &$grupo, array $fila, int $filaIdx = 0): void
     {
         $candidatos = [
             ['ruta' => trim($fila[2]  ?? ''), 'columna' => 'Ruta de resguardo (audio/video)', 'id_tipo' => 310],
@@ -271,7 +276,7 @@ class ImportacionMasivaService
             $yaExiste = collect($grupo['archivos_csv'])->contains(fn($a) => $a['ruta'] === $c['ruta']);
             if ($yaExiste) continue;
 
-            $grupo['archivos_csv'][] = $c;
+            $grupo['archivos_csv'][] = array_merge($c, ['fila_idx' => $filaIdx]);
         }
     }
 
