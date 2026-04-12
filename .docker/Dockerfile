@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
         ffmpeg \
         libreoffice-writer \
         fonts-liberation \
+        supervisor \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd \
     && docker-php-ext-install -j$(nproc) intl \
@@ -27,4 +28,9 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
+# Supervisord: gestiona php-fpm + queue worker
+COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 WORKDIR /var/www
+
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
