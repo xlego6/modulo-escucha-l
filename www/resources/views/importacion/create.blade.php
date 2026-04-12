@@ -144,6 +144,38 @@
                         El sistema lo buscará automáticamente en esa carpeta.<br>
                         Los archivos de audio/video (columna «Ruta de resguardo») siguen requiriendo el mapeo NAS de arriba.
                     </p>
+
+                    <hr>
+
+                    <div class="form-group mb-0">
+                        <label><i class="fas fa-file-alt"></i> Tratamiento de archivos de transcripción (col. 77)</label>
+                        <div class="mt-1">
+                            <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" id="tr_adjunto" name="tratamiento_transcripcion"
+                                    class="custom-control-input" value="adjunto">
+                                <label class="custom-control-label" for="tr_adjunto">
+                                    Guardar como adjunto documental
+                                    <small class="text-muted d-block">El archivo queda disponible para descarga, sin ingresar su contenido.</small>
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio custom-control-inline mt-2">
+                                <input type="radio" id="tr_automatizada" name="tratamiento_transcripcion"
+                                    class="custom-control-input" value="automatizada" checked>
+                                <label class="custom-control-label" for="tr_automatizada">
+                                    Ingestar como transcripción automatizada
+                                    <small class="text-muted d-block">El contenido del .txt se guarda en el campo de transcripción automatizada del expediente.</small>
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio custom-control-inline mt-2">
+                                <input type="radio" id="tr_ambos" name="tratamiento_transcripcion"
+                                    class="custom-control-input" value="ambos">
+                                <label class="custom-control-label" for="tr_ambos">
+                                    Ambos
+                                    <small class="text-muted d-block">Guarda el archivo como adjunto y además ingesta su contenido como transcripción automatizada.</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -47,10 +47,11 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
         $ie->save();
 
         $config        = $importacion->configuracion ?? [];
-        $mapeosCat     = $config['mapeos_catalogos'] ?? [];
-        $mapeosGeo     = $config['mapeos_geo']       ?? [];
-        $pathMappings  = $config['path_mappings']    ?? [];
+        $mapeosCat     = $config['mapeos_catalogos']          ?? [];
+        $mapeosGeo     = $config['mapeos_geo']                ?? [];
+        $pathMappings  = $config['path_mappings']             ?? [];
         $idEntrevistador = (int) ($config['id_entrevistador'] ?? 0);
+        $tratamientoTranscripcion = $config['tratamiento_transcripcion'] ?? 'automatizada';
 
         $cols     = $ie->datos_csv['cols']     ?? [];
         $personas = $ie->datos_csv['personas'] ?? [];
@@ -260,7 +261,7 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
             Storage::disk('public')->makeDirectory($carpetaStorage);
 
             foreach ($archivos as $arch) {
-                $this->procesarArchivo($arch, $entrevista, $carpetaStorage, $svc);
+                $this->procesarArchivo($arch, $entrevista, $carpetaStorage, $svc, $tratamientoTranscripcion);
             }
 
             // ------------------------------------------------------------------
@@ -302,7 +303,7 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
     // Helpers de archivos
     // -------------------------------------------------------------------------
 
-    private function procesarArchivo(array $arch, Entrevista $entrevista, string $carpetaStorage, ImportacionMasivaService $svc): void
+    private function procesarArchivo(array $arch, Entrevista $entrevista, string $carpetaStorage, ImportacionMasivaService $svc, string $tratamientoTranscripcion = 'automatizada'): void
     {
         if (!($arch['existe'] ?? false) || ($arch['es_directorio'] ?? false)) {
             Log::warning("ImportacionJob: archivo no encontrado o es directorio: " . ($arch['ruta_linux'] ?? $arch['ruta']));
@@ -314,11 +315,40 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
         $idTipo     = $arch['id_tipo'];
         $convertir  = $arch['convertir'] ?? ($tamano > 500 * 1024 * 1024);
 
-        if ($convertir && in_array($idTipo, [310])) {
+        // Archivos de transcripción (col. 77): tratamiento configurable
+        if ($idTipo === 313) {
+            if ($tratamientoTranscripcion === 'automatizada' || $tratamientoTranscripcion === 'ambos') {
+                $this->ingestarComoTranscripcionAutomatizada($rutaFuente, $entrevista);
+            }
+            if ($tratamientoTranscripcion === 'adjunto' || $tratamientoTranscripcion === 'ambos') {
+                $this->copiarDirecto($rutaFuente, $entrevista, $carpetaStorage, $idTipo, $tamano);
+            }
+            return;
+        }
+
+        if ($convertir && $idTipo === 310) {
             $this->copiarConvertirM4a($rutaFuente, $entrevista, $carpetaStorage);
         } else {
             $this->copiarDirecto($rutaFuente, $entrevista, $carpetaStorage, $idTipo, $tamano);
         }
+    }
+
+    /**
+     * Lee el contenido de un archivo de texto y lo guarda como transcripción automatizada.
+     */
+    private function ingestarComoTranscripcionAutomatizada(string $rutaFuente, Entrevista $entrevista): void
+    {
+        $contenido = file_get_contents($rutaFuente);
+        if ($contenido === false) {
+            throw new \RuntimeException("No se pudo leer el archivo de transcripción: $rutaFuente");
+        }
+
+        // Detectar y eliminar BOM UTF-8 si existe
+        if (str_starts_with($contenido, "\xEF\xBB\xBF")) {
+            $contenido = substr($contenido, 3);
+        }
+
+        $entrevista->guardarTranscripcionAutomatizada(trim($contenido), basename($rutaFuente));
     }
 
     private function copiarDirecto(string $rutaFuente, Entrevista $entrevista, string $carpetaStorage, int $idTipo, int $tamano): void

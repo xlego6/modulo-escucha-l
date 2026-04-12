@@ -52,11 +52,12 @@ class ImportacionMasivaController extends Controller
     public function subir(Request $request)
     {
         $request->validate([
-            'archivo_csv'       => 'required|file|mimes:csv,txt|max:20480',
-            'id_entrevistador'  => 'required|integer|exists:esclarecimiento.entrevistador,id_entrevistador',
-            'path_mappings'     => 'nullable|array',
-            'path_mappings.*.unc'   => 'nullable|string|max:500',
-            'path_mappings.*.linux' => 'nullable|string|max:500',
+            'archivo_csv'              => 'required|file|mimes:csv,txt|max:20480',
+            'id_entrevistador'         => 'required|integer|exists:esclarecimiento.entrevistador,id_entrevistador',
+            'path_mappings'            => 'nullable|array',
+            'path_mappings.*.unc'      => 'nullable|string|max:500',
+            'path_mappings.*.linux'    => 'nullable|string|max:500',
+            'tratamiento_transcripcion' => 'nullable|in:adjunto,automatizada,ambos',
         ]);
 
         // Guardar CSV en storage temporal
@@ -119,10 +120,11 @@ class ImportacionMasivaController extends Controller
             'estado'           => ImportacionMasiva::ESTADO_MAPEANDO,
             'total_expedientes' => count($expedientes),
             'configuracion'    => [
-                'path_mappings'    => $mappings,
-                'id_entrevistador' => (int) $request->id_entrevistador,
-                'mapeos_catalogos' => [],
-                'mapeos_geo'       => [],
+                'path_mappings'              => $mappings,
+                'id_entrevistador'           => (int) $request->id_entrevistador,
+                'mapeos_catalogos'           => [],
+                'mapeos_geo'                 => [],
+                'tratamiento_transcripcion'  => $request->input('tratamiento_transcripcion', 'automatizada'),
             ],
         ]);
 
