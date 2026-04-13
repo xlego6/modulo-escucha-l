@@ -356,6 +356,46 @@ class ImportacionMasivaController extends Controller
     }
 
     // -------------------------------------------------------------------------
+    // Cancelar / borrar importación
+    // -------------------------------------------------------------------------
+
+    public function destroy(Request $request, int $id)
+    {
+        $importacion = ImportacionMasiva::findOrFail($id);
+        $this->autorizarAcceso($importacion);
+
+        // No permitir borrar si ya está procesando o completado con éxito
+        if (in_array($importacion->estado, [
+            ImportacionMasiva::ESTADO_PROCESANDO,
+            ImportacionMasiva::ESTADO_COMPLETADO,
+        ])) {
+            return back()->withErrors(['error' => 'No se puede borrar una importación que está procesando o ya completada.']);
+        }
+
+        // Borrar el archivo CSV temporal si existe
+        if ($importacion->ruta_csv && Storage::disk('local')->exists($importacion->ruta_csv)) {
+            Storage::disk('local')->delete($importacion->ruta_csv);
+        }
+
+        // Borrar los expedientes de la sesión (no los expedientes reales ya creados)
+        $importacion->rel_expedientes()->delete();
+        $importacion->delete();
+
+        TrazaActividad::create([
+            'fecha_hora'  => now(),
+            'id_usuario'  => Auth::id(),
+            'accion'      => 'eliminar',
+            'objeto'      => 'importacion_masiva',
+            'id_registro' => $id,
+            'referencia'  => 'Importación masiva cancelada/borrada: #' . $id,
+            'ip'          => $request->ip(),
+        ]);
+
+        return redirect()->route('importacion.index')
+            ->with('success', "Importación #$id cancelada y borrada correctamente.");
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

@@ -28,6 +28,13 @@
         </div>
         @endif
 
+        @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show">
+            {{ $errors->first() }}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+        @endif
+
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">Historial de importaciones</h3>
@@ -81,6 +88,18 @@
                                 <a href="{{ route('importacion.monitor', $imp->id_importacion) }}" class="btn btn-xs btn-secondary">
                                     <i class="fas fa-chart-line"></i> Monitor
                                 </a>
+                                @endif
+
+                                @if(!in_array($imp->estado, ['procesando', 'completado']))
+                                <form method="POST" action="{{ route('importacion.destroy', $imp->id_importacion) }}"
+                                      class="d-inline"
+                                      onsubmit="return confirm('¿Borrar importación #{{ $imp->id_importacion }}? Se eliminarán los datos de la sesión (no los expedientes ya creados).')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-xs btn-danger ml-1" title="Cancelar y borrar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                                 @endif
                             </td>
                         </tr>
