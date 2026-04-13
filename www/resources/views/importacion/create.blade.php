@@ -174,7 +174,9 @@
                             value="{{ $dirTranscripciones }}"
                             placeholder="{{ $dirTranscripciones }}">
                         <small class="form-text text-muted">
-                            Ruta absoluta en el servidor Linux. Déjala como está si copiaste los archivos a la carpeta por defecto.
+                            Ruta <strong>dentro del contenedor</strong> — no la ruta que ves desde SFTP/fish.
+                            Si accedes a los archivos por SFTP como <code>/home/…/escucha/www/storage/…</code>,
+                            aquí escribe <code>/var/www/storage/…</code>. Déjala como está si usaste la carpeta por defecto.
                         </small>
                     </div>
                     <p class="text-muted small mb-0">

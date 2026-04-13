@@ -129,10 +129,12 @@
 
 @push('scripts')
 <script>
-var estadoUrl     = '{{ route("importacion.estado", $importacion->id_importacion) }}';
-var estadoFinal   = ['completado', 'con_errores'];
-var intervalo     = null;
+var estadoUrl        = '{{ route("importacion.estado", $importacion->id_importacion) }}';
+var estadoFinal      = ['completado', 'con_errores'];
+var intervalo        = null;
 var totalExpedientes = {{ $importacion->total_expedientes }};
+var yaNotificado     = false;
+var tituloOriginal   = document.title;
 
 var badgeClases = {
     pendiente:   'badge-secondary',
@@ -140,6 +142,47 @@ var badgeClases = {
     completado:  'badge-success',
     error:       'badge-danger',
 };
+
+function pedirPermisoNotificacion() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+function notificarCompletado(completados, errores) {
+    if (yaNotificado) return;
+    yaNotificado = true;
+
+    var titulo, cuerpo, icono;
+    if (errores > 0) {
+        titulo = '⚠️ Importación completada con errores';
+        cuerpo = completados + ' expedientes creados, ' + errores + ' con error.';
+    } else {
+        titulo = '✅ Importación completada';
+        cuerpo = completados + ' expedientes creados correctamente.';
+    }
+
+    // Notificación del navegador (funciona aunque la pestaña esté en segundo plano)
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(titulo, { body: cuerpo, icon: '/favicon.ico' });
+    }
+
+    // Cambiar título de la pestaña
+    document.title = (errores > 0 ? '⚠️ ' : '✅ ') + tituloOriginal;
+
+    // Banner prominente en la página
+    var color  = errores > 0 ? 'warning' : 'success';
+    var icono  = errores > 0 ? 'fa-exclamation-triangle' : 'fa-check-circle';
+    var banner = '<div class="alert alert-' + color + ' alert-dismissible text-center py-3 mt-3" id="banner-completado">'
+               + '<h4><i class="fas ' + icono + '"></i> ' + titulo + '</h4>'
+               + '<p class="mb-0">' + cuerpo + '</p>'
+               + '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>'
+               + '</div>';
+    $('.container-fluid').prepend(banner);
+
+    // Scroll al banner
+    $('html, body').animate({ scrollTop: 0 }, 400);
+}
 
 function actualizarMonitor() {
     $.getJSON(estadoUrl, function (data) {
@@ -180,6 +223,8 @@ function actualizarMonitor() {
             var barColor = data.errores > 0 ? 'bg-warning' : 'bg-success';
             $('#barra-progreso').removeClass('progress-bar-animated progress-bar-striped bg-primary').addClass(barColor);
 
+            notificarCompletado(data.completados, data.errores);
+
             if (data.errores > 0) {
                 $('#btn-reintentar-container').show();
             }
@@ -188,6 +233,7 @@ function actualizarMonitor() {
 }
 
 $(document).ready(function () {
+    pedirPermisoNotificacion();
     actualizarMonitor();
     intervalo = setInterval(actualizarMonitor, 4000);
 });
