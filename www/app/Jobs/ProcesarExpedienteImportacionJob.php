@@ -83,6 +83,11 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
                 // ------------------------------------------------------------------
                 $entrevistador = Entrevistador::findOrFail($idEntrevistador);
 
+                // Lock a nivel de transacción para serializar la asignación de números
+                // entre workers concurrentes del mismo entrevistador y el correlativo global.
+                DB::statement('SELECT pg_advisory_xact_lock(1, ?)', [$entrevistador->id_entrevistador]);
+                DB::statement('SELECT pg_advisory_xact_lock(2, 0)');
+
                 $siguienteNumero = Entrevista::where('id_entrevistador', $entrevistador->id_entrevistador)
                     ->where('id_activo', 1)
                     ->max('entrevista_numero') + 1;
