@@ -89,6 +89,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('importacion-masiva/{id}/procesar',               [ImportacionMasivaController::class, 'procesar'])->name('importacion.procesar');
             Route::get('importacion-masiva/{id}/monitor',                 [ImportacionMasivaController::class, 'monitor'])->name('importacion.monitor');
             Route::get('importacion-masiva/{id}/estado',                  [ImportacionMasivaController::class, 'estado'])->name('importacion.estado');
+            Route::delete('importacion-masiva/{id}',                      [ImportacionMasivaController::class, 'destroy'])->name('importacion.destroy');
         });
 
         // Exportar Excel: Solo Admin(1)
