@@ -151,11 +151,16 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
                 }
 
                 ContenidoTestimonio::create([
-                    'id_e_ind_fvt'              => $entrevista->id_e_ind_fvt,
-                    'fecha_hechos_inicial'      => $fechaHechosIni,
-                    'fecha_hechos_final'        => $fechaHechosFin,
-                    'responsables_individuales' => $this->col($cols, 59),
-                    'temas_abordados'           => $this->col($cols, 64),
+                    'id_e_ind_fvt'                     => $entrevista->id_e_ind_fvt,
+                    'fecha_hechos_inicial'              => $fechaHechosIni,
+                    'fecha_hechos_final'                => $fechaHechosFin,
+                    'responsables_individuales'         => $this->col($cols, 59) ?: null,
+                    'temas_abordados'                   => $this->col($cols, 64) ?: null,
+                    'otras_poblaciones_mencionadas'     => $this->col($cols, 69) ?: null,
+                    'otras_ocupaciones_mencionadas'     => $this->col($cols, 70) ?: null,
+                    'detalle_grupos_etnicos'            => $this->col($cols, 71) ?: null,
+                    'otros_hechos_victimizantes'        => $this->col($cols, 72) ?: null,
+                    'detalle_resistencias'              => $this->col($cols, 74) ?: null,
                 ]);
 
                 $this->insertarRelacionesContenido($entrevista, $cols, $mapeosCat, $mapeosGeo, $svc);
@@ -519,10 +524,15 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
         ContenidoTestimonio::updateOrCreate(
             ['id_e_ind_fvt' => $entrevista->id_e_ind_fvt],
             array_filter([
-                'fecha_hechos_inicial'      => $fechaHechosIni,
-                'fecha_hechos_final'        => $fechaHechosFin,
-                'responsables_individuales' => $this->col($cols, 59) ?: null,
-                'temas_abordados'           => $this->col($cols, 64) ?: null,
+                'fecha_hechos_inicial'              => $fechaHechosIni,
+                'fecha_hechos_final'                => $fechaHechosFin,
+                'responsables_individuales'         => $this->col($cols, 59) ?: null,
+                'temas_abordados'                   => $this->col($cols, 64) ?: null,
+                'otras_poblaciones_mencionadas'     => $this->col($cols, 69) ?: null,
+                'otras_ocupaciones_mencionadas'     => $this->col($cols, 70) ?: null,
+                'detalle_grupos_etnicos'            => $this->col($cols, 71) ?: null,
+                'otros_hechos_victimizantes'        => $this->col($cols, 72) ?: null,
+                'detalle_resistencias'              => $this->col($cols, 74) ?: null,
             ])
         );
 
@@ -610,8 +620,9 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
             'contenido_etnia'              => ['id_etnia',       $this->mapearLista($svc, $mapeosCat, 'contenido_etnia',        $this->col($cols, 54))],
             'contenido_rango_etario'       => ['id_rango',       $this->mapearLista($svc, $mapeosCat, 'contenido_rango_etario', $this->col($cols, 55))],
             'contenido_discapacidad'       => ['id_discapacidad',$this->mapearLista($svc, $mapeosCat, 'contenido_discapacidad', $this->col($cols, 56))],
-            'contenido_hecho_victimizante' => ['id_hecho',       $this->mapearLista($svc, $mapeosCat, 'contenido_hecho',        $this->col($cols, 57))],
-            'contenido_responsable'        => ['id_responsable', $this->mapearLista($svc, $mapeosCat, 'contenido_responsable',  $this->col($cols, 58))],
+            'contenido_hecho_victimizante'   => ['id_hecho',    $this->mapearLista($svc, $mapeosCat, 'contenido_hecho',        $this->col($cols, 57))],
+            'contenido_responsable'          => ['id_responsable', $this->mapearLista($svc, $mapeosCat, 'contenido_responsable',  $this->col($cols, 58))],
+            'contenido_practica_resistencia' => ['id_practica', $this->mapearLista($svc, $mapeosCat, 'contenido_practica',     $this->col($cols, 73))],
         ];
 
         foreach ($relaciones as $tabla => [$campo, $ids]) {

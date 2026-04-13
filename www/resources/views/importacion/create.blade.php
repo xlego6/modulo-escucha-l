@@ -166,10 +166,17 @@
                 <div class="card-body">
                     <p class="mb-2">
                         Para archivos <strong>no</strong> almacenados en el NAS (p.&nbsp;ej. transcripciones .txt
-                        copiadas directamente al servidor), deposítalos en la siguiente carpeta del servidor
-                        <strong>antes</strong> de procesar la importación:
+                        copiadas directamente al servidor), indica la carpeta del servidor donde están depositados:
                     </p>
-                    <pre class="bg-light border rounded p-2 mb-2" style="user-select:all">{{ $dirTranscripciones }}</pre>
+                    <div class="form-group mb-2">
+                        <input type="text" class="form-control form-control-sm font-monospace"
+                            id="dir_local" name="dir_local"
+                            value="{{ $dirTranscripciones }}"
+                            placeholder="{{ $dirTranscripciones }}">
+                        <small class="form-text text-muted">
+                            Ruta absoluta en el servidor Linux. Déjala como está si copiaste los archivos a la carpeta por defecto.
+                        </small>
+                    </div>
                     <p class="text-muted small mb-0">
                         En el CSV pon <strong>solo el nombre del archivo</strong> (sin ruta) en las columnas de
                         Transcripción, Consentimiento u Otros archivos.

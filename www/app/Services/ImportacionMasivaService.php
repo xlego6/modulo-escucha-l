@@ -72,6 +72,13 @@ use App\Models\Geo;
  *  66  Prueba de daño – Intereses públicos (Sí / No / No sabe)
  *  67  Prueba de daño – Inteligencia (Sí / No / No sabe)
  *  68  Prueba de daño – NNA (Sí / No / No sabe)
+ *  69  Contenido: Otras poblaciones mencionadas (texto libre)
+ *  70  Contenido: Otras ocupaciones mencionadas (texto libre)
+ *  71  Contenido: Detalle grupos étnicos (texto libre)
+ *  72  Contenido: Otros hechos victimizantes (texto libre)
+ *  73  Contenido: Prácticas de resistencia (valores catálogo separados por coma)
+ *  74  Contenido: Detalle resistencias (texto libre)
+ *  75  (reservado)
  *  76  Ruta archivo Consentimiento
  *  77  Ruta archivo Transcripción
  *  78  Ruta otros archivos
@@ -406,12 +413,13 @@ class ImportacionMasivaService
             'discapacidad'           => 38,
             'contenido_hecho'        => 57,
             'contenido_responsable'  => 58,
-            'contenido_practica'     => null, // sin columna directa en CSV, pero se puede agregar
+            'contenido_practica'     => 73,
         ];
 
         $columnasMúltiples = [
             'formato', 'modalidad', 'necesidad_reparacion', 'areas_compatibles',
             'poblacion', 'ocupacion', 'contenido_hecho', 'contenido_responsable',
+            'contenido_practica',
         ];
 
         $valores = [];
@@ -466,7 +474,7 @@ class ImportacionMasivaService
             }
         }
 
-        // Campos de contenido del testimonio (cols 49-58)
+        // Campos de contenido del testimonio (cols 49-56): no están en columnasCatalogo
         $columnasContenido = [
             'contenido_poblacion'    => 49,
             'contenido_ocupacion'    => 50,
