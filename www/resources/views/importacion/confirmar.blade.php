@@ -22,6 +22,7 @@
     @include('importacion._pasos', ['paso_actual' => 3])
 
     @php
+        use Illuminate\Support\Str;
         $sinArchivos    = $expedientes->filter(fn($e) => collect($e->archivos)->where('existe', false)->count() > 0);
         $conAdvertencias = $expedientes->filter(fn($e) => count($e->advertencias) > 0);
         $archivosAConvertir = $expedientes->flatMap(fn($e) => collect($e->archivos)->where('convertir', true));
