@@ -55,11 +55,15 @@ class ImportacionMasivaController extends Controller
 
         $request->validate([
             'archivo_csv'               => 'required|file|max:20480',
-            'id_entrevistador'          => array_filter([
+            'id_entrevistador'          => [
                                               $modo === 'crear' ? 'required' : 'nullable',
                                               'integer',
-                                              \Illuminate\Validation\Rule::exists('esclarecimiento.entrevistador', 'id_entrevistador'),
-                                          ]),
+                                              function ($attr, $val, $fail) {
+                                                  if ($val && !Entrevistador::where('id_entrevistador', $val)->exists()) {
+                                                      $fail('El entrevistador seleccionado no existe.');
+                                                  }
+                                              },
+                                          ],
             'path_mappings'             => 'nullable|array',
             'path_mappings.*.unc'       => 'nullable|string|max:500',
             'path_mappings.*.linux'     => 'nullable|string|max:500',
