@@ -24,7 +24,7 @@ return [
 
         'database' => [
             'driver' => 'database',
-            'table' => 'esclarecimiento.trabajo_procesamiento',
+            'table' => 'esclarecimiento.jobs',
             'queue' => 'default',
             'retry_after' => 7200, // 2 horas para transcripciones largas
             'after_commit' => false,
@@ -50,7 +50,7 @@ return [
     'failed' => [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
         'database' => env('DB_CONNECTION', 'pgsql'),
-        'table' => 'esclarecimiento.trabajo_procesamiento',
+        'table' => 'esclarecimiento.failed_jobs',
     ],
 
 ];
