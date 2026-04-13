@@ -582,6 +582,10 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
             'autoriza_datos_personales_sin_anonimizar' => $svc->parseBool($pDatos['consent_datos_pers']),
             'autoriza_datos_sensibles_sin_anonimizar'  => $svc->parseBool($pDatos['consent_datos_sens']),
             'observaciones'                            => $pDatos['consent_obs'] ?: null,
+            'prueba_dano_derechos_privados'            => $this->parsePruebaDano($pDatos['prueba_dano_privados'] ?? ''),
+            'prueba_dano_intereses_publicos'           => $this->parsePruebaDano($pDatos['prueba_dano_publicos'] ?? ''),
+            'prueba_dano_inteligencia'                 => $this->parsePruebaDano($pDatos['prueba_dano_intelig']  ?? ''),
+            'prueba_dano_nna'                          => $this->parsePruebaDano($pDatos['prueba_dano_nna']      ?? ''),
         ]);
     }
 
@@ -697,6 +701,20 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
     private function col(array $cols, int $idx): string
     {
         return trim($cols[$idx] ?? '');
+    }
+
+    /**
+     * Convierte el texto de prueba de daño a su entero DB.
+     * Sí → 1, No → 0, No sabe → 2, vacío/n/a → null
+     */
+    private function parsePruebaDano(string $valor): ?int
+    {
+        $v = mb_strtolower(trim($valor));
+        if ($v === '' || $v === 'n/a') return null;
+        if (in_array($v, ['sí', 'si', 's', '1', 'yes'])) return 1;
+        if (in_array($v, ['no', 'n', '0']))               return 0;
+        if (in_array($v, ['no sabe', 'ns', '2']))         return 2;
+        return null;
     }
 
     /**

@@ -68,6 +68,10 @@ use App\Models\Geo;
  *  62  Contenido: Lugar geográfico – Departamento
  *  63  Contenido: Lugar geográfico – Municipio
  *  64  Temas abordados
+ *  65  Prueba de daño – Derechos privados (Sí / No / No sabe)
+ *  66  Prueba de daño – Intereses públicos (Sí / No / No sabe)
+ *  67  Prueba de daño – Inteligencia (Sí / No / No sabe)
+ *  68  Prueba de daño – NNA (Sí / No / No sabe)
  *  76  Ruta archivo Consentimiento
  *  77  Ruta archivo Transcripción
  *  78  Ruta otros archivos
@@ -235,6 +239,10 @@ class ImportacionMasivaService
                 'consent_datos_pers'     => trim($fila[46] ?? ''),
                 'consent_datos_sens'     => trim($fila[47] ?? ''),
                 'consent_obs'            => trim($fila[48] ?? ''),
+                'prueba_dano_privados'   => trim($fila[65] ?? ''),
+                'prueba_dano_publicos'   => trim($fila[66] ?? ''),
+                'prueba_dano_intelig'    => trim($fila[67] ?? ''),
+                'prueba_dano_nna'        => trim($fila[68] ?? ''),
             ];
         }
     }
