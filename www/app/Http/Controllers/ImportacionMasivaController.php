@@ -54,14 +54,21 @@ class ImportacionMasivaController extends Controller
         $modo = $request->input('modo', 'crear');
 
         $request->validate([
-            'archivo_csv'               => 'required|file|mimes:csv,txt|max:20480',
+            'archivo_csv'               => 'required|file|max:20480',
             'id_entrevistador'          => ($modo === 'crear' ? 'required' : 'nullable') . '|integer|exists:esclarecimiento.entrevistador,id_entrevistador',
             'path_mappings'             => 'nullable|array',
             'path_mappings.*.unc'       => 'nullable|string|max:500',
             'path_mappings.*.linux'     => 'nullable|string|max:500',
             'tratamiento_transcripcion' => 'nullable|in:adjunto,automatizada,ambos',
+            'dir_local'                 => 'nullable|string|max:500',
             'modo'                      => 'nullable|in:crear,actualizar',
         ]);
+
+        // Verificar manualmente que el archivo sea CSV/TXT por extensión
+        $ext = strtolower($request->file('archivo_csv')->getClientOriginalExtension());
+        if (!in_array($ext, ['csv', 'txt'])) {
+            return back()->withErrors(['archivo_csv' => 'El archivo debe tener extensión .csv o .txt']);
+        }
 
         // Guardar CSV en storage temporal
         $archivo = $request->file('archivo_csv');
@@ -90,7 +97,10 @@ class ImportacionMasivaController extends Controller
             ->values()
             ->toArray();
 
-        $dirTranscripciones = storage_path('app/importaciones/transcripciones');
+        $dirTranscripciones = rtrim($request->input('dir_local', ''), '/') ?: storage_path('app/importaciones/transcripciones');
+        if (!is_dir($dirTranscripciones)) {
+            @mkdir($dirTranscripciones, 0775, true);
+        }
 
         // Resolver rutas y construir archivos con estado de existencia
         foreach ($expedientes as &$exp) {
@@ -128,6 +138,7 @@ class ImportacionMasivaController extends Controller
                 'mapeos_catalogos'          => [],
                 'mapeos_geo'                => [],
                 'tratamiento_transcripcion' => $request->input('tratamiento_transcripcion', 'automatizada'),
+                'dir_local'                 => $dirTranscripciones,
                 'modo'                      => $modo,
             ],
         ]);
