@@ -502,23 +502,39 @@ class ImportacionMasivaService
         }
 
         // Geografía (departamentos y municipios)
-        $valores['lugar_depto'] = [];
-        $valores['lugar_muni_raw'] = []; // valor original "depto|muni"
+        // Las celdas pueden tener múltiples valores separados por " | " (deptos)
+        // o por ", " (munis). Se dividen para que cada nombre individual aparezca
+        // como una entrada de mapeo en el paso 2.
+        $valores['lugar_depto']    = [];
+        $valores['lugar_muni_raw'] = []; // formato "primer_depto||muni"
 
         $colParejas = [[15, 16], [27, 28], [62, 63]];
         foreach ($expedientes as $exp) {
             $datos = $exp['datos'];
             foreach ($colParejas as [$cDepto, $cMuni]) {
-                $depto = trim($datos[$cDepto] ?? '');
-                $muni  = trim($datos[$cMuni]  ?? '');
-                if ($depto !== '' && strtolower($depto) !== 'n/a' && !in_array($depto, $valores['lugar_depto'])) {
-                    $valores['lugar_depto'][] = $depto;
+                $deptoRaw = trim($datos[$cDepto] ?? '');
+                $muniRaw  = trim($datos[$cMuni]  ?? '');
+
+                // Dividir departamentos por "|"
+                if ($deptoRaw !== '' && strtolower($deptoRaw) !== 'n/a') {
+                    foreach (preg_split('/\s*\|\s*/', $deptoRaw) as $depto) {
+                        $depto = trim($depto);
+                        if ($depto !== '' && !in_array($depto, $valores['lugar_depto'])) {
+                            $valores['lugar_depto'][] = $depto;
+                        }
+                    }
                 }
-                // Municipios en formato "depto||muni" para identificación única
-                if ($muni !== '' && strtolower($muni) !== 'n/a') {
-                    $key = "$depto||$muni";
-                    if (!in_array($key, $valores['lugar_muni_raw'])) {
-                        $valores['lugar_muni_raw'][] = $key;
+
+                // Dividir municipios por "," — se emparejan con el primer depto de la celda
+                if ($muniRaw !== '' && strtolower($muniRaw) !== 'n/a') {
+                    $primerDepto = trim(preg_split('/\s*\|\s*/', $deptoRaw)[0] ?? $deptoRaw);
+                    foreach (preg_split('/\s*,\s*/', $muniRaw) as $muni) {
+                        $muni = trim($muni);
+                        if ($muni === '') continue;
+                        $key = "$primerDepto||$muni";
+                        if (!in_array($key, $valores['lugar_muni_raw'])) {
+                            $valores['lugar_muni_raw'][] = $key;
+                        }
                     }
                 }
             }
