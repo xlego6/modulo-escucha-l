@@ -43,8 +43,9 @@ class TranscripcionDocService
             $fechaRealizacion = $fi ?? $ff ?? 'Sin información';
         }
 
-        // Nombre del entrevistador
-        $entrevistador = $entrevista->rel_entrevistador?->rel_usuario?->name ?? 'Sin información';
+        // Nombre del entrevistador: priorizar el campo editable de la entrevista
+        $entrevistador = $entrevista->nombre_entrevistador
+            ?: ($entrevista->rel_entrevistador?->rel_usuario?->name ?? 'Sin información');
 
         // Duración total de audios/videos
         $duracionSeg = $entrevista->rel_adjuntos
