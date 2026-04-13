@@ -578,16 +578,16 @@ class ImportacionMasivaService
 
         // Geografía – municipios
         if (!empty($valoresUnicos['lugar_muni_raw'])) {
+            // Cargamos todos los municipios una sola vez y comparamos en PHP
+            // para evitar depender de la extensión unaccent de PostgreSQL.
+            $municipios = Geo::where('nivel', 3)->get()
+                ->mapWithKeys(fn($g) => [$g->id_geo => $this->normalizar($g->descripcion)]);
+
             foreach ($valoresUnicos['lugar_muni_raw'] as $key) {
                 [$deptoNombre, $muniNombre] = explode('||', $key, 2);
-                $norm = $this->normalizar($muniNombre);
-
-                // Buscar municipio (nivel=3) cuyo nombre coincida
-                $muni = Geo::where('nivel', 3)->whereRaw(
-                    "unaccent(lower(descripcion)) = unaccent(lower(?))", [$muniNombre]
-                )->first();
-
-                $sugerencias['lugar_muni'][$key] = $muni ? $muni->id_geo : null;
+                $norm     = $this->normalizar($muniNombre);
+                $encontrado = $municipios->search(fn($d) => $d === $norm);
+                $sugerencias['lugar_muni'][$key] = $encontrado !== false ? $encontrado : null;
             }
         }
 
