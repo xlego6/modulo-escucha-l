@@ -127,7 +127,7 @@
 </section>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 var estadoUrl        = '{{ route("importacion.estado", $importacion->id_importacion) }}';
 var estadoFinal      = ['completado', 'con_errores'];
@@ -238,4 +238,4 @@ $(document).ready(function () {
     intervalo = setInterval(actualizarMonitor, 4000);
 });
 </script>
-@endpush
+@endsection
