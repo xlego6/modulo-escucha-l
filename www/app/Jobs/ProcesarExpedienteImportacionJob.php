@@ -679,18 +679,35 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
     /**
      * Resuelve un par (departamento, municipio) a su id_geo.
      * $nivel: 2=departamento, 3=municipio
+     *
+     * Las celdas del CSV pueden contener múltiples valores ("A | B" o "X, Y").
+     * Se intenta primero el valor exacto; si no resuelve, se divide y se devuelve
+     * el primer id_geo que se encuentre en el mapa.
      */
     private function resolverGeo(ImportacionMasivaService $svc, array $mapeosGeo, string $depto, ?string $muni, int $nivel): ?int
     {
         if ($nivel === 2) {
-            $id = $mapeosGeo['lugar_depto'][$depto] ?? null;
-            return $id ? (int) $id : null;
+            // Intento exacto primero (compatibilidad con CSVs de un solo depto)
+            if ($id = $mapeosGeo['lugar_depto'][$depto] ?? null) return (int) $id;
+            // Dividir por "|" y tomar el primero que resuelva
+            foreach (preg_split('/\s*\|\s*/', $depto) as $parte) {
+                $parte = trim($parte);
+                if ($id = $mapeosGeo['lugar_depto'][$parte] ?? null) return (int) $id;
+            }
+            return null;
         }
 
         if ($nivel === 3 && $muni !== null) {
-            $key = "$depto||$muni";
-            $id  = $mapeosGeo['lugar_muni'][$key] ?? null;
-            return $id ? (int) $id : null;
+            $primerDepto = trim(preg_split('/\s*\|\s*/', $depto)[0] ?? $depto);
+            // Intento exacto con clave "primerDepto||muni"
+            if ($id = $mapeosGeo['lugar_muni']["$depto||$muni"] ?? null)           return (int) $id;
+            if ($id = $mapeosGeo['lugar_muni']["$primerDepto||$muni"] ?? null)     return (int) $id;
+            // Dividir muni por "," y tomar el primero que resuelva
+            foreach (preg_split('/\s*,\s*/', $muni) as $muniParte) {
+                $muniParte = trim($muniParte);
+                if ($id = $mapeosGeo['lugar_muni']["$primerDepto||$muniParte"] ?? null) return (int) $id;
+            }
+            return null;
         }
 
         return null;
