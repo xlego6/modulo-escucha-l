@@ -634,10 +634,9 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
             }
         }
 
-        $idDepto = $this->resolverGeo($svc, $mapeosGeo, $this->col($cols, 62), null, 2);
-        $idMuni  = $this->resolverGeo($svc, $mapeosGeo, $this->col($cols, 62), $this->col($cols, 63), 3);
-        if ($idDepto || $idMuni) {
-            $fila = ['id_e_ind_fvt' => $entrevista->id_e_ind_fvt, 'id_departamento' => $idDepto, 'id_municipio' => $idMuni];
+        // Lugares de los hechos: una fila en contenido_lugar por cada par resuelto
+        foreach ($this->resolverLugares($mapeosGeo, $this->col($cols, 62), $this->col($cols, 63)) as $par) {
+            $fila = array_merge(['id_e_ind_fvt' => $entrevista->id_e_ind_fvt], $par);
             $insertOrIgnore
                 ? DB::table('esclarecimiento.contenido_lugar')->insertOrIgnore($fila)
                 : DB::table('esclarecimiento.contenido_lugar')->insert($fila);
@@ -711,6 +710,44 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
         }
 
         return null;
+    }
+
+    /**
+     * Divide las celdas de departamento (sep "|") y municipio (sep ",") y devuelve
+     * todos los pares ['id_departamento' => ?, 'id_municipio' => ?] que resuelvan.
+     * Se emparejan por índice: depto[0]↔muni[0], depto[1]↔muni[1], etc.
+     * Si hay más municipios que departamentos se reutiliza el último departamento.
+     */
+    private function resolverLugares(array $mapeosGeo, string $deptoRaw, string $muniRaw): array
+    {
+        $deptos = array_values(array_filter(array_map('trim', preg_split('/\s*\|\s*/', $deptoRaw))));
+        $munis  = array_values(array_filter(array_map('trim', preg_split('/\s*,\s*/',  $muniRaw))));
+
+        $count  = max(count($deptos), count($munis), 1);
+        $vistos = [];
+        $result = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $deptoStr = $deptos[$i] ?? ($deptos[count($deptos) - 1] ?? '');
+            $muniStr  = $munis[$i]  ?? '';
+
+            $idDepto = $deptoStr ? (($id = $mapeosGeo['lugar_depto'][$deptoStr] ?? null) ? (int) $id : null) : null;
+            $idMuni  = null;
+            if ($muniStr) {
+                $key    = "$deptoStr||$muniStr";
+                $idMuni = ($id = $mapeosGeo['lugar_muni'][$key] ?? null) ? (int) $id : null;
+            }
+
+            if (!$idDepto && !$idMuni) continue;
+
+            $clave = "$idDepto|$idMuni";
+            if (isset($vistos[$clave])) continue;
+            $vistos[$clave] = true;
+
+            $result[] = ['id_departamento' => $idDepto, 'id_municipio' => $idMuni];
+        }
+
+        return $result;
     }
 
     private function syncPivot(string $tabla, int $idEntrevista, string $campo, array $ids): void
