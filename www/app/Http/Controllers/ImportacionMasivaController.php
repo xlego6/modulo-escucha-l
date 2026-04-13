@@ -206,13 +206,14 @@ class ImportacionMasivaController extends Controller
 
         // Geografía
         $departamentos = Geo::where('nivel', 2)->orderBy('descripcion')->get();
+        $municipios    = Geo::where('nivel', 3)->orderBy('descripcion')->get();
 
         $mapeosActuales = $importacion->configuracion['mapeos_catalogos'] ?? [];
         $mapeosGeo      = $importacion->configuracion['mapeos_geo'] ?? [];
 
         return view('importacion.mapear', compact(
             'importacion', 'valoresUnicos', 'sugerencias',
-            'catalogos', 'departamentos', 'mapeosActuales', 'mapeosGeo'
+            'catalogos', 'departamentos', 'municipios', 'mapeosActuales', 'mapeosGeo'
         ));
     }
 
