@@ -364,12 +364,9 @@ class ImportacionMasivaController extends Controller
         $importacion = ImportacionMasiva::findOrFail($id);
         $this->autorizarAcceso($importacion);
 
-        // No permitir borrar si ya está procesando o completado con éxito
-        if (in_array($importacion->estado, [
-            ImportacionMasiva::ESTADO_PROCESANDO,
-            ImportacionMasiva::ESTADO_COMPLETADO,
-        ])) {
-            return back()->withErrors(['error' => 'No se puede borrar una importación que está procesando o ya completada.']);
+        // No permitir borrar si ya completó exitosamente
+        if ($importacion->estado === ImportacionMasiva::ESTADO_COMPLETADO) {
+            return back()->withErrors(['error' => 'No se puede borrar una importación ya completada.']);
         }
 
         // Borrar el archivo CSV temporal si existe

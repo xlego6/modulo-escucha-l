@@ -90,7 +90,7 @@
                                 </a>
                                 @endif
 
-                                @if(!in_array($imp->estado, ['procesando', 'completado']))
+                                @if($imp->estado !== 'completado')
                                 <form method="POST" action="{{ route('importacion.destroy', $imp->id_importacion) }}"
                                       class="d-inline"
                                       onsubmit="return confirm('¿Borrar importación #{{ $imp->id_importacion }}? Se eliminarán los datos de la sesión (no los expedientes ya creados).')">
