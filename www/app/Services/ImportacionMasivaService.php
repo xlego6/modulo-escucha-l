@@ -435,7 +435,7 @@ class ImportacionMasivaService
 
                 if (in_array($campo, $columnasMúltiples)) {
                     // Puede ser lista separada por coma o punto y coma
-                    $items = preg_split('/\s*[;,]\s*/', $celda);
+                    $items = preg_split('/\s*[;,|]\s*/', $celda);
                     foreach ($items as $item) {
                         $item = trim($item);
                         if ($item !== '' && !in_array($item, $valores[$campo])) {
@@ -463,7 +463,7 @@ class ImportacionMasivaService
                 foreach ($camposPersona as $campo) {
                     $celda = trim($persona[$campo] ?? '');
                     if ($celda === '' || strtolower($celda) === 'n/a') continue;
-                    $items = preg_split('/\s*[;,]\s*/', $celda);
+                    $items = preg_split('/\s*[;,|]\s*/', $celda);
                     foreach ($items as $item) {
                         $item = trim($item);
                         if ($item !== '' && !in_array($item, $valores[$campo])) {
@@ -491,7 +491,7 @@ class ImportacionMasivaService
             foreach ($expedientes as $exp) {
                 $celda = trim($exp['datos'][$colIdx] ?? '');
                 if ($celda === '' || strtolower($celda) === 'n/a') continue;
-                $items = preg_split('/\s*[;,]\s*/', $celda);
+                $items = preg_split('/\s*[;,|]\s*/', $celda);
                 foreach ($items as $item) {
                     $item = trim($item);
                     if ($item !== '' && !in_array($item, $valores[$campo])) {
@@ -651,7 +651,7 @@ class ImportacionMasivaService
     public function parseLista(string $valor): array
     {
         if (trim($valor) === '' || strtolower(trim($valor)) === 'n/a') return [];
-        $items = preg_split('/\s*[;,]\s*/', $valor);
+        $items = preg_split('/\s*[;,|]\s*/', $valor);
         return array_values(array_filter(array_map('trim', $items)));
     }
 }

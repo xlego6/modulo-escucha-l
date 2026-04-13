@@ -233,9 +233,9 @@
 @push('scripts')
 <script>
 // Custom file input label
-document.getElementById('archivo_csv').addEventListener('change', function () {
+$('#archivo_csv').on('change', function () {
     var name = this.files[0] ? this.files[0].name : 'Seleccionar archivo…';
-    this.nextElementSibling.textContent = name;
+    $(this).siblings('.custom-file-label').first().text(name);
 });
 
 // Agregar filas de mapeo dinámicamente
