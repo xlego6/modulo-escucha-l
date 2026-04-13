@@ -157,18 +157,29 @@
                             [$deptoNom, $muniNom] = explode('||', $key, 2);
                             $sugeridoM = $sugerencias['lugar_muni'][$key] ?? null;
                             $actualM   = $mapeosGeo['lugar_muni'][$key] ?? $sugeridoM;
+                            // Intentar preseleccionar el departamento mapeado para filtrar
+                            $idDeptoMapeado = $mapeosGeo['lugar_depto'][$deptoNom]
+                                           ?? ($sugerencias['lugar_depto'][$deptoNom] ?? null);
                         @endphp
                         <tr>
                             <td><code>{{ $muniNom }}</code> <small class="text-muted">({{ $deptoNom }})</small></td>
                             <td><span class="badge badge-light">Municipio</span></td>
                             <td>
-                                <input type="number" class="form-control form-control-sm"
+                                <select class="form-control form-control-sm select2-muni"
                                     name="mapeos_geo[lugar_muni][{{ $key }}]"
-                                    value="{{ $actualM }}"
-                                    placeholder="ID geo municipio">
-                                <small class="text-muted">
-                                    @if($sugeridoM) Sugerido: {{ $sugeridoM }} @endif
-                                </small>
+                                    data-depto="{{ $idDeptoMapeado }}">
+                                    <option value="">— Sin mapear —</option>
+                                    @foreach($municipios as $muni)
+                                    <option value="{{ $muni->id_geo }}"
+                                        data-padre="{{ $muni->id_padre }}"
+                                        @selected($actualM == $muni->id_geo)>
+                                        {{ $muni->descripcion }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @if($sugeridoM && (!$actualM || $actualM == $sugeridoM))
+                                <small class="text-success"><i class="fas fa-magic"></i> Sugerencia automática</small>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
@@ -195,10 +206,32 @@
 @push('scripts')
 <script>
 $(document).ready(function () {
-    $('select.form-control-sm').not('.select2-geo').each(function () {
+    $('select.form-control-sm').not('.select2-geo, .select2-muni').each(function () {
         $(this).select2({ theme: 'bootstrap4', width: '100%', minimumResultsForSearch: 5 });
     });
+
     $('.select2-geo').select2({ theme: 'bootstrap4', width: '100%' });
+
+    // Municipios: Select2 con búsqueda, filtrando por departamento padre si está disponible
+    $('.select2-muni').each(function () {
+        var $sel     = $(this);
+        var idDepto  = $sel.data('depto');
+
+        $sel.select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            matcher: function (params, data) {
+                // Filtrar por departamento padre si hay uno mapeado
+                if (idDepto && data.element && $(data.element).data('padre') != idDepto) {
+                    // Mostrar igual si coincide la búsqueda aunque sea de otro depto
+                    if (!params.term || params.term.trim() === '') return null;
+                }
+                if (!params.term || params.term.trim() === '') return data;
+                if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) return data;
+                return null;
+            }
+        });
+    });
 });
 </script>
 @endpush
