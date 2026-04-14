@@ -88,17 +88,6 @@ class ImportacionMasivaController extends Controller
 
         $rutaAbsoluta = storage_path('app/' . $rutaCsv);
 
-        // Parsear
-        try {
-            $expedientes = $this->svc->parsearCsv($rutaAbsoluta);
-        } catch (\Exception $e) {
-            return back()->withErrors(['archivo_csv' => 'Error al leer el CSV: ' . $e->getMessage()]);
-        }
-
-        if (empty($expedientes)) {
-            return back()->withErrors(['archivo_csv' => 'El CSV no contiene filas de datos válidas.']);
-        }
-
         // Filtrar path_mappings vacíos
         $mappings = collect($request->path_mappings ?? [])
             ->filter(fn($m) => !empty($m['unc']) && !empty($m['linux']))
@@ -110,37 +99,14 @@ class ImportacionMasivaController extends Controller
             @mkdir($dirTranscripciones, 0775, true);
         }
 
-        // Resolver rutas y construir archivos con estado de existencia
-        foreach ($expedientes as &$exp) {
-            $archivosResueltos = [];
-            foreach ($exp['archivos_csv'] as $arch) {
-                // Archivos que no son audio/video principal pueden estar en la carpeta local
-                $dirLocal = ($arch['id_tipo'] !== 310) ? $dirTranscripciones : '';
-                $rutaLinux = $this->svc->resolverRuta($arch['ruta'], $mappings, $dirLocal);
-                $info      = $this->svc->verificarArchivo($rutaLinux);
-
-                $archivosResueltos[] = array_merge($arch, [
-                    'ruta_linux'    => $rutaLinux,
-                    'existe'        => $info['existe'],
-                    'es_directorio' => $info['es_directorio'],
-                    'tamano'        => $info['tamano'],
-                    'convertir'     => $info['existe'] && !$info['es_directorio'] && $info['tamano']
-                        ? $this->svc->necesitaConversion($rutaLinux, $info['tamano'])
-                        : false,
-                ]);
-            }
-            $exp['archivos_resueltos'] = $archivosResueltos;
-        }
-        unset($exp);
-
-        // Crear registro de sesión de importación
+        // Crear registro de sesión de importación (total_expedientes se actualiza al final)
         $importacion = ImportacionMasiva::create([
-            'id_usuario'       => Auth::id(),
-            'nombre_archivo'   => $archivo->getClientOriginalName(),
-            'ruta_csv'         => $rutaCsv,
-            'estado'           => ImportacionMasiva::ESTADO_MAPEANDO,
-            'total_expedientes' => count($expedientes),
-            'configuracion'    => [
+            'id_usuario'        => Auth::id(),
+            'nombre_archivo'    => $archivo->getClientOriginalName(),
+            'ruta_csv'          => $rutaCsv,
+            'estado'            => ImportacionMasiva::ESTADO_MAPEANDO,
+            'total_expedientes' => 0,
+            'configuracion'     => [
                 'path_mappings'             => $mappings,
                 'id_entrevistador'          => (int) $request->id_entrevistador,
                 'mapeos_catalogos'          => [],
@@ -151,21 +117,60 @@ class ImportacionMasivaController extends Controller
             ],
         ]);
 
-        // Guardar expedientes en DB
-        foreach ($expedientes as $exp) {
-            ImportacionExpediente::create([
-                'id_importacion'   => $importacion->id_importacion,
-                'id_csv'           => $exp['id_csv'],
-                'estado'           => ImportacionExpediente::ESTADO_PENDIENTE,
-                'datos_csv'        => [
-                    'cols'     => $exp['datos'],    // array indexado de columnas del CSV
-                    'personas' => $exp['personas'],  // personas parseadas
-                ],
-                'filas_originales' => $exp['filas_originales'],
-                'archivos'         => $exp['archivos_resueltos'],
-                'advertencias'     => $this->generarAdvertencias($exp, $modo),
-            ]);
+        // Parsear y guardar expedientes en streaming: cada grupo se procesa y
+        // descarta inmediatamente para evitar acumular todo el CSV en memoria.
+        try {
+            $totalExpedientes = $this->svc->parsearCsvCallback(
+                $rutaAbsoluta,
+                function (array $exp) use ($importacion, $mappings, $dirTranscripciones, $modo): void {
+                    // Resolver rutas y verificar existencia de archivos
+                    $archivosResueltos = [];
+                    foreach ($exp['archivos_csv'] as $arch) {
+                        $dirLocal  = ($arch['id_tipo'] !== 310) ? $dirTranscripciones : '';
+                        $rutaLinux = $this->svc->resolverRuta($arch['ruta'], $mappings, $dirLocal);
+                        $info      = $this->svc->verificarArchivo($rutaLinux);
+
+                        $archivosResueltos[] = array_merge($arch, [
+                            'ruta_linux'    => $rutaLinux,
+                            'existe'        => $info['existe'],
+                            'es_directorio' => $info['es_directorio'],
+                            'tamano'        => $info['tamano'],
+                            'convertir'     => $info['existe'] && !$info['es_directorio'] && $info['tamano']
+                                ? $this->svc->necesitaConversion($rutaLinux, $info['tamano'])
+                                : false,
+                        ]);
+                    }
+
+                    ImportacionExpediente::create([
+                        'id_importacion'   => $importacion->id_importacion,
+                        'id_csv'           => $exp['id_csv'],
+                        'estado'           => ImportacionExpediente::ESTADO_PENDIENTE,
+                        'datos_csv'        => [
+                            'cols'     => $exp['datos'],
+                            'personas' => $exp['personas'],
+                        ],
+                        'filas_originales' => $exp['filas_originales'],
+                        'archivos'         => $archivosResueltos,
+                        'advertencias'     => $this->generarAdvertencias($exp, $modo),
+                    ]);
+                    // $exp sale de scope y PHP puede liberar su memoria
+                }
+            );
+        } catch (\Exception $e) {
+            $importacion->rel_expedientes()->delete();
+            $importacion->delete();
+            Storage::disk('local')->delete($rutaCsv);
+            return back()->withErrors(['archivo_csv' => 'Error al leer el CSV: ' . $e->getMessage()]);
         }
+
+        if ($totalExpedientes === 0) {
+            $importacion->delete();
+            Storage::disk('local')->delete($rutaCsv);
+            return back()->withErrors(['archivo_csv' => 'El CSV no contiene filas de datos válidas.']);
+        }
+
+        $importacion->total_expedientes = $totalExpedientes;
+        $importacion->save();
 
         TrazaActividad::create([
             'fecha_hora'  => now(),
@@ -173,7 +178,7 @@ class ImportacionMasivaController extends Controller
             'accion'      => 'crear',
             'objeto'      => 'importacion_masiva',
             'id_registro' => $importacion->id_importacion,
-            'referencia'  => 'Importación masiva: ' . $archivo->getClientOriginalName() . ' (' . count($expedientes) . ' expedientes)',
+            'referencia'  => 'Importación masiva: ' . $archivo->getClientOriginalName() . ' (' . $totalExpedientes . ' expedientes)',
             'ip'          => $request->ip(),
         ]);
 
@@ -189,14 +194,21 @@ class ImportacionMasivaController extends Controller
         $importacion = ImportacionMasiva::findOrFail($id);
         $this->autorizarAcceso($importacion);
 
-        // Reconstruir estructura para extraer valores únicos desde datos guardados
-        $expedientesParsed = $importacion->rel_expedientes->map(function ($ie) {
-            return [
-                'datos'        => $ie->datos_csv['cols'] ?? [],
-                'personas'     => $ie->datos_csv['personas'] ?? [],
-                'archivos_csv' => [],
-            ];
-        })->toArray();
+        // Reconstruir estructura para extraer valores únicos desde datos guardados.
+        // Se usa chunk() y se selecciona solo datos_csv para evitar cargar
+        // filas_originales y archivos de todos los expedientes en memoria a la vez.
+        $expedientesParsed = [];
+        $importacion->rel_expedientes()
+            ->select(['datos_csv'])
+            ->chunk(200, function ($lote) use (&$expedientesParsed) {
+                foreach ($lote as $ie) {
+                    $expedientesParsed[] = [
+                        'datos'        => $ie->datos_csv['cols'] ?? [],
+                        'personas'     => $ie->datos_csv['personas'] ?? [],
+                        'archivos_csv' => [],
+                    ];
+                }
+            });
 
         $valoresUnicos = $this->svc->extraerValoresUnicos($expedientesParsed);
         $sugerencias   = $this->svc->sugerirMapeos($valoresUnicos);

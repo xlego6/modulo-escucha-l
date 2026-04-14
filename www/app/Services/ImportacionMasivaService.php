@@ -131,8 +131,31 @@ class ImportacionMasivaService
      *   'archivos_csv' => array (rutas de archivos del CSV sin resolver),
      *   'filas_originales' => array (filas raw),
      * ]
+     *
+     * ADVERTENCIA: carga todos los grupos en memoria a la vez. Para CSVs
+     * grandes use parsearCsvCallback().
      */
     public function parsearCsv(string $rutaAbsoluta): array
+    {
+        $expedientes = [];
+        $this->parsearCsvCallback($rutaAbsoluta, function (array $grupo) use (&$expedientes) {
+            $expedientes[] = $grupo;
+        });
+        return $expedientes;
+    }
+
+    /**
+     * Parsea el CSV en modo streaming: llama a $onGrupo($grupo) por cada
+     * expediente completo y libera su memoria antes de continuar.
+     *
+     * IMPORTANTE: asume que todas las filas de un mismo ID son contiguas en
+     * el CSV (orden típico de cualquier exportación de hoja de cálculo). Si
+     * las filas de un mismo ID están dispersas, ese grupo se procesará en
+     * múltiples llamadas (una por bloque contiguo).
+     *
+     * Retorna el número de grupos emitidos.
+     */
+    public function parsearCsvCallback(string $rutaAbsoluta, callable $onGrupo): int
     {
         $handle = fopen($rutaAbsoluta, 'r');
         if (!$handle) {
@@ -150,7 +173,9 @@ class ImportacionMasivaService
         // Leer fila 2 (sub-encabezados) – se descarta
         fgetcsv($handle, 0, ';', '"', '\\');
 
-        $grupos = [];
+        $grupoActual = null;
+        $idActual    = null;
+        $total       = 0;
 
         while (($fila = fgetcsv($handle, 0, ';', '"', '\\')) !== false) {
             // Normalizar: padding si hay menos columnas de las esperadas
@@ -161,8 +186,15 @@ class ImportacionMasivaService
             $id_csv = trim($fila[0]);
             if ($id_csv === '') continue;
 
-            if (!isset($grupos[$id_csv])) {
-                $grupos[$id_csv] = [
+            if ($id_csv !== $idActual) {
+                // Nuevo ID: emitir el grupo anterior si existe
+                if ($grupoActual !== null) {
+                    $onGrupo($grupoActual);
+                    $total++;
+                    $grupoActual = null;
+                }
+                $idActual    = $id_csv;
+                $grupoActual = [
                     'id_csv'           => $id_csv,
                     'datos'            => $fila,
                     'personas'         => [],
@@ -170,28 +202,30 @@ class ImportacionMasivaService
                     'filas_originales' => [],
                 ];
             } else {
-                // Fusionar: conservar el valor más completo por columna
+                // Misma fila: fusionar — conservar el valor más completo por columna
                 foreach ($fila as $i => $valor) {
-                    if (trim($valor) !== '' && trim($grupos[$id_csv]['datos'][$i] ?? '') === '') {
-                        $grupos[$id_csv]['datos'][$i] = $valor;
+                    if (trim($valor) !== '' && trim($grupoActual['datos'][$i] ?? '') === '') {
+                        $grupoActual['datos'][$i] = $valor;
                     }
                 }
             }
 
-            // El índice de fila dentro del grupo se captura ANTES de agregar
-            $filaIdx = count($grupos[$id_csv]['filas_originales']);
-            $grupos[$id_csv]['filas_originales'][] = $fila;
+            $filaIdx = count($grupoActual['filas_originales']);
+            $grupoActual['filas_originales'][] = $fila;
 
-            // Extraer persona(s) de esta fila
-            $this->extraerPersonas($grupos[$id_csv], $fila);
+            $this->extraerPersonas($grupoActual, $fila);
+            $this->extraerArchivos($grupoActual, $fila, $filaIdx);
+        }
 
-            // Extraer rutas de archivo de esta fila (con índice para preservar pareja audio↔transcripción)
-            $this->extraerArchivos($grupos[$id_csv], $fila, $filaIdx);
+        // Emitir el último grupo pendiente
+        if ($grupoActual !== null) {
+            $onGrupo($grupoActual);
+            $total++;
         }
 
         fclose($handle);
 
-        return array_values($grupos);
+        return $total;
     }
 
     /**

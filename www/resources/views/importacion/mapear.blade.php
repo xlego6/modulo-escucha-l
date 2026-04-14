@@ -203,7 +203,7 @@
 </section>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 $(document).ready(function () {
     $('select.form-control-sm').not('.select2-geo, .select2-muni').each(function () {
@@ -234,4 +234,4 @@ $(document).ready(function () {
     });
 });
 </script>
-@endpush
+@endsection
