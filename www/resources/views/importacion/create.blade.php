@@ -232,7 +232,7 @@
 </section>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 // Custom file input label
 $('#archivo_csv').on('change', function () {
@@ -291,4 +291,4 @@ $(document).ready(function () {
     $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
 });
 </script>
-@endpush
+@endsection
