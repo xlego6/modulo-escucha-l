@@ -54,7 +54,7 @@ class ImportacionMasivaController extends Controller
         $modo = $request->input('modo', 'crear');
 
         $request->validate([
-            'archivo_csv'               => 'required|file|max:20480',
+            'archivo_csv'               => 'required|file|max:204800',
             'id_entrevistador'          => [
                                               $modo === 'crear' ? 'required' : 'nullable',
                                               'integer',
