@@ -369,36 +369,10 @@
 <script>
 $(document).ready(function () {
     // ------------------------------------------------------------------
-    // Lazy Select2: inicializar solo cuando la tarjeta entra al viewport
-    // ------------------------------------------------------------------
-    var select2Opts = { theme: 'bootstrap4', width: '100%', minimumResultsForSearch: 5 };
-
-    if ('IntersectionObserver' in window) {
-        var observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (!entry.isIntersecting) return;
-                $(entry.target).find('select.lazy-select2:not(.select2-hidden-accessible)').each(function () {
-                    $(this).select2(select2Opts);
-                });
-                observer.unobserve(entry.target);
-            });
-        }, { rootMargin: '200px' });
-
-        document.querySelectorAll('.card-mapeo').forEach(function (card) {
-            observer.observe(card);
-        });
-    } else {
-        // Fallback sin IntersectionObserver
-        $('select.lazy-select2').select2(select2Opts);
-    }
-
-    // ------------------------------------------------------------------
-    // Municipios: Select2 con datos JSON (evita N × 1100 <option>)
+    // Datos de municipios (JSON único, ~100 KB)
     // ------------------------------------------------------------------
     var todosMunicipios = @json($municipios->map(fn($m) => ['id' => $m->id_geo, 'text' => $m->descripcion, 'padre' => $m->id_padre])->values());
 
-    // Pre-construir HTML de <option> por departamento (caché para no
-    // regenerar N veces el mismo bloque de 30-100 opciones).
     var opcionesCache = {};
     function buildOpcionesMuni(idDepto) {
         var key = idDepto || '_all';
@@ -417,28 +391,60 @@ $(document).ready(function () {
         return opcionesCache[key];
     }
 
-    $('.select2-muni').each(function () {
-        var $sel     = $(this);
-        var idDepto  = parseInt($sel.data('depto'))    || 0;
-        var selected = parseInt($sel.data('selected')) || 0;
+    function initMunisEnCard($card) {
+        $card.find('select.select2-muni:not(.select2-hidden-accessible)').each(function () {
+            var $sel     = $(this);
+            var idDepto  = parseInt($sel.data('depto'))    || 0;
+            var selected = parseInt($sel.data('selected')) || 0;
 
-        $sel.html(buildOpcionesMuni(idDepto));
+            $sel.html(buildOpcionesMuni(idDepto));
 
-        // Si el valor seleccionado no está en la lista filtrada, agregarlo
-        if (selected && !$sel.find('option[value="' + selected + '"]').length) {
-            var extra = todosMunicipios.find(function (m) { return m.id == selected; });
-            if (extra) {
-                $sel.prepend('<option value="' + extra.id + '">' +
-                    extra.text.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</option>');
+            if (selected && !$sel.find('option[value="' + selected + '"]').length) {
+                var extra = todosMunicipios.find(function (m) { return m.id == selected; });
+                if (extra) {
+                    $sel.prepend('<option value="' + extra.id + '">' +
+                        extra.text.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</option>');
+                }
             }
-        }
+            if (selected) {
+                $sel.val(String(selected));
+            }
+            $sel.select2({ theme: 'bootstrap4', width: '100%' });
+        });
+    }
 
-        if (selected) {
-            $sel.val(String(selected));
-        }
+    // ------------------------------------------------------------------
+    // Lazy init: Select2 de catálogos Y municipios solo al entrar al viewport
+    // ------------------------------------------------------------------
+    var select2Opts = { theme: 'bootstrap4', width: '100%', minimumResultsForSearch: 5 };
 
-        $sel.select2({ theme: 'bootstrap4', width: '100%' });
-    });
+    function initCardSelects(card) {
+        var $card = $(card);
+        // Catálogos y departamentos
+        $card.find('select.lazy-select2:not(.select2-hidden-accessible)').each(function () {
+            $(this).select2(select2Opts);
+        });
+        // Municipios
+        initMunisEnCard($card);
+    }
+
+    if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                initCardSelects(entry.target);
+                observer.unobserve(entry.target);
+            });
+        }, { rootMargin: '300px' });
+
+        document.querySelectorAll('.card-mapeo').forEach(function (card) {
+            observer.observe(card);
+        });
+    } else {
+        document.querySelectorAll('.card-mapeo').forEach(function (card) {
+            initCardSelects(card);
+        });
+    }
 
     // ------------------------------------------------------------------
     // Toggle de municipios exactos (tbody show/hide)

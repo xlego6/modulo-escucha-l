@@ -647,15 +647,43 @@ class ImportacionMasivaService
             // Cargar todos los municipios una sola vez, agrupados por departamento
             $allMunis     = Geo::where('nivel', 3)->get();
             $munisByDepto = $allMunis->groupBy('id_padre');
+            // Lookup directo de departamentos para hints entre paréntesis
+            $deptosDb = Geo::where('nivel', 2)->get()
+                ->mapWithKeys(fn($g) => [$g->id_geo => $this->normalizar($g->descripcion)]);
 
             foreach ($valoresUnicos['lugar_muni_raw'] as $key) {
                 [$deptoNombre, $muniNombre] = explode('||', $key, 2);
-                $normMuni       = $this->normalizar($muniNombre);
-                $idDeptoSugerido = $deptoNameToId[$deptoNombre] ?? null;
-                $encontrado     = null;
-                $confianza      = null;
 
-                // Fase 1: buscar dentro del departamento sugerido
+                // Detectar departamento entre paréntesis: "Montería (Córdoba)"
+                // → nombre limpio = "Montería", hint de depto = "Córdoba"
+                $deptoHint   = null;
+                $muniLimpio  = $muniNombre;
+                if (preg_match('/^(.+?)\s*\(([^)]+)\)\s*$/', $muniNombre, $m)) {
+                    $muniLimpio = trim($m[1]);
+                    $deptoHint  = trim($m[2]);
+                }
+
+                $normMuni = $this->normalizar($muniLimpio);
+
+                // Determinar el departamento a usar: hint del paréntesis prevalece
+                $idDeptoSugerido = $deptoNameToId[$deptoNombre] ?? null;
+                if ($deptoHint) {
+                    // Buscar el departamento del hint en las sugerencias existentes
+                    $idDeptoHint = $deptoNameToId[$deptoHint] ?? null;
+                    // Si no está en las sugerencias, buscarlo directamente por nombre
+                    if (!$idDeptoHint) {
+                        $normHint    = $this->normalizar($deptoHint);
+                        $idDeptoHint = $deptosDb->search(fn($d) => $d === $normHint) ?: null;
+                    }
+                    if ($idDeptoHint) {
+                        $idDeptoSugerido = $idDeptoHint;
+                    }
+                }
+
+                $encontrado = null;
+                $confianza  = null;
+
+                // Fase 1: buscar dentro del departamento (del hint o del CSV)
                 if ($idDeptoSugerido && isset($munisByDepto[$idDeptoSugerido])) {
                     foreach ($munisByDepto[$idDeptoSugerido] as $geo) {
                         if ($this->normalizar($geo->descripcion) === $normMuni) {
@@ -681,7 +709,6 @@ class ImportacionMasivaService
                     foreach ($allMunis as $geo) {
                         if ($this->normalizar($geo->descripcion) === $normMuni) {
                             $encontrado = $geo->id_geo;
-                            // Si cayó en otro depto distinto al indicado en el CSV, marcar
                             $confianza = ($idDeptoSugerido && $geo->id_padre != $idDeptoSugerido)
                                 ? 'otro_depto'
                                 : 'exacto';
