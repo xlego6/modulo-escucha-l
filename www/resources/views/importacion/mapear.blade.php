@@ -397,25 +397,45 @@ $(document).ready(function () {
     // ------------------------------------------------------------------
     var todosMunicipios = @json($municipios->map(fn($m) => ['id' => $m->id_geo, 'text' => $m->descripcion, 'padre' => $m->id_padre])->values());
 
+    // Pre-construir HTML de <option> por departamento (caché para no
+    // regenerar N veces el mismo bloque de 30-100 opciones).
+    var opcionesCache = {};
+    function buildOpcionesMuni(idDepto) {
+        var key = idDepto || '_all';
+        if (!opcionesCache[key]) {
+            var lista = idDepto
+                ? todosMunicipios.filter(function (m) { return m.padre == idDepto; })
+                : todosMunicipios;
+            var html = '<option value="">— Sin mapear —</option>';
+            for (var i = 0; i < lista.length; i++) {
+                html += '<option value="' + lista[i].id + '">' +
+                    lista[i].text.replace(/&/g,'&amp;').replace(/</g,'&lt;') +
+                    '</option>';
+            }
+            opcionesCache[key] = html;
+        }
+        return opcionesCache[key];
+    }
+
     $('.select2-muni').each(function () {
         var $sel     = $(this);
         var idDepto  = parseInt($sel.data('depto'))    || 0;
         var selected = parseInt($sel.data('selected')) || 0;
 
-        var lista = idDepto
-            ? todosMunicipios.filter(function (m) { return m.padre == idDepto; })
-            : todosMunicipios.slice();
+        $sel.html(buildOpcionesMuni(idDepto));
 
-        if (selected && !lista.find(function (m) { return m.id == selected; })) {
+        // Si el valor seleccionado no está en la lista filtrada, agregarlo
+        if (selected && !$sel.find('option[value="' + selected + '"]').length) {
             var extra = todosMunicipios.find(function (m) { return m.id == selected; });
-            if (extra) lista.unshift(extra);
+            if (extra) {
+                $sel.prepend('<option value="' + extra.id + '">' +
+                    extra.text.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</option>');
+            }
         }
 
-        // Inyectar <option> en el DOM (más confiable que data: en Select2 4.x)
-        $sel.empty().append('<option value="">— Sin mapear —</option>');
-        lista.forEach(function (m) {
-            $sel.append(new Option(m.text, m.id, false, m.id == selected));
-        });
+        if (selected) {
+            $sel.val(String(selected));
+        }
 
         $sel.select2({ theme: 'bootstrap4', width: '100%' });
     });
