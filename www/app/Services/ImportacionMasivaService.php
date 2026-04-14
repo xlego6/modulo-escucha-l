@@ -559,13 +559,24 @@ class ImportacionMasivaService
                     }
                 }
 
-                // Dividir municipios por "," — se emparejan con el primer depto de la celda
+                // Emparejar municipios con departamentos por índice posicional
+                // (depto[0]↔muni[0], depto[1]↔muni[1], etc.), replicando la
+                // misma lógica de resolverLugares() en el Job. Si hay más
+                // municipios que departamentos se reutiliza el último departamento.
                 if ($muniRaw !== '' && strtolower($muniRaw) !== 'n/a') {
-                    $primerDepto = trim(preg_split('/\s*\|\s*/', $deptoRaw)[0] ?? $deptoRaw);
-                    foreach (preg_split('/\s*,\s*/', $muniRaw) as $muni) {
-                        $muni = trim($muni);
+                    $deptoParts = array_values(array_filter(
+                        array_map('trim', preg_split('/\s*\|\s*/', $deptoRaw))
+                    ));
+                    $muniParts = array_values(array_filter(
+                        array_map('trim', preg_split('/\s*,\s*/', $muniRaw))
+                    ));
+                    $count = max(count($deptoParts), count($muniParts), 1);
+
+                    for ($i = 0; $i < $count; $i++) {
+                        $depto = $deptoParts[$i] ?? ($deptoParts[count($deptoParts) - 1] ?? '');
+                        $muni  = $muniParts[$i]  ?? '';
                         if ($muni === '') continue;
-                        $key = "$primerDepto||$muni";
+                        $key = "$depto||$muni";
                         if (!in_array($key, $valores['lugar_muni_raw'])) {
                             $valores['lugar_muni_raw'][] = $key;
                         }
@@ -592,6 +603,9 @@ class ImportacionMasivaService
     {
         $sugerencias = [];
 
+        // -----------------------------------------------------------------
+        // Catálogos generales — con niveles de confianza
+        // -----------------------------------------------------------------
         foreach (self::CATALOGOS as $campo => $idCat) {
             if (!isset($valoresUnicos[$campo])) continue;
 
@@ -604,40 +618,101 @@ class ImportacionMasivaService
                 $encontrado = $items->search(fn($desc) => $desc === $norm);
                 if ($encontrado !== false) {
                     $sugerencias[$campo][$valorCsv] = $encontrado;
+                    $sugerencias["{$campo}_confianza"][$valorCsv] = 'exacto';
                 } else {
-                    // Búsqueda parcial: si el valor del CSV está contenido en la descripción
                     $encontrado = $items->search(fn($desc) => str_contains($desc, $norm));
                     if ($encontrado !== false) {
                         $sugerencias[$campo][$valorCsv] = $encontrado;
+                        $sugerencias["{$campo}_confianza"][$valorCsv] = 'parcial';
                     } else {
-                        $sugerencias[$campo][$valorCsv] = null; // sin sugerencia
+                        $sugerencias[$campo][$valorCsv] = null;
+                        $sugerencias["{$campo}_confianza"][$valorCsv] = null;
                     }
                 }
             }
         }
 
+        // -----------------------------------------------------------------
         // Geografía – departamentos
+        // -----------------------------------------------------------------
         if (!empty($valoresUnicos['lugar_depto'])) {
             $deptos = Geo::where('nivel', 2)->get()->mapWithKeys(fn($g) => [$g->id_geo => $this->normalizar($g->descripcion)]);
             foreach ($valoresUnicos['lugar_depto'] as $val) {
                 $norm = $this->normalizar($val);
                 $encontrado = $deptos->search(fn($d) => $d === $norm);
                 $sugerencias['lugar_depto'][$val] = $encontrado !== false ? $encontrado : null;
+                $sugerencias['lugar_depto_confianza'][$val] = $encontrado !== false ? 'exacto' : null;
             }
         }
 
-        // Geografía – municipios
+        // -----------------------------------------------------------------
+        // Geografía – municipios (con contexto de departamento padre)
+        // -----------------------------------------------------------------
         if (!empty($valoresUnicos['lugar_muni_raw'])) {
-            // Cargamos todos los municipios una sola vez y comparamos en PHP
-            // para evitar depender de la extensión unaccent de PostgreSQL.
-            $municipios = Geo::where('nivel', 3)->get()
-                ->mapWithKeys(fn($g) => [$g->id_geo => $this->normalizar($g->descripcion)]);
+            // Lookup de nombre de depto → id_geo desde las sugerencias ya calculadas
+            $deptoNameToId = [];
+            foreach (($sugerencias['lugar_depto'] ?? []) as $nombre => $idGeo) {
+                if ($idGeo) $deptoNameToId[$nombre] = $idGeo;
+            }
+
+            // Cargar todos los municipios una sola vez, agrupados por departamento
+            $allMunis     = Geo::where('nivel', 3)->get();
+            $munisByDepto = $allMunis->groupBy('id_padre');
 
             foreach ($valoresUnicos['lugar_muni_raw'] as $key) {
                 [$deptoNombre, $muniNombre] = explode('||', $key, 2);
-                $norm     = $this->normalizar($muniNombre);
-                $encontrado = $municipios->search(fn($d) => $d === $norm);
-                $sugerencias['lugar_muni'][$key] = $encontrado !== false ? $encontrado : null;
+                $normMuni       = $this->normalizar($muniNombre);
+                $idDeptoSugerido = $deptoNameToId[$deptoNombre] ?? null;
+                $encontrado     = null;
+                $confianza      = null;
+
+                // Fase 1: buscar dentro del departamento sugerido
+                if ($idDeptoSugerido && isset($munisByDepto[$idDeptoSugerido])) {
+                    foreach ($munisByDepto[$idDeptoSugerido] as $geo) {
+                        if ($this->normalizar($geo->descripcion) === $normMuni) {
+                            $encontrado = $geo->id_geo;
+                            $confianza  = 'exacto';
+                            break;
+                        }
+                    }
+                    if (!$encontrado) {
+                        foreach ($munisByDepto[$idDeptoSugerido] as $geo) {
+                            $normDesc = $this->normalizar($geo->descripcion);
+                            if (str_contains($normDesc, $normMuni) || str_contains($normMuni, $normDesc)) {
+                                $encontrado = $geo->id_geo;
+                                $confianza  = 'parcial';
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Fase 2: búsqueda global (todos los departamentos)
+                if (!$encontrado) {
+                    foreach ($allMunis as $geo) {
+                        if ($this->normalizar($geo->descripcion) === $normMuni) {
+                            $encontrado = $geo->id_geo;
+                            // Si cayó en otro depto distinto al indicado en el CSV, marcar
+                            $confianza = ($idDeptoSugerido && $geo->id_padre != $idDeptoSugerido)
+                                ? 'otro_depto'
+                                : 'exacto';
+                            break;
+                        }
+                    }
+                }
+                if (!$encontrado) {
+                    foreach ($allMunis as $geo) {
+                        $normDesc = $this->normalizar($geo->descripcion);
+                        if (str_contains($normDesc, $normMuni) || str_contains($normMuni, $normDesc)) {
+                            $encontrado = $geo->id_geo;
+                            $confianza  = 'parcial';
+                            break;
+                        }
+                    }
+                }
+
+                $sugerencias['lugar_muni'][$key]            = $encontrado;
+                $sugerencias['lugar_muni_confianza'][$key]   = $confianza;
             }
         }
 
