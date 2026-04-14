@@ -392,25 +392,36 @@ $(document).ready(function () {
     }
 
     function initMunisEnCard($card) {
-        $card.find('select.select2-muni:not(.select2-hidden-accessible)').each(function () {
-            var $sel     = $(this);
-            var idDepto  = parseInt($sel.data('depto'))    || 0;
-            var selected = parseInt($sel.data('selected')) || 0;
+        // Collect all selects first, then process — avoids DOM mutation
+        // from Select2 breaking the jQuery .each() iterator.
+        var selects = $card.find('select.select2-muni:not(.select2-hidden-accessible)').toArray();
 
-            $sel.html(buildOpcionesMuni(idDepto));
+        for (var i = 0; i < selects.length; i++) {
+            (function (el, idx) {
+                var $sel     = $(el);
+                var idDepto  = parseInt($sel.data('depto'))    || 0;
+                var selected = parseInt($sel.data('selected')) || 0;
 
-            if (selected && !$sel.find('option[value="' + selected + '"]').length) {
-                var extra = todosMunicipios.find(function (m) { return m.id == selected; });
-                if (extra) {
-                    $sel.prepend('<option value="' + extra.id + '">' +
-                        extra.text.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</option>');
+                // Populate options (fast DOM op)
+                $sel.html(buildOpcionesMuni(idDepto));
+
+                if (selected && !$sel.find('option[value="' + selected + '"]').length) {
+                    var extra = todosMunicipios.find(function (m) { return m.id == selected; });
+                    if (extra) {
+                        $sel.prepend('<option value="' + extra.id + '">' +
+                            extra.text.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</option>');
+                    }
                 }
-            }
-            if (selected) {
-                $sel.val(String(selected));
-            }
-            $sel.select2({ theme: 'bootstrap4', width: '100%' });
-        });
+                if (selected) {
+                    $sel.val(String(selected));
+                }
+
+                // Stagger Select2 init so each runs in its own tick
+                setTimeout(function () {
+                    $sel.select2({ theme: 'bootstrap4', width: '100%' });
+                }, idx * 30);
+            })(selects[i], i);
+        }
     }
 
     // ------------------------------------------------------------------
