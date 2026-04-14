@@ -114,12 +114,17 @@ class EstadisticaController extends Controller
             ->get();
 
         // Rango de años de hechos (min y max para la barra de rango)
+        $anioActual = (int) date('Y');
         $rango_fechas_hechos = DB::table('esclarecimiento.contenido_testimonio')
             ->whereNotNull('fecha_hechos_inicial')
+            ->whereRaw("EXTRACT(YEAR FROM fecha_hechos_inicial) BETWEEN 1900 AND ?", [$anioActual])
             ->selectRaw("
                 MIN(EXTRACT(YEAR FROM fecha_hechos_inicial))::integer AS min_year,
-                MAX(EXTRACT(YEAR FROM COALESCE(fecha_hechos_final, fecha_hechos_inicial)))::integer AS max_year
-            ")
+                MAX(EXTRACT(YEAR FROM COALESCE(
+                    CASE WHEN EXTRACT(YEAR FROM fecha_hechos_final) BETWEEN 1900 AND ? THEN fecha_hechos_final END,
+                    fecha_hechos_inicial
+                )))::integer AS max_year
+            ", [$anioActual])
             ->first();
 
         // Histograma por década (1900-2020)
