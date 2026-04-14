@@ -157,7 +157,6 @@
                             [$deptoNom, $muniNom] = explode('||', $key, 2);
                             $sugeridoM = $sugerencias['lugar_muni'][$key] ?? null;
                             $actualM   = $mapeosGeo['lugar_muni'][$key] ?? $sugeridoM;
-                            // Intentar preseleccionar el departamento mapeado para filtrar
                             $idDeptoMapeado = $mapeosGeo['lugar_depto'][$deptoNom]
                                            ?? ($sugerencias['lugar_depto'][$deptoNom] ?? null);
                         @endphp
@@ -165,17 +164,12 @@
                             <td><code>{{ $muniNom }}</code> <small class="text-muted">({{ $deptoNom }})</small></td>
                             <td><span class="badge badge-light">Municipio</span></td>
                             <td>
+                                {{-- Las opciones se inyectan desde JS (evita N × 1100 <option> en el HTML) --}}
                                 <select class="form-control form-control-sm select2-muni"
                                     name="mapeos_geo[lugar_muni][{{ $key }}]"
-                                    data-depto="{{ $idDeptoMapeado }}">
+                                    data-depto="{{ $idDeptoMapeado }}"
+                                    data-selected="{{ $actualM ?? '' }}">
                                     <option value="">— Sin mapear —</option>
-                                    @foreach($municipios as $muni)
-                                    <option value="{{ $muni->id_geo }}"
-                                        data-padre="{{ $muni->id_padre }}"
-                                        @selected($actualM == $muni->id_geo)>
-                                        {{ $muni->descripcion }}
-                                    </option>
-                                    @endforeach
                                 </select>
                                 @if($sugeridoM && (!$actualM || $actualM == $sugeridoM))
                                 <small class="text-success"><i class="fas fa-magic"></i> Sugerencia automática</small>
@@ -212,25 +206,37 @@ $(document).ready(function () {
 
     $('.select2-geo').select2({ theme: 'bootstrap4', width: '100%' });
 
-    // Municipios: Select2 con búsqueda, filtrando por departamento padre si está disponible
+    // Municipios: se pasan como JSON para evitar renderizar N × 1100 <option> en el servidor.
+    // Cada select recibe data-depto (id del departamento padre para filtrar) y
+    // data-selected (id del municipio actualmente mapeado).
+    var todosMunicipios = @json($municipios->map(fn($m) => ['id' => $m->id_geo, 'text' => $m->descripcion, 'padre' => $m->id_padre])->values());
+
     $('.select2-muni').each(function () {
         var $sel     = $(this);
-        var idDepto  = $sel.data('depto');
+        var idDepto  = parseInt($sel.data('depto'))    || 0;
+        var selected = parseInt($sel.data('selected')) || 0;
 
-        $sel.select2({
-            theme: 'bootstrap4',
-            width: '100%',
-            matcher: function (params, data) {
-                // Filtrar por departamento padre si hay uno mapeado
-                if (idDepto && data.element && $(data.element).data('padre') != idDepto) {
-                    // Mostrar igual si coincide la búsqueda aunque sea de otro depto
-                    if (!params.term || params.term.trim() === '') return null;
-                }
-                if (!params.term || params.term.trim() === '') return data;
-                if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) return data;
-                return null;
-            }
-        });
+        // Filtrar por departamento; si no hay depto mapeado mostrar todos
+        var lista = idDepto
+            ? todosMunicipios.filter(function (m) { return m.padre == idDepto; })
+            : todosMunicipios.slice();
+
+        // Si el valor seleccionado no está en la lista filtrada, incluirlo igualmente
+        if (selected && !lista.find(function (m) { return m.id == selected; })) {
+            var extra = todosMunicipios.find(function (m) { return m.id == selected; });
+            if (extra) lista.unshift(extra);
+        }
+
+        var data = [{ id: '', text: '— Sin mapear —' }].concat(
+            lista.map(function (m) { return { id: m.id, text: m.text }; })
+        );
+
+        $sel.select2({ theme: 'bootstrap4', width: '100%', data: data });
+
+        // Restaurar valor seleccionado (Select2 con data: no lee el atributo selected del DOM)
+        if (selected) {
+            $sel.val(selected).trigger('change.select2');
+        }
     });
 });
 </script>
