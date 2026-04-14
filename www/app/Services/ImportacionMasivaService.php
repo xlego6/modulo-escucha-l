@@ -615,20 +615,9 @@ class ImportacionMasivaService
 
             foreach ($valoresUnicos[$campo] as $valorCsv) {
                 $norm = $this->normalizar($valorCsv);
-                $encontrado = $items->search(fn($desc) => $desc === $norm);
-                if ($encontrado !== false) {
-                    $sugerencias[$campo][$valorCsv] = $encontrado;
-                    $sugerencias["{$campo}_confianza"][$valorCsv] = 'exacto';
-                } else {
-                    $encontrado = $items->search(fn($desc) => str_contains($desc, $norm));
-                    if ($encontrado !== false) {
-                        $sugerencias[$campo][$valorCsv] = $encontrado;
-                        $sugerencias["{$campo}_confianza"][$valorCsv] = 'parcial';
-                    } else {
-                        $sugerencias[$campo][$valorCsv] = null;
-                        $sugerencias["{$campo}_confianza"][$valorCsv] = null;
-                    }
-                }
+                [$encontrado, $confianza] = $this->buscarMejorMatch($items, $norm);
+                $sugerencias[$campo][$valorCsv] = $encontrado;
+                $sugerencias["{$campo}_confianza"][$valorCsv] = $confianza;
             }
         }
 
@@ -731,6 +720,48 @@ class ImportacionMasivaService
             'ò' => 'o', 'ù' => 'u',
         ];
         return strtr($str, $map);
+    }
+
+    /**
+     * Busca el mejor match para un valor normalizado dentro de una colección
+     * de items { id => descripción_normalizada }.
+     *
+     * Fases de búsqueda:
+     *   1. Exacto: coincidencia idéntica tras normalizar.
+     *   2. Contenido bidireccional: uno contiene al otro.
+     *   3. Similitud: diferencia de ≤ 2 caracteres (Levenshtein).
+     *
+     * Retorna [id|null, 'exacto'|'parcial'|null].
+     */
+    private function buscarMejorMatch(\Illuminate\Support\Collection $items, string $norm): array
+    {
+        // Fase 1: exacto
+        $encontrado = $items->search(fn($desc) => $desc === $norm);
+        if ($encontrado !== false) {
+            return [$encontrado, 'exacto'];
+        }
+
+        // Fase 2: contenido bidireccional
+        $encontrado = $items->search(fn($desc) => str_contains($desc, $norm) || str_contains($norm, $desc));
+        if ($encontrado !== false) {
+            return [$encontrado, 'parcial'];
+        }
+
+        // Fase 3: similitud (Levenshtein ≤ 2) — cubre plurales, typos de un carácter
+        $mejorId   = null;
+        $mejorDist = 3; // umbral máximo
+        foreach ($items as $id => $desc) {
+            $dist = levenshtein($norm, $desc);
+            if ($dist < $mejorDist) {
+                $mejorDist = $dist;
+                $mejorId   = $id;
+            }
+        }
+        if ($mejorId !== null) {
+            return [$mejorId, 'parcial'];
+        }
+
+        return [null, null];
     }
 
     // -------------------------------------------------------------------------
