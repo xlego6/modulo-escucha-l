@@ -411,15 +411,13 @@ $(document).ready(function () {
             if (extra) lista.unshift(extra);
         }
 
-        var data = [{ id: '', text: '— Sin mapear —' }].concat(
-            lista.map(function (m) { return { id: m.id, text: m.text }; })
-        );
+        // Inyectar <option> en el DOM (más confiable que data: en Select2 4.x)
+        $sel.empty().append('<option value="">— Sin mapear —</option>');
+        lista.forEach(function (m) {
+            $sel.append(new Option(m.text, m.id, false, m.id == selected));
+        });
 
-        $sel.empty().select2({ theme: 'bootstrap4', width: '100%', data: data });
-
-        if (selected) {
-            $sel.val(selected).trigger('change.select2');
-        }
+        $sel.select2({ theme: 'bootstrap4', width: '100%' });
     });
 
     // ------------------------------------------------------------------
