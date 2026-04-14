@@ -300,13 +300,13 @@
                             <td colspan="2" class="py-1 pl-4">
                                 <i class="fas fa-check-circle text-success"></i>
                                 <strong>{{ count($munisExactos) }}</strong> municipio(s) auto-mapeado(s)
-                                <a href="#" class="ml-2 small toggle-munis-exact" data-target="#munis-exact-{{ Str::slug($deptoNom) }}">
+                                <a href="#" class="ml-2 small toggle-munis-exact" data-target="#munis-exact-{{ \Illuminate\Support\Str::slug($deptoNom) }}">
                                     <i class="fas fa-eye"></i> Revisar
                                 </a>
                             </td>
                         </tr>
                     </tbody>
-                    <tbody class="munis-exact-toggle" id="munis-exact-{{ Str::slug($deptoNom) }}" style="display:none">
+                    <tbody class="munis-exact-toggle" id="munis-exact-{{ \Illuminate\Support\Str::slug($deptoNom) }}" style="display:none">
                         @foreach($munisExactos as $key)
                         @php
                             [, $muniNom] = explode('||', $key, 2);
