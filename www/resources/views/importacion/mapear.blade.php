@@ -340,7 +340,6 @@
                                     name="mapeos_geo[lugar_muni][{{ $mr['key'] }}]"
                                     data-depto="{{ $idDeptoMapeado }}"
                                     data-selected="{{ $mr['act'] ?? '' }}">
-                                    <option value="">— Sin mapear —</option>
                                 </select>
                             </td>
                         </tr>
@@ -416,7 +415,7 @@ $(document).ready(function () {
             lista.map(function (m) { return { id: m.id, text: m.text }; })
         );
 
-        $sel.select2({ theme: 'bootstrap4', width: '100%', data: data });
+        $sel.empty().select2({ theme: 'bootstrap4', width: '100%', data: data });
 
         if (selected) {
             $sel.val(selected).trigger('change.select2');
