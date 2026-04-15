@@ -137,15 +137,6 @@ class PermisoController extends Controller
      */
     public function create(Request $request)
     {
-        $entrevistadores = Entrevistador::with('rel_usuario')
-            ->whereHas('rel_usuario', function ($q) {
-                $q->whereNotNull('name')->where('name', '!=', '');
-            })
-            ->orderBy('numero_entrevistador')
-            ->get()
-            ->pluck('rel_usuario.name', 'id_entrevistador')
-            ->prepend('-- Seleccione --', '');
-
         $tipos = [
             '' => '-- Seleccione --',
             1 => 'Lectura',
@@ -155,12 +146,14 @@ class PermisoController extends Controller
 
         // Pre-seleccionar entrevista si viene por parametro
         $entrevistaPreselect = null;
+        $codigoPreselect = null;
         $id_entrevista_preselect = $request->get('entrevista');
         if ($id_entrevista_preselect) {
             $entrevistaPreselect = Entrevista::find($id_entrevista_preselect);
+            $codigoPreselect = $entrevistaPreselect?->entrevista_codigo;
         }
 
-        return view('permisos.create', compact('entrevistadores', 'tipos', 'entrevistaPreselect', 'id_entrevista_preselect'));
+        return view('permisos.create', compact('tipos', 'entrevistaPreselect', 'codigoPreselect', 'id_entrevista_preselect'));
     }
 
     /**
@@ -185,6 +178,31 @@ class PermisoController extends Controller
         return response()->json($results->map(fn($e) => [
             'id'   => $e->id_e_ind_fvt,
             'text' => "{$e->entrevista_codigo} — {$e->titulo}",
+        ]));
+    }
+
+    /**
+     * Búsqueda AJAX de entrevistadores para el formulario de permisos
+     */
+    public function buscarEntrevistadores(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+
+        $query = Entrevistador::with('rel_usuario')
+            ->whereHas('rel_usuario', function ($sub) use ($q) {
+                $sub->whereNotNull('name')->where('name', '!=', '');
+                if ($q !== '') {
+                    $sub->where('name', 'ilike', "%{$q}%");
+                }
+            })
+            ->orderBy('numero_entrevistador')
+            ->limit(30);
+
+        $results = $query->get();
+
+        return response()->json($results->map(fn($e) => [
+            'id'   => $e->id_entrevistador,
+            'text' => $e->rel_usuario->name,
         ]));
     }
 
