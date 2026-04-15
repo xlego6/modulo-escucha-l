@@ -69,14 +69,11 @@
                                         <i class="fas fa-check"></i> Aprobar
                                     </button>
                                     <button type="button" class="btn btn-sm btn-danger"
-                                        onclick="document.getElementById('form-rechazar-{{ $sol->id_permiso }}').submit()">
+                                        onclick="abrirModalRechazar({{ $sol->id_permiso }})">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
                             </div>
-                        </form>
-                        <form id="form-rechazar-{{ $sol->id_permiso }}" action="{{ route('permisos.rechazar', $sol->id_permiso) }}" method="POST" style="display:none" onsubmit="return confirm('¿Rechazar esta solicitud?')">
-                            @csrf
                         </form>
                     </td>
                 </tr>
@@ -129,7 +126,12 @@
                         @endif
                     </td>
                     <td><small>{{ $sol->fecha_solicitud ? $sol->fecha_solicitud->format('d/m/Y H:i') : '-' }}</small></td>
-                    <td><small>{{ $sol->fecha_respuesta ? $sol->fecha_respuesta->format('d/m/Y H:i') : '-' }}</small></td>
+                    <td>
+                        <small>{{ $sol->fecha_respuesta ? $sol->fecha_respuesta->format('d/m/Y H:i') : '-' }}</small>
+                        @if($sol->estado_solicitud === 'rechazado' && $sol->motivo_rechazo)
+                            <br><small class="text-danger"><i class="fas fa-comment-alt mr-1"></i>{{ $sol->motivo_rechazo }}</small>
+                        @endif
+                    </td>
                 </tr>
                 @endforeach
             </tbody>
@@ -285,5 +287,51 @@
     @endif
 </div>
 @endif
+
+{{-- Modal para rechazar solicitud con justificación --}}
+<div class="modal fade" id="modal-rechazar" tabindex="-1" role="dialog" aria-labelledby="modal-rechazar-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="form-rechazar-modal" method="POST">
+                @csrf
+                <div class="modal-header bg-danger">
+                    <h5 class="modal-title text-white" id="modal-rechazar-label">
+                        <i class="fas fa-times-circle mr-2"></i>Rechazar Solicitud
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Indique el motivo del rechazo para que el solicitante sepa por qué fue rechazada su solicitud.</p>
+                    <div class="form-group mb-0">
+                        <label for="motivo_rechazo">Motivo del rechazo</label>
+                        <textarea class="form-control" id="motivo_rechazo" name="motivo_rechazo"
+                                  rows="3" maxlength="500"
+                                  placeholder="Ej: La entrevista ya cuenta con restricciones de acceso vigentes..."></textarea>
+                        <small class="form-text text-muted">Opcional, máximo 500 caracteres.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times mr-1"></i> Confirmar Rechazo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function abrirModalRechazar(idPermiso) {
+    var baseUrl = '{{ url("permisos") }}';
+    $('#form-rechazar-modal').attr('action', baseUrl + '/' + idPermiso + '/rechazar');
+    $('#motivo_rechazo').val('');
+    $('#modal-rechazar').modal('show');
+}
+</script>
+@endpush
 
 @endsection
