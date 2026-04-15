@@ -9,15 +9,17 @@ return new class extends Migration
 {
     public function up()
     {
-        // Crear tabla junction para idiomas múltiples
-        Schema::create('esclarecimiento.entrevista_idioma', function (Blueprint $table) {
-            $table->integer('id_e_ind_fvt');
-            $table->integer('id_idioma');
-            $table->timestamp('created_at')->nullable();
-        });
+        // Crear tabla junction para idiomas múltiples (IF NOT EXISTS)
+        DB::statement("
+            CREATE TABLE IF NOT EXISTS esclarecimiento.entrevista_idioma (
+                id_e_ind_fvt integer NOT NULL,
+                id_idioma    integer NOT NULL,
+                created_at   timestamp NULL
+            )
+        ");
 
-        // Agregar opción "Otro(s)" al catálogo de idiomas (id_cat=8)
-        DB::table('catalogos.cat_item')->insert([
+        // Agregar opción "Otro(s)" al catálogo de idiomas (ignorar si ya existe)
+        DB::table('catalogos.cat_item')->insertOrIgnore([
             'id_item' => 325,
             'id_cat' => 8,
             'descripcion' => 'Otro(s)',
@@ -25,17 +27,19 @@ return new class extends Migration
             'habilitado' => 1,
         ]);
 
-        // Agregar columna detalle_idiomas a la tabla de entrevistas
-        Schema::table('esclarecimiento.e_ind_fvt', function (Blueprint $table) {
-            $table->text('detalle_idiomas')->nullable();
-        });
+        // Agregar columna detalle_idiomas (IF NOT EXISTS)
+        DB::statement("
+            ALTER TABLE esclarecimiento.e_ind_fvt
+            ADD COLUMN IF NOT EXISTS detalle_idiomas text
+        ");
 
-        // Migrar datos existentes: copiar id_idioma actual a la junction table
+        // Migrar datos existentes solo si la junction table está vacía
         DB::statement("
             INSERT INTO esclarecimiento.entrevista_idioma (id_e_ind_fvt, id_idioma, created_at)
             SELECT id_e_ind_fvt, id_idioma, NOW()
             FROM esclarecimiento.e_ind_fvt
             WHERE id_idioma IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM esclarecimiento.entrevista_idioma LIMIT 1)
         ");
     }
 
