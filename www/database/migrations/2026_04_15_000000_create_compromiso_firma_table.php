@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-class CreateCompromisioFirmaTable extends Migration
+return new class extends Migration
 {
     public function up()
     {
@@ -41,4 +41,4 @@ class CreateCompromisioFirmaTable extends Migration
     {
         DB::statement("DROP TABLE IF EXISTS esclarecimiento.compromiso_firma");
     }
-}
+};
