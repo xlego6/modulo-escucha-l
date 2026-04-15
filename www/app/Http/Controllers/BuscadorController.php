@@ -81,21 +81,23 @@ class BuscadorController extends Controller
             ->orderBy('orden')
             ->pluck('descripcion', 'id_item');
 
-        // Hechos victimizantes para filtro
-        $hechos_victimizantes = CatItem::whereHas('rel_catalogo', function($q) {
-                $q->where('nombre', 'like', '%hechos%')->orWhere('nombre', 'like', '%victimiz%');
-            })
+        // Hechos victimizantes para filtro (id_cat=10)
+        $hechos_victimizantes = CatItem::where('id_cat', 10)
             ->orderBy('descripcion')
             ->pluck('descripcion', 'id_item')
             ->prepend('-- Todos --', '');
 
-        // Practicas de resistencia
-        $resistencias = CatItem::whereHas('rel_catalogo', function($q) {
-                $q->where('nombre', 'like', '%resistencia%');
-            })
+        // Practicas de resistencia (id_cat=20)
+        $resistencias = CatItem::where('id_cat', 20)
             ->orderBy('descripcion')
             ->pluck('descripcion', 'id_item')
             ->prepend('-- Todos --', '');
+
+        // Dependencias de origen (id_cat=4)
+        $dependencias = CatItem::where('id_cat', 4)
+            ->orderBy('descripcion')
+            ->pluck('descripcion', 'id_item')
+            ->prepend('-- Todas --', '');
 
         // Determine permission context for current user
         $user = \Illuminate\Support\Facades\Auth::user();
@@ -124,6 +126,7 @@ class BuscadorController extends Controller
             'tipos_adjunto',
             'hechos_victimizantes',
             'resistencias',
+            'dependencias',
             'entrevistadorActual',
             'permisosAprobados'
         ));
@@ -206,6 +209,11 @@ class BuscadorController extends Controller
             $query->whereHas('rel_contenido.rel_practicas_resistencia', function($q) use ($request) {
                 $q->where('cat_item.id_item', $request->id_resistencia);
             });
+        }
+
+        // Dependencia origen filter
+        if ($request->filled('id_dependencia')) {
+            $query->where('id_dependencia_origen', (int) $request->id_dependencia);
         }
 
         $entrevistasDirectas = $query->with([

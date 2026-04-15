@@ -57,17 +57,26 @@
                         <small>{{ $sol->fecha_solicitud ? $sol->fecha_solicitud->format('d/m/Y H:i') : '-' }}</small>
                     </td>
                     <td>
-                        <form action="{{ route('permisos.aprobar', $sol->id_permiso) }}" method="POST" style="display:inline" onsubmit="return confirm('¿Aprobar esta solicitud?')">
+                        <form action="{{ route('permisos.aprobar', $sol->id_permiso) }}" method="POST" onsubmit="return confirm('¿Aprobar esta solicitud?')">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-success" title="Aprobar">
-                                <i class="fas fa-check"></i> Aprobar
-                            </button>
+                            <div class="d-flex flex-column" style="gap:4px">
+                                <div class="d-flex" style="gap:4px">
+                                    <input type="date" name="fecha_desde" class="form-control form-control-sm" placeholder="Desde" title="Vigencia desde (opcional)">
+                                    <input type="date" name="fecha_hasta" class="form-control form-control-sm" placeholder="Hasta" title="Vigencia hasta (opcional)">
+                                </div>
+                                <div class="d-flex" style="gap:4px">
+                                    <button type="submit" class="btn btn-sm btn-success flex-fill">
+                                        <i class="fas fa-check"></i> Aprobar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                        onclick="document.getElementById('form-rechazar-{{ $sol->id_permiso }}').submit()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </form>
-                        <form action="{{ route('permisos.rechazar', $sol->id_permiso) }}" method="POST" style="display:inline" onsubmit="return confirm('¿Rechazar esta solicitud?')">
+                        <form id="form-rechazar-{{ $sol->id_permiso }}" action="{{ route('permisos.rechazar', $sol->id_permiso) }}" method="POST" style="display:none" onsubmit="return confirm('¿Rechazar esta solicitud?')">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-danger" title="Rechazar">
-                                <i class="fas fa-times"></i>
-                            </button>
                         </form>
                     </td>
                 </tr>
