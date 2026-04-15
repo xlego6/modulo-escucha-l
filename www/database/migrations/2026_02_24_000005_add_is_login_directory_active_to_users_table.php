@@ -8,49 +8,32 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Detecta el schema donde vive 'users' y agrega la columna si no existe.
-        // Necesario porque el search_path varía entre entornos.
+        // Crear tabla users si no existe (puede haber sido eliminada por migrate:fresh)
         DB::statement("
-            DO \$\$
-            DECLARE v_schema text;
-            BEGIN
-                -- Si la columna ya existe, no hacer nada
-                SELECT table_schema INTO v_schema
-                FROM information_schema.columns
-                WHERE table_name = 'users' AND column_name = 'is_login_directory_active'
-                LIMIT 1;
-                IF v_schema IS NOT NULL THEN RETURN; END IF;
+            CREATE TABLE IF NOT EXISTS public.users (
+                id               SERIAL PRIMARY KEY,
+                name             VARCHAR(255) NOT NULL,
+                email            VARCHAR(255) NOT NULL,
+                email_verified_at TIMESTAMP NULL,
+                password         VARCHAR(255) NOT NULL,
+                remember_token   VARCHAR(100) NULL,
+                created_at       TIMESTAMP DEFAULT NOW(),
+                updated_at       TIMESTAMP DEFAULT NOW(),
+                CONSTRAINT users_email_unique UNIQUE (email)
+            )
+        ");
 
-                -- Buscar en qué schema está la tabla users
-                SELECT table_schema INTO v_schema
-                FROM information_schema.tables
-                WHERE table_name = 'users'
-                LIMIT 1;
-
-                IF v_schema IS NOT NULL THEN
-                    EXECUTE format(
-                        'ALTER TABLE %I.users ADD COLUMN is_login_directory_active boolean NOT NULL DEFAULT false',
-                        v_schema
-                    );
-                END IF;
-            END \$\$
+        DB::statement("
+            ALTER TABLE public.users
+            ADD COLUMN IF NOT EXISTS is_login_directory_active boolean NOT NULL DEFAULT false
         ");
     }
 
     public function down(): void
     {
         DB::statement("
-            DO \$\$
-            DECLARE v_schema text;
-            BEGIN
-                SELECT table_schema INTO v_schema
-                FROM information_schema.columns
-                WHERE table_name = 'users' AND column_name = 'is_login_directory_active'
-                LIMIT 1;
-                IF v_schema IS NOT NULL THEN
-                    EXECUTE format('ALTER TABLE %I.users DROP COLUMN is_login_directory_active', v_schema);
-                END IF;
-            END \$\$
+            ALTER TABLE public.users
+            DROP COLUMN IF EXISTS is_login_directory_active
         ");
     }
 };

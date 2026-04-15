@@ -8,9 +8,10 @@ class AddCompromisoAccesoToEntrevistador extends Migration
 {
     public function up()
     {
-        Schema::connection('pgsql')->table('esclarecimiento.entrevistador', function (Blueprint $table) {
-            $table->timestamp('compromiso_acceso')->nullable()->after('compromiso_reserva');
-        });
+        \Illuminate\Support\Facades\DB::statement("
+            ALTER TABLE esclarecimiento.entrevistador
+            ADD COLUMN IF NOT EXISTS compromiso_acceso timestamp NULL
+        ");
     }
 
     public function down()

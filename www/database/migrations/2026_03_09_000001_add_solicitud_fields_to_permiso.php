@@ -8,14 +8,15 @@ class AddSolicitudFieldsToPermiso extends Migration
 {
     public function up()
     {
-        Schema::connection('pgsql')->table('esclarecimiento.permiso', function (Blueprint $table) {
-            $table->boolean('es_solicitud')->default(false)->after('id_estado');
-            $table->string('tipo_solicitud', 20)->nullable()->after('es_solicitud');
-            $table->string('estado_solicitud', 20)->nullable()->after('tipo_solicitud');
-            $table->timestamp('fecha_solicitud')->nullable()->after('estado_solicitud');
-            $table->timestamp('fecha_respuesta')->nullable()->after('fecha_solicitud');
-            $table->unsignedInteger('id_respondido_por')->nullable()->after('fecha_respuesta');
-        });
+        \Illuminate\Support\Facades\DB::statement("
+            ALTER TABLE esclarecimiento.permiso
+            ADD COLUMN IF NOT EXISTS es_solicitud boolean NOT NULL DEFAULT false,
+            ADD COLUMN IF NOT EXISTS tipo_solicitud varchar(20) NULL,
+            ADD COLUMN IF NOT EXISTS estado_solicitud varchar(20) NULL,
+            ADD COLUMN IF NOT EXISTS fecha_solicitud timestamp NULL,
+            ADD COLUMN IF NOT EXISTS fecha_respuesta timestamp NULL,
+            ADD COLUMN IF NOT EXISTS id_respondido_por integer NULL
+        ");
     }
 
     public function down()
