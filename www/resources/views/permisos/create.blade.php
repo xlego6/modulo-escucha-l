@@ -3,6 +3,11 @@
 @section('title', 'Otorgar Permiso')
 @section('content_header', 'Otorgar Permiso de Acceso')
 
+@section('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet">
+@endsection
+
 @section('content')
 <div class="card">
     <form action="{{ route('permisos.store') }}" method="POST">
@@ -116,7 +121,8 @@
 </div>
 @endsection
 
-@section('scripts')
+@section('js')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(function () {
     // Select2 AJAX para usuarios (entrevistadores)
