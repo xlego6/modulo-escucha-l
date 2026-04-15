@@ -61,8 +61,14 @@ class UsuariosExport implements FromCollection, WithHeadings, WithMapping, WithS
         $firmaReserva = null;
 
         if ($entrevistador) {
-            $firmaAcceso  = FirmaCompromiso::ultimaFirma($entrevistador->id_entrevistador, 'acceso');
-            $firmaReserva = FirmaCompromiso::ultimaFirma($entrevistador->id_entrevistador, 'reserva');
+            try {
+                $firmaAcceso  = FirmaCompromiso::ultimaFirma($entrevistador->id_entrevistador, 'acceso');
+                $firmaReserva = FirmaCompromiso::ultimaFirma($entrevistador->id_entrevistador, 'reserva');
+            } catch (\Exception $e) {
+                // Tabla compromiso_firma aún no existe (migración pendiente)
+                $firmaAcceso  = null;
+                $firmaReserva = null;
+            }
         }
 
         $nivelLabels = [
