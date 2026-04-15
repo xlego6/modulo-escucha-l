@@ -31,6 +31,7 @@ class Permiso extends Model
         'fecha_solicitud',
         'fecha_respuesta',
         'id_respondido_por',
+        'motivo_rechazo',
     ];
 
     protected $casts = [

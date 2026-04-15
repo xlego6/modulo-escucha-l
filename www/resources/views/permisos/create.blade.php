@@ -22,22 +22,29 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label for="id_entrevistador">Usuario <span class="text-danger">*</span></label>
-                        <select class="form-control @error('id_entrevistador') is-invalid @enderror" id="id_entrevistador" name="id_entrevistador" required>
+                        <select class="form-control select2 @error('id_entrevistador') is-invalid @enderror"
+                                id="id_entrevistador" name="id_entrevistador" required>
                             @foreach($entrevistadores as $id => $nombre)
                             <option value="{{ $id }}" {{ old('id_entrevistador') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
                             @endforeach
                         </select>
-                        <small class="form-text text-muted">Seleccione el usuario que recibira el permiso</small>
+                        <small class="form-text text-muted">Seleccione el usuario que recibirá el permiso</small>
                     </div>
 
                     <div class="form-group">
                         <label for="id_e_ind_fvt">Entrevista <span class="text-danger">*</span></label>
-                        <select class="form-control @error('id_e_ind_fvt') is-invalid @enderror" id="id_e_ind_fvt" name="id_e_ind_fvt" required>
-                            @foreach($entrevistas as $id => $descripcion)
-                            <option value="{{ $id }}" {{ (old('id_e_ind_fvt') == $id || $id_entrevista_preselect == $id) ? 'selected' : '' }}>{{ $descripcion }}</option>
-                            @endforeach
+                        {{-- Campo oculto que guarda el ID real --}}
+                        <input type="hidden" id="id_e_ind_fvt" name="id_e_ind_fvt" value="{{ old('id_e_ind_fvt', $id_entrevista_preselect) }}">
+                        {{-- Select2 vacío; se carga por AJAX --}}
+                        <select class="form-control @error('id_e_ind_fvt') is-invalid @enderror"
+                                id="id_e_ind_fvt_select" required>
+                            @if($entrevistaPreselect)
+                            <option value="{{ $entrevistaPreselect->id_e_ind_fvt }}" selected>
+                                {{ $entrevistaPreselect->entrevista_codigo }} — {{ $entrevistaPreselect->titulo }}
+                            </option>
+                            @endif
                         </select>
-                        <small class="form-text text-muted">Seleccione la entrevista a la que se dara acceso</small>
+                        <small class="form-text text-muted">Escriba al menos 2 caracteres para buscar por código o título</small>
                     </div>
 
                     <div class="form-group">
@@ -59,12 +66,13 @@
                     <div class="form-group">
                         <label for="fecha_vencimiento">Fecha de Vencimiento</label>
                         <input type="date" class="form-control" id="fecha_vencimiento" name="fecha_vencimiento" value="{{ old('fecha_vencimiento') }}">
-                        <small class="form-text text-muted">Dejar en blanco para permiso sin fecha de expiracion</small>
+                        <small class="form-text text-muted">Dejar en blanco para permiso sin fecha de expiración</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="justificacion">Justificacion <span class="text-danger">*</span></label>
-                        <textarea class="form-control @error('justificacion') is-invalid @enderror" id="justificacion" name="justificacion" rows="4" required>{{ old('justificacion') }}</textarea>
+                        <label for="justificacion">Justificación <span class="text-danger">*</span></label>
+                        <textarea class="form-control @error('justificacion') is-invalid @enderror"
+                                  id="justificacion" name="justificacion" rows="4" required>{{ old('justificacion') }}</textarea>
                         <small class="form-text text-muted">Explique brevemente el motivo por el cual se otorga este permiso</small>
                     </div>
                 </div>
@@ -81,3 +89,34 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+$(function () {
+    // Select2 para usuarios
+    $('#id_entrevistador').select2({ theme: 'bootstrap4', width: '100%' });
+
+    // Select2 AJAX para entrevistas
+    $('#id_e_ind_fvt_select').select2({
+        theme: 'bootstrap4',
+        width: '100%',
+        placeholder: 'Escriba código o título para buscar...',
+        allowClear: true,
+        minimumInputLength: 2,
+        ajax: {
+            url: '{{ route("permisos.buscar_entrevistas") }}',
+            dataType: 'json',
+            delay: 300,
+            data: function (params) { return { q: params.term }; },
+            processResults: function (data) { return { results: data }; },
+            cache: true
+        }
+    });
+
+    // Sincronizar el select2 visible con el input hidden real
+    $('#id_e_ind_fvt_select').on('change', function () {
+        $('#id_e_ind_fvt').val($(this).val());
+    });
+});
+</script>
+@endpush

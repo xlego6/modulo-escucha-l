@@ -138,17 +138,12 @@ class PermisoController extends Controller
     public function create(Request $request)
     {
         $entrevistadores = Entrevistador::with('rel_usuario')
+            ->whereHas('rel_usuario', function ($q) {
+                $q->whereNotNull('name')->where('name', '!=', '');
+            })
             ->orderBy('numero_entrevistador')
             ->get()
             ->pluck('rel_usuario.name', 'id_entrevistador')
-            ->prepend('-- Seleccione --', '');
-
-        $entrevistas = Entrevista::where('id_activo', 1)
-            ->orderBy('entrevista_codigo')
-            ->get()
-            ->mapWithKeys(function($e) {
-                return [$e->id_e_ind_fvt => "{$e->entrevista_codigo} - {$e->titulo}"];
-            })
             ->prepend('-- Seleccione --', '');
 
         $tipos = [
@@ -159,9 +154,38 @@ class PermisoController extends Controller
         ];
 
         // Pre-seleccionar entrevista si viene por parametro
+        $entrevistaPreselect = null;
         $id_entrevista_preselect = $request->get('entrevista');
+        if ($id_entrevista_preselect) {
+            $entrevistaPreselect = Entrevista::find($id_entrevista_preselect);
+        }
 
-        return view('permisos.create', compact('entrevistadores', 'entrevistas', 'tipos', 'id_entrevista_preselect'));
+        return view('permisos.create', compact('entrevistadores', 'tipos', 'entrevistaPreselect', 'id_entrevista_preselect'));
+    }
+
+    /**
+     * Búsqueda AJAX de entrevistas para el formulario de permisos
+     */
+    public function buscarEntrevistas(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        $query = Entrevista::where('id_activo', 1)
+            ->orderBy('entrevista_codigo')
+            ->limit(25);
+
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('entrevista_codigo', 'ilike', "%{$q}%")
+                    ->orWhere('titulo', 'ilike', "%{$q}%");
+            });
+        }
+
+        $results = $query->get(['id_e_ind_fvt', 'entrevista_codigo', 'titulo']);
+
+        return response()->json($results->map(fn($e) => [
+            'id'   => $e->id_e_ind_fvt,
+            'text' => "{$e->entrevista_codigo} — {$e->titulo}",
+        ]));
     }
 
     /**
@@ -815,10 +839,15 @@ class PermisoController extends Controller
             return redirect()->route('permisos.index');
         }
 
+        $request->validate([
+            'motivo_rechazo' => 'nullable|string|max:500',
+        ]);
+
         $permiso->estado_solicitud = Permiso::SOLICITUD_RECHAZADA;
         $permiso->fecha_respuesta = now();
         $permiso->id_respondido_por = $user->id;
         $permiso->id_estado = Permiso::ESTADO_REVOCADO;
+        $permiso->motivo_rechazo = $request->input('motivo_rechazo');
         $permiso->save();
 
         TrazaActividad::create([

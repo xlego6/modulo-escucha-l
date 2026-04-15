@@ -91,7 +91,7 @@ class EntrevistaWizardController extends Controller
             'id_dependencia_origen' => 'required|integer',
             'id_tipo_testimonio' => 'required|integer',
             'formatos' => 'required|array|min:1',
-            'num_testimoniantes' => 'required|integer|min:1|max:20',
+            'num_testimoniantes' => 'required|integer|min:1|max:50',
             'id_territorio' => 'required|integer',
             'entrevista_lugar' => 'required|integer',
             'modalidades' => 'required|array|min:1',
