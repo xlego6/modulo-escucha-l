@@ -520,13 +520,6 @@
                             <p class="small text-muted">Codigos, titulos, anotaciones y contenido de documentos adjuntos</p>
                         </div>
                         <div class="col-md-3 text-center">
-                            <div class="icono-fuente persona mx-auto mb-2" style="width:48px;height:48px;font-size:1.5rem;">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <strong>Personas</strong>
-                            <p class="small text-muted">Nombres, apellidos, alias, nombres identitarios y documentos</p>
-                        </div>
-                        <div class="col-md-3 text-center">
                             <div class="icono-fuente documento mx-auto mb-2" style="width:48px;height:48px;font-size:1.5rem;">
                                 <i class="fas fa-file-alt"></i>
                             </div>

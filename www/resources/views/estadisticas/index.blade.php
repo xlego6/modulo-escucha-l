@@ -66,44 +66,14 @@
 
 <!-- Gráficos -->
 <div class="row">
-    <!-- Entrevistas por mes -->
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-line"></i> Entrevistas por Mes (ultimos 12 meses)</h3>
-            </div>
-            <div class="card-body">
-                <canvas id="chartEntrevistasMes" height="100"></canvas>
-            </div>
-        </div>
-    </div>
-
     <!-- Personas por sexo -->
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-chart-pie"></i> Personas por Sexo</h3>
             </div>
             <div class="card-body">
                 <canvas id="chartPersonasSexo" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Entrevistas por territorio -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Entrevistas por Territorio (Top 10)</h3>
-            </div>
-            <div class="card-body">
-                @if($entrevistas_por_territorio->count() > 0)
-                <canvas id="chartTerritorios" height="200"></canvas>
-                @else
-                <p class="text-muted text-center">Sin datos de territorio</p>
-                @endif
             </div>
         </div>
     </div>
@@ -119,6 +89,24 @@
                 <canvas id="chartEtnias" height="200"></canvas>
                 @else
                 <p class="text-muted text-center">Sin datos de grupo etnico</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Entrevistas por territorio -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Entrevistas por Territorio (Top 10)</h3>
+            </div>
+            <div class="card-body">
+                @if($entrevistas_por_territorio->count() > 0)
+                <canvas id="chartTerritorios" height="80"></canvas>
+                @else
+                <p class="text-muted text-center">Sin datos de territorio</p>
                 @endif
             </div>
         </div>
@@ -274,31 +262,16 @@
     </div>
 </div>
 
-<!-- Rango de Fechas de Hechos -->
+<!-- Hechos Victimizantes por Año -->
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-calendar-alt"></i> Rango de Fechas de Hechos (1900 – 2030)</h3>
+                <h3 class="card-title"><i class="fas fa-chart-line"></i> Testimonios con Hechos Victimizantes por Año</h3>
             </div>
             <div class="card-body">
-                @if($rango_fechas_hechos && $rango_fechas_hechos->min_year)
-                <div class="row align-items-center mb-3">
-                    <div class="col-md-2 text-center">
-                        <div class="text-muted small">Fecha más antigua</div>
-                        <strong class="text-primary h5">{{ $rango_fechas_hechos->min_year }}</strong>
-                    </div>
-                    <div class="col-md-8">
-                        <canvas id="chartRangoFechas" height="60"></canvas>
-                    </div>
-                    <div class="col-md-2 text-center">
-                        <div class="text-muted small">Fecha más reciente</div>
-                        <strong class="text-primary h5">{{ $rango_fechas_hechos->max_year }}</strong>
-                    </div>
-                </div>
-                <hr class="my-2">
-                <div class="mt-2 small text-muted mb-1">Distribución por década (fecha de inicio de hechos)</div>
-                <canvas id="chartFechasDecadas" height="80"></canvas>
+                @if(!empty($hechos_por_anio))
+                <canvas id="chartHechosPorAnio" height="80"></canvas>
                 @else
                 <p class="text-muted text-center">Sin datos de fechas de hechos</p>
                 @endif
@@ -518,35 +491,6 @@ document.addEventListener('DOMContentLoaded', function() {
         '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'
     ];
 
-    // Entrevistas por mes
-    const dataMeses = @json($entrevistas_por_mes);
-    const labelsMeses = Object.keys(dataMeses);
-    const valuesMeses = Object.values(dataMeses);
-
-    if (labelsMeses.length > 0) {
-        new Chart(document.getElementById('chartEntrevistasMes'), {
-            type: 'line',
-            data: {
-                labels: labelsMeses,
-                datasets: [{
-                    label: 'Entrevistas',
-                    data: valuesMeses,
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
-            }
-        });
-    }
-
     // Personas por sexo
     const dataSexo = @json($personas_por_sexo);
     if (dataSexo.length > 0) {
@@ -657,66 +601,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Rango de fechas de hechos — barra flotante (min → max)
-    const rangoFechas = @json($rango_fechas_hechos);
-    if (rangoFechas && rangoFechas.min_year) {
-        new Chart(document.getElementById('chartRangoFechas'), {
-            type: 'bar',
+    // Hechos victimizantes por año
+    const dataHechosPorAnio = @json($hechos_por_anio);
+    if (dataHechosPorAnio && Object.keys(dataHechosPorAnio).length > 0) {
+        new Chart(document.getElementById('chartHechosPorAnio'), {
+            type: 'line',
             data: {
-                labels: [''],
-                datasets: [{
-                    label: 'Rango de hechos',
-                    data: [[rangoFechas.min_year, rangoFechas.max_year]],
-                    backgroundColor: 'rgba(0, 123, 255, 0.55)',
-                    borderColor: '#007bff',
-                    borderWidth: 2,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `${ctx.raw[0]} – ${ctx.raw[1]}`
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        min: 1900,
-                        max: 2030,
-                        ticks: { stepSize: 10 }
-                    },
-                    y: { display: false }
-                }
-            }
-        });
-    }
-
-    // Histograma por década
-    const dataDecadas = @json($fechas_decadas);
-    if (dataDecadas) {
-        const decadaLabels = Object.keys(dataDecadas).map(d => d + 's');
-        const decadaValues = Object.values(dataDecadas);
-        new Chart(document.getElementById('chartFechasDecadas'), {
-            type: 'bar',
-            data: {
-                labels: decadaLabels,
+                labels: Object.keys(dataHechosPorAnio),
                 datasets: [{
                     label: 'Testimonios',
-                    data: decadaValues,
-                    backgroundColor: 'rgba(0, 123, 255, 0.6)',
+                    data: Object.values(dataHechosPorAnio),
                     borderColor: '#007bff',
-                    borderWidth: 1,
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 5
                 }]
             },
             options: {
                 responsive: true,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { ticks: { maxTicksLimit: 20 } }
+                }
             }
         });
     }
