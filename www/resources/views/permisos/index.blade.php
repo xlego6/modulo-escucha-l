@@ -323,7 +323,7 @@
     </div>
 </div>
 
-@push('scripts')
+@section('scripts')
 <script>
 function abrirModalRechazar(idPermiso) {
     var baseUrl = '{{ url("permisos") }}';
@@ -332,6 +332,6 @@ function abrirModalRechazar(idPermiso) {
     $('#modal-rechazar').modal('show');
 }
 </script>
-@endpush
+@endsection
 
 @endsection

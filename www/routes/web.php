@@ -148,6 +148,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('permisos/create', [PermisoController::class, 'create'])->name('permisos.create');
             Route::post('permisos', [PermisoController::class, 'store'])->name('permisos.store');
             Route::get('permisos/buscar-entrevistas', [PermisoController::class, 'buscarEntrevistas'])->name('permisos.buscar_entrevistas');
+            Route::get('permisos/buscar-entrevistadores', [PermisoController::class, 'buscarEntrevistadores'])->name('permisos.buscar_entrevistadores');
             Route::get('permisos/entrevista/{id}', [PermisoController::class, 'porEntrevista'])->name('permisos.por_entrevista');
             Route::get('permisos/usuario/{id}', [PermisoController::class, 'porUsuario'])->name('permisos.por_usuario');
             Route::get('permisos/{id}', [PermisoController::class, 'show'])->name('permisos.show');
