@@ -200,6 +200,14 @@
         -moz-user-select: none;
         -ms-user-select: none;
     }
+    /* Marca de agua sobre fondo oscuro (visor transcripción #1e1e1e) */
+    .visor-transcripcion .marca-agua-css .marca-item {
+        color: rgba(255, 255, 255, 0.2);
+    }
+    .visor-transcripcion .marca-agua-overlay {
+        mix-blend-mode: screen;
+        opacity: 0.25;
+    }
     /* Info de marca de agua en la cabecera */
     .marca-info {
         font-size: 11px;
