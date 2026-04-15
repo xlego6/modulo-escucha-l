@@ -470,7 +470,10 @@ class EntrevistaController extends Controller
             ->where('id_tipo', '>=', 2) // Escritura o Completo
             ->where('id_estado', Permiso::ESTADO_VIGENTE)
             ->where(function($q) {
-                $q->where('es_solicitud', false)
+                // Permiso directo (es_solicitud false/null) o solicitud aprobada
+                $q->where(function($q2) {
+                      $q2->where('es_solicitud', false)->orWhereNull('es_solicitud');
+                  })
                   ->orWhere(function($q2) {
                       $q2->where('es_solicitud', true)
                          ->where('estado_solicitud', Permiso::SOLICITUD_APROBADA);

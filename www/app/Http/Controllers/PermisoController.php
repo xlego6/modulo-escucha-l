@@ -286,17 +286,33 @@ class PermisoController extends Controller
         DB::beginTransaction();
         try {
             foreach ($entrevistasAProcesar as $entrevista) {
-                // Verificar si ya existe un permiso vigente igual
+                // Verificar si ya existe un permiso vigente para esta entrevista/entrevistador
                 $existente = Permiso::where('id_entrevistador', $request->id_entrevistador)
                     ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
                     ->where('id_estado', Permiso::ESTADO_VIGENTE)
                     ->first();
 
                 if ($existente) {
-                    $permisosExistentes++;
-                    continue;
-                }
-
+                    if ($existente->id_tipo == $request->id_tipo) {
+                        // Mismo tipo: no hay nada que cambiar
+                        $permisosExistentes++;
+                        continue;
+                    }
+                    // Tipo diferente: actualizar el permiso existente
+                    $existente->update([
+                        'id_tipo'          => $request->id_tipo,
+                        'fecha_otorgado'   => now(),
+                        'fecha_vencimiento'=> $request->fecha_vencimiento ?: null,
+                        'fecha_desde'      => $request->fecha_desde ?: null,
+                        'fecha_hasta'      => $request->fecha_hasta ?: null,
+                        'justificacion'    => $request->justificacion,
+                        'id_otorgado_por'  => $user->id_entrevistador,
+                        'es_solicitud'     => false,
+                        'estado_solicitud' => null,
+                    ]);
+                    $permiso = $existente;
+                    $permisosCreados++;
+                } else {
                 $permiso = Permiso::create([
                     'id_entrevistador' => $request->id_entrevistador,
                     'id_e_ind_fvt' => $entrevista->id_e_ind_fvt,
@@ -310,7 +326,10 @@ class PermisoController extends Controller
                     'id_otorgado_por' => $user->id_entrevistador,
                     'id_adjunto' => $idAdjunto,
                     'id_estado' => Permiso::ESTADO_VIGENTE,
+                    'es_solicitud' => false,
                 ]);
+                $permisosCreados++;
+                } // end else (nuevo permiso)
 
                 // Registrar traza
                 TrazaActividad::create([
@@ -322,8 +341,6 @@ class PermisoController extends Controller
                     'codigo' => $entrevistador->rel_usuario->name ?? '',
                     'ip' => $request->ip(),
                 ]);
-
-                $permisosCreados++;
             }
 
             DB::commit();
