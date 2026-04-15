@@ -120,7 +120,7 @@
                         <div class="col-md-3">
                             <div class="form-group mb-0">
                                 <label class="small text-muted mb-1"><i class="fas fa-map-marker-alt"></i> Departamento (toma)</label>
-                                <select name="id_departamento" id="filtro-departamento" class="form-control form-control-sm select2-departamento">
+                                <select name="id_departamento" id="filtro-departamento" class="form-control form-control-sm">
                                     <option value="">-- Todos --</option>
                                     @foreach($territorios->except('') as $id => $nombre)
                                         <option value="{{ $id }}" {{ request('id_departamento') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
@@ -131,10 +131,9 @@
                         <div class="col-md-3">
                             <div class="form-group mb-0">
                                 <label class="small text-muted mb-1"><i class="fas fa-map-pin"></i> Municipio (toma)</label>
-                                <select name="id_municipio" id="filtro-municipio" class="form-control form-control-sm select2-municipio" {{ request('id_departamento') ? '' : 'disabled' }}>
+                                <select name="id_municipio" id="filtro-municipio" class="form-control form-control-sm" {{ request('id_departamento') ? '' : 'disabled' }}>
                                     <option value="">-- Todos --</option>
                                     @if(request('id_municipio'))
-                                        {{-- Pre-cargar municipio seleccionado --}}
                                         @php $geoMuni = \App\Models\Geo::find(request('id_municipio')); @endphp
                                         @if($geoMuni)
                                             <option value="{{ $geoMuni->id_geo }}" selected>{{ $geoMuni->descripcion }}</option>
@@ -162,6 +161,28 @@
                                     @endforeach
                                 </select>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-3">
+                            <div class="form-group mb-0">
+                                <label class="small text-muted mb-1"><i class="fas fa-building"></i> Dependencia Origen</label>
+                                <select name="id_dependencia" class="form-control form-control-sm">
+                                    @foreach($dependencias as $id => $nombre)
+                                    <option value="{{ $id }}" {{ request('id_dependencia') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-9 d-flex align-items-end justify-content-end">
+                            @if(request()->hasAny(['id_departamento','id_municipio','id_hecho_victimizante','id_resistencia','id_dependencia']))
+                            <a href="{{ route('buscador.index', ['q' => $termino]) }}" class="btn btn-sm btn-outline-secondary mr-2">
+                                <i class="fas fa-times"></i> Limpiar filtros
+                            </a>
+                            @endif
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="fas fa-filter"></i> Aplicar filtros
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -536,59 +557,45 @@ function toggleSeccion(id, header) {
     }
 }
 
-// Dropdowns en cascada: Departamento → Municipio
+// Dropdown en cascada: Departamento → Municipio
 $(document).ready(function() {
-    $('.select2-departamento').select2({
+    $('#filtro-departamento').select2({
         placeholder: '-- Todos --',
         allowClear: true,
         width: '100%'
     });
 
-    $('.select2-municipio').select2({
+    $('#filtro-municipio').select2({
         placeholder: '-- Todos --',
         allowClear: true,
-        width: '100%',
-        disabled: !$('#filtro-departamento').val()
+        width: '100%'
     });
 
-    $('#filtro-departamento').on('change', function() {
-        var idDepto = $(this).val();
+    function cargarMunicipios(idDepto, idMuniSeleccionado) {
         var $muni = $('#filtro-municipio');
-
-        // Limpiar y deshabilitar municipio
         $muni.empty().append('<option value="">-- Todos --</option>');
+        $muni.prop('disabled', true).trigger('change');
 
-        if (!idDepto) {
-            $muni.prop('disabled', true).trigger('change.select2');
-            return;
-        }
-
-        $muni.prop('disabled', true);
+        if (!idDepto) return;
 
         $.getJSON('{{ route("api.municipios") }}', { id_departamento: idDepto }, function(data) {
             $.each(data, function(id, nombre) {
-                $muni.append($('<option>').val(id).text(nombre));
+                var opt = new Option(nombre, id, false, String(id) === String(idMuniSeleccionado));
+                $muni.append(opt);
             });
-            $muni.prop('disabled', false).trigger('change.select2');
+            $muni.prop('disabled', false).trigger('change');
         }).fail(function() {
-            $muni.prop('disabled', false);
+            $muni.prop('disabled', false).trigger('change');
         });
+    }
+
+    $('#filtro-departamento').on('change', function() {
+        cargarMunicipios($(this).val(), '');
     });
 
-    // Si hay departamento preseleccionado, cargar sus municipios
+    // Si hay departamento preseleccionado, cargar municipios y seleccionar el municipio actual
     @if(request('id_departamento'))
-    var idDeptoInicial = '{{ request("id_departamento") }}';
-    var idMuniInicial  = '{{ request("id_municipio") }}';
-
-    $.getJSON('{{ route("api.municipios") }}', { id_departamento: idDeptoInicial }, function(data) {
-        var $muni = $('#filtro-municipio');
-        $muni.empty().append('<option value="">-- Todos --</option>');
-        $.each(data, function(id, nombre) {
-            var selected = (String(id) === String(idMuniInicial)) ? ' selected' : '';
-            $muni.append($('<option' + selected + '>').val(id).text(nombre));
-        });
-        $muni.prop('disabled', false).trigger('change.select2');
-    });
+    cargarMunicipios('{{ request("id_departamento") }}', '{{ request("id_municipio") }}');
     @endif
 });
 </script>

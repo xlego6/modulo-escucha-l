@@ -739,8 +739,10 @@ class PermisoController extends Controller
             $permiso->fecha_otorgado = now();
             $permiso->fecha_respuesta = now();
             $permiso->id_respondido_por = $user->id;
-            $permiso->id_otorgado_por = $user->id_entrevistador;
+            $permiso->id_otorgado_por = $user->id_entrevistador ?: null;
             $permiso->id_estado = Permiso::ESTADO_VIGENTE;
+            $permiso->fecha_desde = $request->fecha_desde ?: null;
+            $permiso->fecha_hasta = $request->fecha_hasta ?: null;
             $permiso->save();
 
             // Si es solicitud de eliminación, hacer soft delete de la entrevista
