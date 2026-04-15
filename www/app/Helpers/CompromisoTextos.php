@@ -15,7 +15,7 @@ namespace App\Helpers;
  */
 class CompromisoTextos
 {
-    const ACCESO_VERSION  = '2026-04-v1';
+    const ACCESO_VERSION  = '2026-05-v1';
     const RESERVA_VERSION = '2026-04-v1';
 
     /**
@@ -24,10 +24,10 @@ class CompromisoTextos
     public static function textoAcceso(string $nombreUsuario, string $dependencia): string
     {
         $parteDependencia = (trim($dependencia) && $dependencia !== 'Sin asignar')
-            ? ', de la ' . trim($dependencia) . ','
-            : '';
+            ? trim($dependencia)
+            : '[Dependencia]';
 
-        return "El funcionario(a) del CNMH {$nombreUsuario}{$parteDependencia} acepta las condiciones para la consulta interna y/o entrega de copias de los expedientes testimoniales recopilados dentro del marco misional del CNMH en el Repositorio «CNMH Escucha». Esta contribución se realiza de manera voluntaria y libre de costos.";
+        return "El/La funcionario/a del CNMH {$nombreUsuario}, de la {$parteDependencia}, suscribe el presente compromiso con el fin de formalizar la entrega y consulta de copias de información de expedientes testimoniales, entrevistas u otros archivos orales, producto de las actividades misional del CNMH o los que le sean allegados por organizaciones sociales de derechos humanos, en función del numeral 2 del artículo 12. del Decreto 4803 de 2011, en el Módulo de Escucha, administrado por la Dirección de Archivos de los Derechos Humanos. Esta aceptación se realiza de manera voluntaria, libre de costos y autoriza el resguardo, búsqueda, consulta, visualización y generación de informes en el Módulo de Escucha del CNMH de dichos documentos, dependiendo del nivel de reserva y sujeto a las medidas de protección u otras que dictamine la ley colombiana. El usuario que realiza la entrega, a través de la carga, se hace responsable de la integridad, producción y gestión de los documentos que hacen parte de sus expedientes y de su inclusión en instrumentos de gestión documental de la entidad, y otorga autorización para su uso por el período de vigencia del Centro Nacional de Memoria Histórica y/o quien haga sus veces.";
     }
 
     /**
