@@ -41,7 +41,9 @@ class EntrevistaController extends Controller
                           ->where('id_entrevistador', $user->id_entrevistador)
                           ->where('id_estado', 1) // ESTADO_VIGENTE
                           ->where(function($pq) {
-                              $pq->where('es_solicitud', false)
+                              $pq->where(function($pq2) {
+                                     $pq2->where('es_solicitud', false)->orWhereNull('es_solicitud');
+                                 })
                                  ->orWhere(function($pq2) {
                                      $pq2->where('es_solicitud', true)
                                          ->where('estado_solicitud', 'aprobado');
@@ -519,7 +521,9 @@ class EntrevistaController extends Controller
             ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
             ->where('id_estado', Permiso::ESTADO_VIGENTE)
             ->where(function($q) {
-                $q->where('es_solicitud', false)
+                $q->where(function($q2) {
+                      $q2->where('es_solicitud', false)->orWhereNull('es_solicitud');
+                  })
                   ->orWhere(function($q2) {
                       $q2->where('es_solicitud', true)
                          ->where('estado_solicitud', Permiso::SOLICITUD_APROBADA);
