@@ -30,19 +30,6 @@ class EstadisticaController extends Controller
             'entrevistadores' => Entrevistador::count(),
         ];
 
-        // Entrevistas por mes (últimos 12 meses)
-        $entrevistas_por_mes = Entrevista::where('id_activo', 1)
-            ->where('entrevista_fecha', '>=', now()->subMonths(12))
-            ->select(
-                DB::raw("TO_CHAR(entrevista_fecha, 'YYYY-MM') as mes"),
-                DB::raw('COUNT(*) as total')
-            )
-            ->groupBy('mes')
-            ->orderBy('mes')
-            ->get()
-            ->pluck('total', 'mes')
-            ->toArray();
-
         // Entrevistas por territorio
         $entrevistas_por_territorio = Entrevista::where('id_activo', 1)
             ->whereNotNull('id_territorio')
@@ -113,34 +100,23 @@ class EstadisticaController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        // Rango de años de hechos (min y max para la barra de rango)
+        // Hechos victimizantes por año (fecha_hechos_inicial)
         $anioActual = (int) date('Y');
-        $rango_fechas_hechos = DB::table('esclarecimiento.contenido_testimonio')
+        $hechos_por_anio_raw = DB::table('esclarecimiento.contenido_testimonio')
             ->whereNotNull('fecha_hechos_inicial')
             ->whereRaw("EXTRACT(YEAR FROM fecha_hechos_inicial) BETWEEN 1900 AND ?", [$anioActual])
-            ->selectRaw("
-                MIN(EXTRACT(YEAR FROM fecha_hechos_inicial))::integer AS min_year,
-                MAX(EXTRACT(YEAR FROM COALESCE(
-                    CASE WHEN EXTRACT(YEAR FROM fecha_hechos_final) BETWEEN 1900 AND ? THEN fecha_hechos_final END,
-                    fecha_hechos_inicial
-                )))::integer AS max_year
-            ", [$anioActual])
-            ->first();
-
-        // Histograma por década (1900-2020)
-        $decadas_raw = DB::table('esclarecimiento.contenido_testimonio')
-            ->whereNotNull('fecha_hechos_inicial')
-            ->whereRaw("EXTRACT(YEAR FROM fecha_hechos_inicial) BETWEEN 1900 AND 2030")
-            ->selectRaw("(FLOOR(EXTRACT(YEAR FROM fecha_hechos_inicial) / 10) * 10)::integer AS decada, COUNT(*) AS total")
-            ->groupByRaw("FLOOR(EXTRACT(YEAR FROM fecha_hechos_inicial) / 10) * 10")
-            ->orderBy('decada')
-            ->pluck('total', 'decada')
+            ->selectRaw("EXTRACT(YEAR FROM fecha_hechos_inicial)::integer AS anio, COUNT(*) AS total")
+            ->groupByRaw("EXTRACT(YEAR FROM fecha_hechos_inicial)::integer")
+            ->orderBy('anio')
+            ->pluck('total', 'anio')
             ->toArray();
 
-        // Rellenar décadas sin datos con 0
-        $fechas_decadas = [];
-        for ($d = 1900; $d <= 2020; $d += 10) {
-            $fechas_decadas[$d] = $decadas_raw[$d] ?? 0;
+        // Rellenar años sin datos con 0 (solo desde el primer año con dato hasta hoy)
+        $hechos_por_anio = [];
+        if (!empty($hechos_por_anio_raw)) {
+            for ($y = min(array_keys($hechos_por_anio_raw)); $y <= $anioActual; $y++) {
+                $hechos_por_anio[$y] = $hechos_por_anio_raw[$y] ?? 0;
+            }
         }
 
         // =============================================
@@ -244,7 +220,6 @@ class EstadisticaController extends Controller
 
         return view('estadisticas.index', compact(
             'totales',
-            'entrevistas_por_mes',
             'entrevistas_por_territorio',
             'personas_por_sexo',
             'personas_por_etnia',
@@ -255,8 +230,7 @@ class EstadisticaController extends Controller
             // Paso 3
             'hechos_victimizantes',
             'practicas_resistencia',
-            'rango_fechas_hechos',
-            'fechas_decadas',
+            'hechos_por_anio',
             // Paso 2
             'poblaciones_testimoniantes',
             'rangos_etarios',
