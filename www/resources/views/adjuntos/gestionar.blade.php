@@ -73,6 +73,7 @@
         overflow-y: auto;
         white-space: pre-wrap;
         word-wrap: break-word;
+        position: relative;
     }
     .visor-transcripcion .transcripcion-header {
         background: #333;
@@ -278,6 +279,7 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $esRolRestringido = in_array(Auth::user()->id_nivel, [3, 5]); @endphp
                         @forelse($entrevista->rel_adjuntos as $adjunto)
                         @php
                             $esTranscripcionAuto = $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA;
@@ -348,12 +350,12 @@
                                         <i class="fas fa-lock"></i>
                                     </span>
                                     @endif
-                                    @if($adjunto->existe_archivo && $puedeGestionar && (Auth::user()->id_nivel == 1 || (!$adjunto->es_audio && !$adjunto->es_video)))
+                                    @if($adjunto->existe_archivo && $puedeGestionar && !($esRolRestringido && $esTranscripcion) && (Auth::user()->id_nivel == 1 || (!$adjunto->es_audio && !$adjunto->es_video)))
                                     <a href="{{ route('adjuntos.descargar', $adjunto->id_adjunto) }}" class="btn btn-success" title="Descargar archivo original">
                                         <i class="fas fa-download"></i>
                                     </a>
                                     @endif
-                                    @if($esTranscripcion && !empty($adjunto->texto_extraido) && $puedeGestionar)
+                                    @if($esTranscripcion && !empty($adjunto->texto_extraido) && $puedeGestionar && !$esRolRestringido)
                                     @php
                                         $tipoFormTR = $esTranscripcionFinal ? 'final' : 'auto';
                                     @endphp
@@ -1021,9 +1023,10 @@ $(document).ready(function() {
             let icono = esFinal ? 'fa-file-signature' : 'fa-robot';
             let titulo = esFinal ? 'Transcripcion Final' : 'Transcripcion Automatizada';
             let colorHeader = esFinal ? '#2e7d32' : '#333';
+            necesitaMarca = true;
 
             contenido = `
-                <div class="visor-transcripcion">
+                <div class="visor-transcripcion visor-con-marca">
                     <div class="transcripcion-header" style="background: ${colorHeader};">
                         <h5><i class="fas ${icono} mr-2"></i>${titulo}</h5>
                         <div class="transcripcion-stats">
@@ -1031,7 +1034,8 @@ $(document).ready(function() {
                             <span><i class="fas fa-paragraph mr-1"></i>${palabras.toLocaleString()} palabras</span>
                         </div>
                     </div>
-                    <div class="transcripcion-texto">${escapeHtml(texto)}</div>
+                    <div class="transcripcion-texto no-copiar" oncontextmenu="return false">${escapeHtml(texto)}</div>
+                    ${generarMarcaAgua()}
                 </div>
             `;
         } else if (esAudio) {

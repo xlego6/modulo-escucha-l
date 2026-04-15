@@ -199,6 +199,15 @@ class AdjuntoController extends Controller
 
         $user = Auth::user();
 
+        // Roles 3 (Entrevistador) y 5 (Gestor) no pueden descargar transcripciones
+        $esTranscripcion = in_array($adjunto->id_tipo, [
+            \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
+            \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL,
+        ]);
+        if ($esTranscripcion && in_array($user->id_nivel, [3, 5])) {
+            abort(403, 'No tiene permiso para descargar transcripciones.');
+        }
+
         TrazaActividad::create([
             'fecha_hora'  => now(),
             'id_usuario'  => $user->id,
@@ -427,6 +436,11 @@ class AdjuntoController extends Controller
      */
     public function descargarFormTR($id_entrevista, string $tipo, string $formato)
     {
+        // Roles 3 (Entrevistador) y 5 (Gestor) no pueden descargar transcripciones formateadas
+        if (in_array(Auth::user()->id_nivel, [3, 5])) {
+            abort(403, 'No tiene permiso para descargar transcripciones.');
+        }
+
         $entrevista = Entrevista::with([
             'rel_adjuntos',
             'rel_entrevistador.rel_usuario',

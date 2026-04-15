@@ -93,20 +93,47 @@ class MapaController extends Controller
      */
     private function getDatosPorLugarToma()
     {
-        // entrevista_lugar es a nivel municipio, necesitamos obtener el departamento (padre)
+        // Combina dos fuentes:
+        // 1. entrevista_lugar (municipio nivel=3) → padre = departamento
+        // 2. id_territorio (departamento nivel=2) para entrevistas sin municipio (carga masiva)
         return DB::select("
             SELECT
-                depto.id_geo as id_depto,
-                depto.descripcion as departamento,
-                depto.lat,
-                depto.lon,
-                COUNT(e.id_e_ind_fvt) as total
-            FROM esclarecimiento.e_ind_fvt e
-            INNER JOIN catalogos.geo muni ON e.entrevista_lugar = muni.id_geo
-            INNER JOIN catalogos.geo depto ON muni.id_padre = depto.id_geo AND depto.nivel = 2
-            WHERE e.id_activo = 1 AND e.entrevista_lugar IS NOT NULL
-                AND depto.descripcion != 'Sin Información'
-            GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
+                id_depto,
+                departamento,
+                lat,
+                lon,
+                SUM(total) as total
+            FROM (
+                SELECT
+                    depto.id_geo as id_depto,
+                    depto.descripcion as departamento,
+                    depto.lat,
+                    depto.lon,
+                    COUNT(e.id_e_ind_fvt) as total
+                FROM esclarecimiento.e_ind_fvt e
+                INNER JOIN catalogos.geo muni ON e.entrevista_lugar = muni.id_geo
+                INNER JOIN catalogos.geo depto ON muni.id_padre = depto.id_geo AND depto.nivel = 2
+                WHERE e.id_activo = 1 AND e.entrevista_lugar IS NOT NULL
+                    AND depto.descripcion != 'Sin Información'
+                GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
+
+                UNION ALL
+
+                SELECT
+                    depto.id_geo as id_depto,
+                    depto.descripcion as departamento,
+                    depto.lat,
+                    depto.lon,
+                    COUNT(e.id_e_ind_fvt) as total
+                FROM esclarecimiento.e_ind_fvt e
+                INNER JOIN catalogos.geo depto ON e.id_territorio = depto.id_geo AND depto.nivel = 2
+                WHERE e.id_activo = 1
+                    AND (e.entrevista_lugar IS NULL OR e.entrevista_lugar = 0)
+                    AND e.id_territorio IS NOT NULL
+                    AND depto.descripcion != 'Sin Información'
+                GROUP BY depto.id_geo, depto.descripcion, depto.lat, depto.lon
+            ) combined
+            GROUP BY id_depto, departamento, lat, lon
             ORDER BY total DESC
         ");
     }
