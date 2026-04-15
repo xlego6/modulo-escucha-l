@@ -8,8 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('users', 'is_login_directory_active')) {
-            Schema::table('users', function (Blueprint $table) {
+        if (!Schema::hasColumn('public.users', 'is_login_directory_active')) {
+            Schema::table('public.users', function (Blueprint $table) {
                 $table->boolean('is_login_directory_active')->default(false);
             });
         }
@@ -17,8 +17,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::hasColumn('users', 'is_login_directory_active')) {
-            Schema::table('users', function (Blueprint $table) {
+        if (Schema::hasColumn('public.users', 'is_login_directory_active')) {
+            Schema::table('public.users', function (Blueprint $table) {
                 $table->dropColumn('is_login_directory_active');
             });
         }
