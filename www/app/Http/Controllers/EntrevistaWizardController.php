@@ -12,6 +12,7 @@ use App\Models\Geo;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
 use App\Models\RolModuloPermiso;
+use App\Models\Permiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -778,9 +779,28 @@ class EntrevistaWizardController extends Controller
         if ($p && $p['puede_editar'] && $p['alcance_todas']) {
             return true;
         }
+
         if ($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->id_usuario == $user->id) {
             return true;
         }
-        return false;
+
+        // Permiso de escritura o completo otorgado vigente
+        return Permiso::where('id_entrevistador', $user->id_entrevistador)
+            ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+            ->where('id_tipo', '>=', 2)
+            ->where('id_estado', Permiso::ESTADO_VIGENTE)
+            ->where(function ($q) {
+                $q->where(function ($q2) {
+                    $q2->where('es_solicitud', false)->orWhereNull('es_solicitud');
+                })->orWhere(function ($q2) {
+                    $q2->where('es_solicitud', true)
+                       ->where('estado_solicitud', Permiso::SOLICITUD_APROBADA);
+                });
+            })
+            ->where(function ($q) {
+                $q->whereNull('fecha_vencimiento')
+                  ->orWhere('fecha_vencimiento', '>', now());
+            })
+            ->exists();
     }
 }
