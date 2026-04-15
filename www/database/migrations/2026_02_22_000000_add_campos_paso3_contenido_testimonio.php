@@ -9,23 +9,24 @@ return new class extends Migration
 {
     public function up()
     {
-        // Agregar columnas a contenido_testimonio
-        Schema::table('esclarecimiento.contenido_testimonio', function (Blueprint $table) {
-            $table->text('otras_poblaciones_mencionadas')->nullable();
-            $table->text('otras_ocupaciones_mencionadas')->nullable();
-            $table->text('detalle_grupos_etnicos')->nullable();
-            $table->text('otros_hechos_victimizantes')->nullable();
-            $table->text('detalle_resistencias')->nullable();
-        });
+        // Agregar columnas a contenido_testimonio (IF NOT EXISTS para idempotencia)
+        DB::statement("
+            ALTER TABLE esclarecimiento.contenido_testimonio
+            ADD COLUMN IF NOT EXISTS otras_poblaciones_mencionadas text,
+            ADD COLUMN IF NOT EXISTS otras_ocupaciones_mencionadas text,
+            ADD COLUMN IF NOT EXISTS detalle_grupos_etnicos text,
+            ADD COLUMN IF NOT EXISTS otros_hechos_victimizantes text,
+            ADD COLUMN IF NOT EXISTS detalle_resistencias text
+        ");
 
-        // Crear catálogo de prácticas de resistencia
-        DB::table('catalogos.cat_cat')->insert([
+        // Crear catálogo de prácticas de resistencia (ignorar si ya existe)
+        DB::table('catalogos.cat_cat')->insertOrIgnore([
             'id_cat' => 20,
             'nombre' => 'practicas_resistencia',
             'descripcion' => 'Prácticas de resistencia',
         ]);
 
-        // Insertar items del catálogo
+        // Insertar items del catálogo (ignorar duplicados)
         $items = [
             ['id_item' => 316, 'id_cat' => 20, 'descripcion' => 'Prácticas de resistencia colectivas', 'orden' => 1, 'habilitado' => 1],
             ['id_item' => 317, 'id_cat' => 20, 'descripcion' => 'Prácticas de resistencia cultural', 'orden' => 2, 'habilitado' => 1],
@@ -39,14 +40,16 @@ return new class extends Migration
         ];
 
         foreach ($items as $item) {
-            DB::table('catalogos.cat_item')->insert($item);
+            DB::table('catalogos.cat_item')->insertOrIgnore($item);
         }
 
-        // Crear tabla junction para prácticas de resistencia
-        Schema::create('esclarecimiento.contenido_practica_resistencia', function (Blueprint $table) {
-            $table->integer('id_e_ind_fvt');
-            $table->integer('id_practica');
-        });
+        // Crear tabla junction para prácticas de resistencia (IF NOT EXISTS)
+        DB::statement("
+            CREATE TABLE IF NOT EXISTS esclarecimiento.contenido_practica_resistencia (
+                id_e_ind_fvt integer NOT NULL,
+                id_practica integer NOT NULL
+            )
+        ");
     }
 
     public function down()
