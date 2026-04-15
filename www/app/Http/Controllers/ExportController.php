@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\EntrevistasExport;
 use App\Exports\PersonasExport;
+use App\Exports\UsuariosExport;
 use App\Models\Entrevistador;
 use App\Models\CatItem;
 use App\Models\Geo;
@@ -131,5 +132,30 @@ class ExportController extends Controller
         $nombre = 'personas_' . date('Y-m-d_His') . '.xlsx';
 
         return Excel::download(new PersonasExport($filtros), $nombre);
+    }
+
+    /**
+     * Exportar usuarios a Excel (solo Admin)
+     */
+    public function usuarios(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->id_nivel != 1) {
+            abort(403);
+        }
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion'     => 'exportar_usuarios',
+            'objeto'     => 'usuario',
+            'referencia' => 'Exportacion de usuarios y compromisos a Excel',
+            'ip'         => $request->ip(),
+        ]);
+
+        $nombre = 'usuarios_' . date('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new UsuariosExport(), $nombre);
     }
 }

@@ -126,6 +126,37 @@
         </div>
     </div>
 
+    <!-- Exportar Usuarios (solo Admin) -->
+    @if(Auth::user()->id_nivel == 1)
+    <div class="col-lg-4">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>Exportar Usuarios</h3>
+            </div>
+            <form action="{{ route('exportar.usuarios') }}" method="POST">
+                @csrf
+                <div class="card-body">
+                    <p class="text-muted">Exporta el listado completo de usuarios registrados en el sistema, incluyendo:</p>
+                    <ul class="list-unstyled text-muted small">
+                        <li><i class="fas fa-check text-secondary mr-1"></i> Nombre, correo, rol, dependencia</li>
+                        <li><i class="fas fa-check text-secondary mr-1"></i> Fecha de registro en el sistema</li>
+                        <li><i class="fas fa-check text-secondary mr-1"></i> Fecha y texto del compromiso de acceso interno firmado</li>
+                        <li><i class="fas fa-check text-secondary mr-1"></i> Fecha y texto del compromiso de reserva firmado</li>
+                    </ul>
+                    <div class="alert alert-info py-2 mb-0">
+                        <small><i class="fas fa-info-circle mr-1"></i> Incluye el texto exacto que cada usuario firmó en el momento de la aceptación.</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="fas fa-file-excel mr-2"></i>Descargar Excel de Usuarios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
+
     <!-- Exportar Personas -->
     <div class="col-lg-4">
         <div class="card card-success">

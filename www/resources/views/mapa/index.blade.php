@@ -266,11 +266,15 @@ function agregarMarcadores(datos, maxEntrevistas) {
     var color = coloresTipo[tipoActual] || '#EBC01A';
 
     datos.forEach(function(item) {
-        // Radio en metros (escala con el zoom del mapa)
-        // Min: 8km, Max: 50km segun proporcion de entrevistas
-        var radio = maxEntrevistas > 0
-            ? Math.max(8000, Math.min(50000, (item.total / maxEntrevistas) * 50000))
-            : 12000;
+        // Radio en metros: escala logarítmica para balancear puntos pequeños y grandes
+        // Min: 5km, Max: 45km
+        var radio;
+        if (maxEntrevistas <= 1) {
+            radio = 15000;
+        } else {
+            var logRatio = Math.log(item.total + 1) / Math.log(maxEntrevistas + 1);
+            radio = Math.max(5000, Math.min(45000, logRatio * 45000));
+        }
 
         var marker = L.circle([item.lat, item.lng], {
             radius: radio,

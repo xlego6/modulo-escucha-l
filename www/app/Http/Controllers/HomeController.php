@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Entrevista;
 use App\Models\Entrevistador;
+use App\Models\FirmaCompromiso;
 use App\Models\Persona;
 use App\Models\Adjunto;
 use App\Models\TrazaActividad;
+use App\Helpers\CompromisoTextos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -150,16 +152,29 @@ class HomeController extends Controller
         $entrevistador = Entrevistador::where('id_usuario', $user->id)->first();
 
         if ($entrevistador) {
-            $entrevistador->compromiso_acceso = now();
+            $ahora = now();
+            $entrevistador->compromiso_acceso = $ahora;
             $entrevistador->save();
 
+            // Guardar texto firmado para auditoría
+            FirmaCompromiso::create([
+                'id_entrevistador' => $entrevistador->id_entrevistador,
+                'tipo'             => 'acceso',
+                'version_texto'    => CompromisoTextos::ACCESO_VERSION,
+                'fecha_firma'      => $ahora,
+                'texto_firmado'    => CompromisoTextos::textoAcceso(
+                    $user->name,
+                    $entrevistador->fmt_dependencia_origen
+                ),
+            ]);
+
             TrazaActividad::create([
-                'fecha_hora' => now(),
+                'fecha_hora' => $ahora,
                 'id_usuario' => $user->id,
                 'accion' => 'aceptar_compromiso',
                 'objeto' => 'compromiso_acceso',
                 'id_registro' => $entrevistador->id_entrevistador,
-                'referencia' => 'Aceptacion del compromiso de acceso interno',
+                'referencia' => 'Aceptacion del compromiso de acceso interno (version: ' . CompromisoTextos::ACCESO_VERSION . ')',
                 'ip' => $request->ip(),
             ]);
 
@@ -187,16 +202,27 @@ class HomeController extends Controller
         $entrevistador = Entrevistador::where('id_usuario', $user->id)->first();
 
         if ($entrevistador) {
-            $entrevistador->compromiso_reserva = now();
+            $ahora = now();
+            $rolLabel = $user->id_nivel == 2 ? 'lider(a)' : 'transcriptor(a)';
+            $entrevistador->compromiso_reserva = $ahora;
             $entrevistador->save();
 
+            // Guardar texto firmado para auditoría
+            FirmaCompromiso::create([
+                'id_entrevistador' => $entrevistador->id_entrevistador,
+                'tipo'             => 'reserva',
+                'version_texto'    => CompromisoTextos::RESERVA_VERSION,
+                'fecha_firma'      => $ahora,
+                'texto_firmado'    => CompromisoTextos::textoReserva($user->name, $rolLabel),
+            ]);
+
             TrazaActividad::create([
-                'fecha_hora' => now(),
+                'fecha_hora' => $ahora,
                 'id_usuario' => $user->id,
                 'accion' => 'aceptar_compromiso',
                 'objeto' => 'compromiso_reserva',
                 'id_registro' => $entrevistador->id_entrevistador,
-                'referencia' => 'Aceptacion del compromiso de reserva',
+                'referencia' => 'Aceptacion del compromiso de reserva (version: ' . CompromisoTextos::RESERVA_VERSION . ')',
                 'ip' => $request->ip(),
             ]);
 

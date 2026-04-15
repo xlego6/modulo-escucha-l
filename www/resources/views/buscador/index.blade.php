@@ -120,15 +120,27 @@
                         <div class="col-md-3">
                             <div class="form-group mb-0">
                                 <label class="small text-muted mb-1"><i class="fas fa-map-marker-alt"></i> Departamento (toma)</label>
-                                <input type="text" name="departamento" class="form-control form-control-sm"
-                                    placeholder="Ej: Antioquia" value="{{ request('departamento') }}">
+                                <select name="id_departamento" id="filtro-departamento" class="form-control form-control-sm select2-departamento">
+                                    <option value="">-- Todos --</option>
+                                    @foreach($territorios->except('') as $id => $nombre)
+                                        <option value="{{ $id }}" {{ request('id_departamento') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group mb-0">
                                 <label class="small text-muted mb-1"><i class="fas fa-map-pin"></i> Municipio (toma)</label>
-                                <input type="text" name="municipio" class="form-control form-control-sm"
-                                    placeholder="Ej: Medellín" value="{{ request('municipio') }}">
+                                <select name="id_municipio" id="filtro-municipio" class="form-control form-control-sm select2-municipio" {{ request('id_departamento') ? '' : 'disabled' }}>
+                                    <option value="">-- Todos --</option>
+                                    @if(request('id_municipio'))
+                                        {{-- Pre-cargar municipio seleccionado --}}
+                                        @php $geoMuni = \App\Models\Geo::find(request('id_municipio')); @endphp
+                                        @if($geoMuni)
+                                            <option value="{{ $geoMuni->id_geo }}" selected>{{ $geoMuni->descripcion }}</option>
+                                        @endif
+                                    @endif
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -185,6 +197,9 @@
                             <i class="fas fa-microphone text-success"></i>
                             Entrevistas
                             <span class="badge badge-success contador-seccion ml-2">{{ $resultados['entrevistas']->count() }}</span>
+                            @if($resultados['tiene_mas_entrevistas'])
+                                <span class="badge badge-warning ml-1" title="Puede haber más resultados">+</span>
+                            @endif
                         </h3>
                         <div class="card-tools">
                             <i class="fas fa-chevron-up toggle-icon"></i>
@@ -271,6 +286,13 @@
                             </div>
                             @endforeach
                         </div>
+                        @if($resultados['tiene_mas_entrevistas'])
+                        <div class="card-footer text-center">
+                            <a href="{{ request()->fullUrlWithQuery(['limite_entrevistas' => $resultados['limite_entrevistas'] * 2]) }}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-plus-circle mr-1"></i> Ver más entrevistas (mostrando {{ $resultados['entrevistas']->count() }})
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -283,6 +305,9 @@
                             <i class="fas fa-users text-info"></i>
                             Personas
                             <span class="badge badge-info contador-seccion ml-2">{{ $resultados['personas']->count() }}</span>
+                            @if($resultados['tiene_mas_personas'])
+                                <span class="badge badge-warning ml-1" title="Puede haber más resultados">+</span>
+                            @endif
                         </h3>
                         <div class="card-tools">
                             <i class="fas fa-chevron-up toggle-icon"></i>
@@ -341,6 +366,13 @@
                             </div>
                             @endforeach
                         </div>
+                        @if($resultados['tiene_mas_personas'])
+                        <div class="card-footer text-center">
+                            <a href="{{ request()->fullUrlWithQuery(['limite_personas' => $resultados['limite_personas'] * 2]) }}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-plus-circle mr-1"></i> Ver más personas (mostrando {{ $resultados['personas']->count() }})
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -426,6 +458,13 @@
                             </div>
                             @endforeach
                         </div>
+                        @if($resultados['tiene_mas_documentos'])
+                        <div class="card-footer text-center">
+                            <a href="{{ request()->fullUrlWithQuery(['limite_documentos' => $resultados['limite_documentos'] * 2]) }}" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-plus-circle mr-1"></i> Ver más documentos (mostrando {{ $resultados['documentos']->count() }})
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -496,5 +535,61 @@ function toggleSeccion(id, header) {
         icon.classList.add('fa-chevron-down');
     }
 }
+
+// Dropdowns en cascada: Departamento → Municipio
+$(document).ready(function() {
+    $('.select2-departamento').select2({
+        placeholder: '-- Todos --',
+        allowClear: true,
+        width: '100%'
+    });
+
+    $('.select2-municipio').select2({
+        placeholder: '-- Todos --',
+        allowClear: true,
+        width: '100%',
+        disabled: !$('#filtro-departamento').val()
+    });
+
+    $('#filtro-departamento').on('change', function() {
+        var idDepto = $(this).val();
+        var $muni = $('#filtro-municipio');
+
+        // Limpiar y deshabilitar municipio
+        $muni.empty().append('<option value="">-- Todos --</option>');
+
+        if (!idDepto) {
+            $muni.prop('disabled', true).trigger('change.select2');
+            return;
+        }
+
+        $muni.prop('disabled', true);
+
+        $.getJSON('{{ route("api.municipios") }}', { id_departamento: idDepto }, function(data) {
+            $.each(data, function(id, nombre) {
+                $muni.append($('<option>').val(id).text(nombre));
+            });
+            $muni.prop('disabled', false).trigger('change.select2');
+        }).fail(function() {
+            $muni.prop('disabled', false);
+        });
+    });
+
+    // Si hay departamento preseleccionado, cargar sus municipios
+    @if(request('id_departamento'))
+    var idDeptoInicial = '{{ request("id_departamento") }}';
+    var idMuniInicial  = '{{ request("id_municipio") }}';
+
+    $.getJSON('{{ route("api.municipios") }}', { id_departamento: idDeptoInicial }, function(data) {
+        var $muni = $('#filtro-municipio');
+        $muni.empty().append('<option value="">-- Todos --</option>');
+        $.each(data, function(id, nombre) {
+            var selected = (String(id) === String(idMuniInicial)) ? ' selected' : '';
+            $muni.append($('<option' + selected + '>').val(id).text(nombre));
+        });
+        $muni.prop('disabled', false).trigger('change.select2');
+    });
+    @endif
+});
 </script>
 @endsection

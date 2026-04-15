@@ -97,6 +97,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('exportar', [ExportController::class, 'index'])->name('exportar.index');
             Route::post('exportar/entrevistas', [ExportController::class, 'entrevistas'])->name('exportar.entrevistas');
             Route::post('exportar/personas', [ExportController::class, 'personas'])->name('exportar.personas');
+            Route::post('exportar/usuarios', [ExportController::class, 'usuarios'])->name('exportar.usuarios');
         });
 
         // Usuarios: Solo Admin(1)

@@ -26,17 +26,35 @@ class BuscadorController extends Controller
         $termino = $request->get('q', '');
         $tiene_busqueda = strlen(trim($termino)) >= 2;
 
+        $limiteEntrevistas = (int) $request->get('limite_entrevistas', 100);
+        $limitePersonas    = (int) $request->get('limite_personas', 100);
+        $limiteDocumentos  = (int) $request->get('limite_documentos', 100);
+        // Sanitize to allowed values
+        $limiteEntrevistas = in_array($limiteEntrevistas, [100, 200, 500]) ? $limiteEntrevistas : 100;
+        $limitePersonas    = in_array($limitePersonas,    [100, 200, 500]) ? $limitePersonas    : 100;
+        $limiteDocumentos  = in_array($limiteDocumentos,  [100, 200, 500]) ? $limiteDocumentos  : 100;
+
         $resultados = [
             'entrevistas' => collect(),
             'personas' => collect(),
             'documentos' => collect(),
             'total' => 0,
+            'tiene_mas_entrevistas' => false,
+            'tiene_mas_personas'    => false,
+            'tiene_mas_documentos'  => false,
+            'limite_entrevistas'    => $limiteEntrevistas,
+            'limite_personas'       => $limitePersonas,
+            'limite_documentos'     => $limiteDocumentos,
         ];
 
         if ($tiene_busqueda) {
-            $resultados['entrevistas'] = $this->buscarEntrevistas($termino, $request);
-            $resultados['personas'] = $this->buscarPersonas($termino, $request);
-            $resultados['documentos'] = $this->buscarDocumentos($termino, $request);
+            $resultados['entrevistas'] = $this->buscarEntrevistas($termino, $request, $limiteEntrevistas);
+            $resultados['personas']    = $this->buscarPersonas($termino, $request, $limitePersonas);
+            $resultados['documentos']  = $this->buscarDocumentos($termino, $request, $limiteDocumentos);
+
+            $resultados['tiene_mas_entrevistas'] = $resultados['entrevistas']->count() >= $limiteEntrevistas;
+            $resultados['tiene_mas_personas']    = $resultados['personas']->count() >= $limitePersonas;
+            $resultados['tiene_mas_documentos']  = $resultados['documentos']->count() >= $limiteDocumentos;
 
             $resultados['total'] = $resultados['entrevistas']->count() +
                                    $resultados['personas']->count() +
@@ -116,7 +134,7 @@ class BuscadorController extends Controller
      * El buscador muestra todas las entrevistas a todos los roles autenticados;
      * el control de acceso al detalle/edicion se aplica en EntrevistaController.
      */
-    private function buscarEntrevistas($termino, Request $request, $limite = 50)
+    private function buscarEntrevistas($termino, Request $request, $limite = 100)
     {
         $terminos = $this->parsearTerminos($termino);
 
@@ -160,22 +178,20 @@ class BuscadorController extends Controller
             }
         });
 
-        // Geo filter: departamento (text search on geo table)
-        if ($request->filled('departamento')) {
-            $query->whereHas('rel_lugar_entrevista', function($q) use ($request) {
-                $q->where('descripcion', 'ILIKE', '%' . $request->departamento . '%');
+        // Geo filter: departamento (by ID - covers both id_territorio and entrevista_lugar.id_padre)
+        if ($request->filled('id_departamento')) {
+            $idDepto = (int) $request->id_departamento;
+            $query->where(function($q) use ($idDepto) {
+                $q->where('id_territorio', $idDepto)
+                  ->orWhereHas('rel_lugar_entrevista', function($q2) use ($idDepto) {
+                      $q2->where('id_padre', $idDepto);
+                  });
             });
         }
 
-        // Municipio filter
-        if ($request->filled('municipio')) {
-            $query->whereHas('rel_entrevistador', function($q) use ($request) {
-                // Search in entrevista_lugar geo
-            });
-            // Also search by location code in entrevista table directly
-            $query->whereHas('rel_lugar_toma', function($q) use ($request) {
-                $q->where('descripcion', 'ILIKE', '%' . $request->municipio . '%');
-            });
+        // Municipio filter (by ID - exact match on entrevista_lugar)
+        if ($request->filled('id_municipio')) {
+            $query->where('entrevista_lugar', (int) $request->id_municipio);
         }
 
         // Hecho victimizante filter
@@ -237,7 +253,7 @@ class BuscadorController extends Controller
             })
             ->whereNotIn('id_e_ind_fvt', $entrevistasDirectas->pluck('id_e_ind_fvt'))
             ->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario', 'rel_lugar_entrevista', 'rel_adjuntos'])
-            ->limit($limite)
+            ->limit(max(0, $limite - $entrevistasDirectas->count()))
             ->get();
 
         foreach ($entrevistasConDocumentos as $e) {
@@ -263,7 +279,7 @@ class BuscadorController extends Controller
     /**
      * Buscar personas - Incluye busqueda en entrevistas asociadas
      */
-    private function buscarPersonas($termino, Request $request, $limite = 50)
+    private function buscarPersonas($termino, Request $request, $limite = 100)
     {
         $personas = Persona::with(['rel_sexo', 'rel_etnia', 'rel_tipo_documento'])
             ->where(function($q) use ($termino) {
@@ -309,7 +325,7 @@ class BuscadorController extends Controller
     /**
      * Buscar en documentos adjuntos
      */
-    private function buscarDocumentos($termino, Request $request, $limite = 50)
+    private function buscarDocumentos($termino, Request $request, $limite = 100)
     {
         $documentos = Adjunto::with(['rel_entrevista', 'rel_tipo'])
             ->where('existe_archivo', 1)
