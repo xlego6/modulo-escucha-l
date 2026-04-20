@@ -69,14 +69,8 @@ class PermisoController extends Controller
                 ->get();
         }
 
-        // Filtros para permisos directos (alcance total ve la lista completa)
-        if (RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
-            if ($request->filled('id_entrevistador')) {
-                $query->where('id_entrevistador', $request->id_entrevistador);
-            }
-            if ($request->filled('id_e_ind_fvt')) {
-                $query->where('id_e_ind_fvt', $request->id_e_ind_fvt);
-            }
+        // Helper closure para aplicar filtros comunes de la lista
+        $aplicarFiltrosLista = function() use ($query, $request) {
             if ($request->filled('codigo')) {
                 $query->porCodigo($request->codigo);
             }
@@ -92,7 +86,7 @@ class PermisoController extends Controller
             if ($request->filled('tipo')) {
                 $query->where('id_tipo', $request->tipo);
             }
-            // Exclude pending solicitudes from main list (shown separately)
+            // Excluir solicitudes pendientes (se muestran en su propio bloque)
             if (!$request->filled('estado') || $request->estado !== 'pendiente') {
                 $query->where(function($q) {
                     $q->where('es_solicitud', false)
@@ -102,8 +96,25 @@ class PermisoController extends Controller
                       });
                 });
             }
+        };
+
+        if (RolModuloPermiso::alcanceTodas($user->id_nivel, 'permisos')) {
+            // Admin/Líder: ve todos los permisos
+            if ($request->filled('id_entrevistador')) {
+                $query->where('id_entrevistador', $request->id_entrevistador);
+            }
+            if ($request->filled('id_e_ind_fvt')) {
+                $query->where('id_e_ind_fvt', $request->id_e_ind_fvt);
+            }
+            $aplicarFiltrosLista();
+        } elseif (RolModuloPermiso::alcanceDependencia($user->id_nivel, 'permisos') && $entrevistadorActual) {
+            // Gestor de conocimiento: permisos de entrevistas de su dependencia
+            $query->whereHas('rel_entrevista', function($q) use ($entrevistadorActual) {
+                $q->where('id_dependencia_origen', $entrevistadorActual->id_dependencia_origen);
+            });
+            $aplicarFiltrosLista();
         } else {
-            // Non-admin: only see their own records
+            // Otros: solo sus propios registros
             if ($entrevistadorActual) {
                 $query->where('id_entrevistador', $entrevistadorActual->id_entrevistador);
             } else {

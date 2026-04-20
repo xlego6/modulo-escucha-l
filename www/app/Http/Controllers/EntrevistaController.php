@@ -52,6 +52,14 @@ class EntrevistaController extends Controller
                           ->where(function($pq) {
                               $pq->whereNull('fecha_vencimiento')
                                  ->orWhere('fecha_vencimiento', '>', now());
+                          })
+                          ->where(function($pq) {
+                              $pq->whereNull('fecha_desde')
+                                 ->orWhere('fecha_desde', '<=', now());
+                          })
+                          ->where(function($pq) {
+                              $pq->whereNull('fecha_hasta')
+                                 ->orWhere('fecha_hasta', '>=', now());
                           });
                   });
             });
@@ -512,7 +520,6 @@ class EntrevistaController extends Controller
             ->where('id_tipo', '>=', 2) // Escritura o Completo
             ->where('id_estado', Permiso::ESTADO_VIGENTE)
             ->where(function($q) {
-                // Permiso directo (es_solicitud false/null) o solicitud aprobada
                 $q->where(function($q2) {
                       $q2->where('es_solicitud', false)->orWhereNull('es_solicitud');
                   })
@@ -524,6 +531,14 @@ class EntrevistaController extends Controller
             ->where(function($q) {
                 $q->whereNull('fecha_vencimiento')
                   ->orWhere('fecha_vencimiento', '>', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('fecha_desde')
+                  ->orWhere('fecha_desde', '<=', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('fecha_hasta')
+                  ->orWhere('fecha_hasta', '>=', now());
             })
             ->exists();
 
@@ -572,6 +587,14 @@ class EntrevistaController extends Controller
             ->where(function($q) {
                 $q->whereNull('fecha_vencimiento')
                   ->orWhere('fecha_vencimiento', '>', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('fecha_desde')
+                  ->orWhere('fecha_desde', '<=', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('fecha_hasta')
+                  ->orWhere('fecha_hasta', '>=', now());
             })
             ->exists();
 

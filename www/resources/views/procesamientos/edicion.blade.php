@@ -316,8 +316,9 @@
                             @php
                                 $adjuntosData = $entrevista->rel_adjuntos->map(function($a) use ($adjuntosAsignados) {
                                     return [
-                                        'id' => $a->id_adjunto,
-                                        'nombre' => $a->nombre_original,
+                                        'id'       => $a->id_adjunto,
+                                        'nombre'   => $a->nombre_original,
+                                        'duracion' => $a->fmt_duracion !== 'N/A' ? $a->fmt_duracion : null,
                                         'asignado' => in_array($a->id_adjunto, $adjuntosAsignados),
                                     ];
                                 })->values()->toJson();
@@ -511,7 +512,8 @@ function abrirModalAsignar(id, codigo, adjuntosJson) {
     var $sel = $('#id_adjunto').empty().append('<option value="">-- Seleccione el audio --</option>');
     adjuntos.forEach(function(adj) {
         if (!adj.asignado) {
-            $sel.append('<option value="' + adj.id + '">' + adj.nombre + '</option>');
+            var label = adj.nombre + (adj.duracion ? ' (' + adj.duracion + ')' : '');
+            $sel.append('<option value="' + adj.id + '">' + label + '</option>');
         }
     });
 
