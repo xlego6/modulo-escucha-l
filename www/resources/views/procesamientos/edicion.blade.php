@@ -228,6 +228,7 @@
                     <th>Codigo</th>
                     <th>Titulo</th>
                     <th>Audios</th>
+                    <th>Duración</th>
                     <th>Trans. Auto</th>
                     <th>Asignacion por Audio</th>
                     <th>Acciones</th>
@@ -255,6 +256,21 @@
                         <span class="badge badge-info">
                             {{ $totalAudios }} audio(s)
                         </span>
+                    </td>
+                    <td>
+                        @php
+                            $duracionTotal = $entrevista->rel_adjuntos->sum('duracion');
+                        @endphp
+                        @if($duracionTotal > 0)
+                            @php
+                                $h = intdiv($duracionTotal, 3600);
+                                $m = intdiv($duracionTotal % 3600, 60);
+                                $s = $duracionTotal % 60;
+                            @endphp
+                            <small>{{ $h ? "{$h}h " : '' }}{{ $m }}m {{ $s }}s</small>
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
                     </td>
                     <td>
                         @if($audiosTranscritos === $totalAudios && $totalAudios > 0)
@@ -334,7 +350,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
+                    <td colspan="7" class="text-center text-muted py-4">
                         <i class="fas fa-file-audio fa-2x mb-2"></i><br>
                         No hay entrevistas con archivos de audio/video
                     </td>

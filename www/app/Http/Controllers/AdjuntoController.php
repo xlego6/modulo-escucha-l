@@ -199,12 +199,17 @@ class AdjuntoController extends Controller
 
         $user = Auth::user();
 
-        // Roles 3 (Entrevistador) y 5 (Gestor) no pueden descargar transcripciones
+        // Gestor de conocimiento (nivel 5): solo puede visualizar, no descargar
+        if ($user->id_nivel == 5) {
+            abort(403, 'No tiene permiso para descargar archivos. Solo puede visualizarlos.');
+        }
+
+        // Rol 3 (Entrevistador) no puede descargar transcripciones
         $esTranscripcion = in_array($adjunto->id_tipo, [
             \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
             \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL,
         ]);
-        if ($esTranscripcion && in_array($user->id_nivel, [3, 5])) {
+        if ($esTranscripcion && $user->id_nivel == 3) {
             abort(403, 'No tiene permiso para descargar transcripciones.');
         }
 
@@ -243,12 +248,24 @@ class AdjuntoController extends Controller
      */
     public function ver($id)
     {
-        $adjunto = Adjunto::findOrFail($id);
+        $adjunto = Adjunto::with('rel_entrevista')->findOrFail($id);
 
         if (!$adjunto->existe_archivo || !Storage::disk('public')->exists($adjunto->ubicacion)) {
             flash('El archivo no existe o fue eliminado.')->error();
             return back();
         }
+
+        $user = Auth::user();
+        TrazaActividad::create([
+            'fecha_hora'  => now(),
+            'id_usuario'  => $user->id,
+            'accion'      => 'ver_adjunto',
+            'objeto'      => 'adjunto',
+            'id_registro' => $adjunto->id_adjunto,
+            'codigo'      => $adjunto->rel_entrevista->entrevista_codigo ?? null,
+            'referencia'  => 'Visualización de archivo: ' . $adjunto->nombre_original,
+            'ip'          => request()->ip(),
+        ]);
 
         $path = Storage::disk('public')->path($adjunto->ubicacion);
 
