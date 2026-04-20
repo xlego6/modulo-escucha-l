@@ -140,18 +140,21 @@
 </div>
 @endif
 
-{{-- Lista de Permisos (Admin ve todos, otros ven los suyos) --}}
-@if(\App\Models\RolModuloPermiso::alcanceTodas(Auth::user()->id_nivel, 'permisos'))
+{{-- Lista de Permisos (Admin/Líder: todos; Gestor: su dependencia) --}}
+@php $puedeVerLista = \App\Models\RolModuloPermiso::alcanceTodas(Auth::user()->id_nivel, 'permisos') || \App\Models\RolModuloPermiso::alcanceDependencia(Auth::user()->id_nivel, 'permisos'); @endphp
+@if($puedeVerLista)
 <div class="card">
     <div class="card-header">
         <div class="row">
             <div class="col-md-9">
                 <form action="{{ route('permisos.index') }}" method="GET" class="form-inline">
+                    @if(\App\Models\RolModuloPermiso::alcanceTodas(Auth::user()->id_nivel, 'permisos'))
                     <select name="id_entrevistador" class="form-control form-control-sm mr-2 mb-2">
                         @foreach($entrevistadores as $id => $nombre)
                         <option value="{{ $id }}" {{ request('id_entrevistador') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
                         @endforeach
                     </select>
+                    @endif
                     <input type="text" name="codigo" class="form-control form-control-sm mr-2 mb-2" placeholder="Codigo entrevista" value="{{ request('codigo') }}">
                     <select name="estado" class="form-control form-control-sm mr-2 mb-2">
                         <option value="">-- Estado --</option>
@@ -250,6 +253,8 @@
                             <span class="badge badge-danger">Revocado</span>
                         @elseif($permiso->esta_vigente)
                             <span class="badge badge-success">Vigente</span>
+                        @elseif($permiso->fecha_desde && $permiso->fecha_desde > now())
+                            <span class="badge badge-info" title="Activo desde {{ $permiso->fecha_desde->format('d/m/Y') }}">Programado</span>
                         @else
                             <span class="badge badge-secondary">Vencido</span>
                         @endif
