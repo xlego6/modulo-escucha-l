@@ -63,6 +63,7 @@ class Permiso extends Model
     const SOLICITUD_PENDIENTE = 'pendiente';
     const SOLICITUD_APROBADA = 'aprobado';
     const SOLICITUD_RECHAZADA = 'rechazado';
+    const SOLICITUD_REVOCADA = 'revocado';
 
     public function rel_respondido_por()
     {
@@ -265,6 +266,9 @@ class Permiso extends Model
         $this->id_estado = self::ESTADO_REVOCADO;
         $this->id_revocado_por = $idRevocadoPor;
         $this->fecha_revocado = now();
+        if ($this->es_solicitud) {
+            $this->estado_solicitud = self::SOLICITUD_REVOCADA;
+        }
         $this->save();
 
         return $this;
