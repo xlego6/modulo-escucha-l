@@ -16,6 +16,7 @@
     <div class="card-body">
         <form action="{{ route('traza.index') }}" method="GET">
             <div class="row">
+                @if($esAdmin)
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="id_usuario">Usuario</label>
@@ -26,6 +27,7 @@
                         </select>
                     </div>
                 </div>
+                @endif
                 <div class="col-md-2">
                     <div class="form-group">
                         <label for="accion">Accion</label>

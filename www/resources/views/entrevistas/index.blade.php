@@ -39,6 +39,7 @@
                     <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ request('fecha_hasta') }}">
                 </div>
             </div>
+            @if($entrevistadores->isNotEmpty())
             <div class="col-md-2">
                 <div class="form-group">
                     <label>Entrevistador</label>
@@ -49,6 +50,19 @@
                     </select>
                 </div>
             </div>
+            @endif
+            @if($dependencias->isNotEmpty())
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label>Dependencia</label>
+                    <select name="id_dependencia" class="form-control form-control-sm">
+                        @foreach($dependencias as $id => $nombre)
+                            <option value="{{ $id }}" {{ request('id_dependencia') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            @endif
             <div class="col-md-1">
                 <div class="form-group">
                     <label>&nbsp;</label>

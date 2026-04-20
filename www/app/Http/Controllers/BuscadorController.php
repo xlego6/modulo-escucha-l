@@ -7,7 +7,9 @@ use App\Models\Persona;
 use App\Models\Adjunto;
 use App\Models\CatItem;
 use App\Models\Geo;
+use App\Models\TrazaActividad;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -59,6 +61,18 @@ class BuscadorController extends Controller
             $resultados['total'] = $resultados['entrevistas']->count() +
                                    $resultados['personas']->count() +
                                    $resultados['documentos']->count();
+
+            // Registrar búsqueda en traza
+            $user = Auth::user();
+            TrazaActividad::create([
+                'fecha_hora'  => now(),
+                'id_usuario'  => $user->id,
+                'accion'      => 'buscar',
+                'objeto'      => 'buscador',
+                'codigo'      => mb_substr($termino, 0, 100),
+                'referencia'  => 'Búsqueda: "' . $termino . '" — ' . $resultados['total'] . ' resultado(s)',
+                'ip'          => $request->ip(),
+            ]);
         }
 
         // Catalogos para filtros

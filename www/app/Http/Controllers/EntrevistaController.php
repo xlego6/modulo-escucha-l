@@ -57,6 +57,21 @@ class EntrevistaController extends Controller
             });
         }
 
+        // Gestor de conocimiento (nivel 5): solo ve entrevistas de su dependencia (+ propias)
+        if ($user->id_nivel == 5) {
+            $entrevistadorGestor = Entrevistador::where('id_usuario', $user->id)->first();
+            if ($entrevistadorGestor && $entrevistadorGestor->id_dependencia_origen) {
+                $query->where(function($q) use ($entrevistadorGestor) {
+                    $q->where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
+                      ->orWhere('id_entrevistador', $entrevistadorGestor->id_entrevistador);
+                });
+            } elseif ($entrevistadorGestor) {
+                $query->where('id_entrevistador', $entrevistadorGestor->id_entrevistador);
+            } else {
+                $query->whereRaw('1=0');
+            }
+        }
+
         // Filtros
         if ($request->filled('codigo')) {
             $query->where('entrevista_codigo', 'ILIKE', '%' . $request->codigo . '%');
@@ -78,11 +93,15 @@ class EntrevistaController extends Controller
             $query->where('id_entrevistador', $request->id_entrevistador);
         }
 
+        if ($request->filled('id_dependencia')) {
+            $query->where('id_dependencia_origen', $request->id_dependencia);
+        }
+
         $entrevistas = $query->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        // Entrevistador (nivel 3): no mostrar filtro de entrevistadores
+        // Filtro de entrevistadores: solo nivel 1-2
         $entrevistadores = collect();
         if ($user->id_nivel <= 2) {
             $entrevistadores = Entrevistador::with('rel_usuario')
@@ -92,7 +111,16 @@ class EntrevistaController extends Controller
                 ->prepend('-- Todos --', '');
         }
 
-        return view('entrevistas.index', compact('entrevistas', 'entrevistadores'));
+        // Filtro de dependencias: nivel 1-2 y nivel 5
+        $dependencias = collect();
+        if ($user->id_nivel <= 2 || $user->id_nivel == 5) {
+            $dependencias = CatItem::where('id_cat', 4)
+                ->orderBy('descripcion')
+                ->pluck('descripcion', 'id_item')
+                ->prepend('-- Todas --', '');
+        }
+
+        return view('entrevistas.index', compact('entrevistas', 'entrevistadores', 'dependencias'));
     }
 
     /**
@@ -258,6 +286,18 @@ class EntrevistaController extends Controller
             flash('No tiene permisos para ver esta entrevista.')->error();
             return redirect()->route('entrevistas.index');
         }
+
+        // Registrar consulta de metadatos en traza
+        TrazaActividad::create([
+            'fecha_hora'  => now(),
+            'id_usuario'  => $user->id,
+            'accion'      => 'consultar_metadata',
+            'objeto'      => 'entrevista',
+            'id_registro' => $entrevista->id_e_ind_fvt,
+            'codigo'      => $entrevista->entrevista_codigo,
+            'referencia'  => 'Consulta de metadatos: ' . $entrevista->titulo,
+            'ip'          => request()->ip(),
+        ]);
 
         // Cargar lugares
         $depto_toma = $entrevista->id_territorio ? Geo::find($entrevista->id_territorio) : null;
