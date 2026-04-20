@@ -99,6 +99,7 @@
                     <th>Estado</th>
                     <th>Fecha Solicitud</th>
                     <th>Respuesta</th>
+                    <th>Vence</th>
                 </tr>
             </thead>
             <tbody>
@@ -130,6 +131,15 @@
                         <small>{{ $sol->fecha_respuesta ? $sol->fecha_respuesta->format('d/m/Y H:i') : '-' }}</small>
                         @if($sol->estado_solicitud === 'rechazado' && $sol->motivo_rechazo)
                             <br><small class="text-danger"><i class="fas fa-comment-alt mr-1"></i>{{ $sol->motivo_rechazo }}</small>
+                        @endif
+                    </td>
+                    <td>
+                        @if($sol->estado_solicitud === 'aprobado' && $sol->fecha_vencimiento)
+                            <small class="{{ $sol->fecha_vencimiento < now() ? 'text-danger' : 'text-muted' }}">
+                                {{ $sol->fecha_vencimiento->format('d/m/Y') }}
+                            </small>
+                        @else
+                            <small class="text-muted">-</small>
                         @endif
                     </td>
                 </tr>
