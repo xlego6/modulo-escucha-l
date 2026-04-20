@@ -92,7 +92,7 @@ class PermisoController extends Controller
                     $q->where('es_solicitud', false)
                       ->orWhere(function($q2) {
                           $q2->where('es_solicitud', true)
-                             ->whereIn('estado_solicitud', [Permiso::SOLICITUD_APROBADA, Permiso::SOLICITUD_RECHAZADA]);
+                             ->whereIn('estado_solicitud', [Permiso::SOLICITUD_APROBADA, Permiso::SOLICITUD_RECHAZADA, Permiso::SOLICITUD_REVOCADA]);
                       });
                 });
             }

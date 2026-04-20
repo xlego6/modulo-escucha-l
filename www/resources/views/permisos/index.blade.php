@@ -124,6 +124,8 @@
                             <span class="badge badge-success"><i class="fas fa-check"></i> Aprobada</span>
                         @elseif($sol->estado_solicitud === 'rechazado')
                             <span class="badge badge-danger"><i class="fas fa-times"></i> Rechazada</span>
+                        @elseif($sol->estado_solicitud === 'revocado')
+                            <span class="badge badge-dark"><i class="fas fa-ban"></i> Revocada</span>
                         @endif
                     </td>
                     <td><small>{{ $sol->fecha_solicitud ? $sol->fecha_solicitud->format('d/m/Y H:i') : '-' }}</small></td>
