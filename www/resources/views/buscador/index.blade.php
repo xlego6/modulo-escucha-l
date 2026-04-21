@@ -72,6 +72,10 @@
         font-size: 0.9rem;
         font-weight: bold;
     }
+
+    .card-footer .pagination {
+        margin-bottom: 0;
+    }
 </style>
 @endsection
 
@@ -195,15 +199,15 @@
                 <div class="col-md-12">
                     <div class="alert alert-info mb-0">
                         <i class="fas fa-chart-bar"></i>
-                        <strong>{{ $resultados['total'] }}</strong> resultado(s) encontrados para "<strong>{{ $termino }}</strong>":
+                        <strong>{{ $resultados['total'] }}{{ ($resultados['cap_hit_e'] || $resultados['cap_hit_p'] || $resultados['cap_hit_d']) ? '+' : '' }}</strong> resultado(s) encontrados para "<strong>{{ $termino }}</strong>":
                         <span class="badge badge-success ml-2">
-                            <i class="fas fa-microphone"></i> {{ $resultados['entrevistas']->count() }} Entrevistas
+                            <i class="fas fa-microphone"></i> {{ $resultados['total_e'] }}{{ $resultados['cap_hit_e'] ? '+' : '' }} Entrevistas
                         </span>
                         <span class="badge badge-info ml-1">
-                            <i class="fas fa-users"></i> {{ $resultados['personas']->count() }} Personas
+                            <i class="fas fa-users"></i> {{ $resultados['total_p'] }}{{ $resultados['cap_hit_p'] ? '+' : '' }} Personas
                         </span>
                         <span class="badge badge-warning ml-1">
-                            <i class="fas fa-file-alt"></i> {{ $resultados['documentos']->count() }} Documentos
+                            <i class="fas fa-file-alt"></i> {{ $resultados['total_d'] }}{{ $resultados['cap_hit_d'] ? '+' : '' }} Documentos
                         </span>
                     </div>
                 </div>
@@ -211,15 +215,15 @@
 
             @if($resultados['total'] > 0)
                 <!-- Seccion Entrevistas -->
-                @if($resultados['entrevistas']->count() > 0)
+                @if($resultados['total_e'] > 0)
                 <div class="card seccion-resultado entrevistas">
                     <div class="card-header seccion-header" onclick="toggleSeccion('seccion-entrevistas', this)">
                         <h3 class="card-title">
                             <i class="fas fa-microphone text-success"></i>
                             Entrevistas
-                            <span class="badge badge-success contador-seccion ml-2">{{ $resultados['entrevistas']->count() }}</span>
-                            @if($resultados['tiene_mas_entrevistas'])
-                                <span class="badge badge-warning ml-1" title="Puede haber más resultados">+</span>
+                            <span class="badge badge-success contador-seccion ml-2">{{ $resultados['total_e'] }}{{ $resultados['cap_hit_e'] ? '+' : '' }}</span>
+                            @if($resultados['entrevistas']->lastPage() > 1)
+                                <small class="text-muted ml-2">pág. {{ $resultados['entrevistas']->currentPage() }}/{{ $resultados['entrevistas']->lastPage() }}</small>
                             @endif
                         </h3>
                         <div class="card-tools">
@@ -307,27 +311,34 @@
                             </div>
                             @endforeach
                         </div>
-                        @if($resultados['tiene_mas_entrevistas'])
-                        <div class="card-footer text-center">
-                            <a href="{{ request()->fullUrlWithQuery(['limite_entrevistas' => $resultados['limite_entrevistas'] * 2]) }}" class="btn btn-sm btn-outline-success">
-                                <i class="fas fa-plus-circle mr-1"></i> Ver más entrevistas (mostrando {{ $resultados['entrevistas']->count() }})
-                            </a>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <small class="text-muted">
+                                    Mostrando {{ $resultados['entrevistas']->firstItem() }}–{{ $resultados['entrevistas']->lastItem() }}
+                                    de {{ $resultados['total_e'] }}{{ $resultados['cap_hit_e'] ? '+' : '' }}
+                                    @if($resultados['cap_hit_e'])
+                                        <span class="badge badge-warning ml-1">Límite de 500 — refine la búsqueda</span>
+                                    @endif
+                                </small>
+                                @if($resultados['entrevistas']->lastPage() > 1)
+                                <div class="mt-1 mt-md-0">{{ $resultados['entrevistas']->links() }}</div>
+                                @endif
+                            </div>
                         </div>
-                        @endif
                     </div>
                 </div>
                 @endif
 
                 <!-- Seccion Personas -->
-                @if($resultados['personas']->count() > 0)
+                @if($resultados['total_p'] > 0)
                 <div class="card seccion-resultado personas">
                     <div class="card-header seccion-header" onclick="toggleSeccion('seccion-personas', this)">
                         <h3 class="card-title">
                             <i class="fas fa-users text-info"></i>
                             Personas
-                            <span class="badge badge-info contador-seccion ml-2">{{ $resultados['personas']->count() }}</span>
-                            @if($resultados['tiene_mas_personas'])
-                                <span class="badge badge-warning ml-1" title="Puede haber más resultados">+</span>
+                            <span class="badge badge-info contador-seccion ml-2">{{ $resultados['total_p'] }}{{ $resultados['cap_hit_p'] ? '+' : '' }}</span>
+                            @if($resultados['personas']->lastPage() > 1)
+                                <small class="text-muted ml-2">pág. {{ $resultados['personas']->currentPage() }}/{{ $resultados['personas']->lastPage() }}</small>
                             @endif
                         </h3>
                         <div class="card-tools">
@@ -387,25 +398,35 @@
                             </div>
                             @endforeach
                         </div>
-                        @if($resultados['tiene_mas_personas'])
-                        <div class="card-footer text-center">
-                            <a href="{{ request()->fullUrlWithQuery(['limite_personas' => $resultados['limite_personas'] * 2]) }}" class="btn btn-sm btn-outline-info">
-                                <i class="fas fa-plus-circle mr-1"></i> Ver más personas (mostrando {{ $resultados['personas']->count() }})
-                            </a>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <small class="text-muted">
+                                    Mostrando {{ $resultados['personas']->firstItem() }}–{{ $resultados['personas']->lastItem() }}
+                                    de {{ $resultados['total_p'] }}{{ $resultados['cap_hit_p'] ? '+' : '' }}
+                                    @if($resultados['cap_hit_p'])
+                                        <span class="badge badge-warning ml-1">Límite de 500 — refine la búsqueda</span>
+                                    @endif
+                                </small>
+                                @if($resultados['personas']->lastPage() > 1)
+                                <div class="mt-1 mt-md-0">{{ $resultados['personas']->links() }}</div>
+                                @endif
+                            </div>
                         </div>
-                        @endif
                     </div>
                 </div>
                 @endif
 
                 <!-- Seccion Documentos -->
-                @if($resultados['documentos']->count() > 0)
+                @if($resultados['total_d'] > 0)
                 <div class="card seccion-resultado documentos">
                     <div class="card-header seccion-header" onclick="toggleSeccion('seccion-documentos', this)">
                         <h3 class="card-title">
                             <i class="fas fa-file-alt text-warning"></i>
                             Documentos
-                            <span class="badge badge-warning contador-seccion ml-2">{{ $resultados['documentos']->count() }}</span>
+                            <span class="badge badge-warning contador-seccion ml-2">{{ $resultados['total_d'] }}{{ $resultados['cap_hit_d'] ? '+' : '' }}</span>
+                            @if($resultados['documentos']->lastPage() > 1)
+                                <small class="text-muted ml-2">pág. {{ $resultados['documentos']->currentPage() }}/{{ $resultados['documentos']->lastPage() }}</small>
+                            @endif
                         </h3>
                         <div class="card-tools">
                             <i class="fas fa-chevron-up toggle-icon"></i>
@@ -479,13 +500,20 @@
                             </div>
                             @endforeach
                         </div>
-                        @if($resultados['tiene_mas_documentos'])
-                        <div class="card-footer text-center">
-                            <a href="{{ request()->fullUrlWithQuery(['limite_documentos' => $resultados['limite_documentos'] * 2]) }}" class="btn btn-sm btn-outline-warning">
-                                <i class="fas fa-plus-circle mr-1"></i> Ver más documentos (mostrando {{ $resultados['documentos']->count() }})
-                            </a>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <small class="text-muted">
+                                    Mostrando {{ $resultados['documentos']->firstItem() }}–{{ $resultados['documentos']->lastItem() }}
+                                    de {{ $resultados['total_d'] }}{{ $resultados['cap_hit_d'] ? '+' : '' }}
+                                    @if($resultados['cap_hit_d'])
+                                        <span class="badge badge-warning ml-1">Límite de 500 — refine la búsqueda</span>
+                                    @endif
+                                </small>
+                                @if($resultados['documentos']->lastPage() > 1)
+                                <div class="mt-1 mt-md-0">{{ $resultados['documentos']->links() }}</div>
+                                @endif
+                            </div>
                         </div>
-                        @endif
                     </div>
                 </div>
                 @endif

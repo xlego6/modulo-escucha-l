@@ -9,6 +9,7 @@ use App\Models\CatItem;
 use App\Models\Geo;
 use App\Models\TrazaActividad;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -28,39 +29,65 @@ class BuscadorController extends Controller
         $termino = $request->get('q', '');
         $tiene_busqueda = strlen(trim($termino)) >= 2;
 
-        $limiteEntrevistas = (int) $request->get('limite_entrevistas', 100);
-        $limitePersonas    = (int) $request->get('limite_personas', 100);
-        $limiteDocumentos  = (int) $request->get('limite_documentos', 100);
-        // Sanitize to allowed values
-        $limiteEntrevistas = in_array($limiteEntrevistas, [100, 200, 500]) ? $limiteEntrevistas : 100;
-        $limitePersonas    = in_array($limitePersonas,    [100, 200, 500]) ? $limitePersonas    : 100;
-        $limiteDocumentos  = in_array($limiteDocumentos,  [100, 200, 500]) ? $limiteDocumentos  : 100;
+        $perPage     = 25;
+        $limiteTotal = 500;
+        $pageE = max(1, (int) $request->get('page_e', 1));
+        $pageP = max(1, (int) $request->get('page_p', 1));
+        $pageD = max(1, (int) $request->get('page_d', 1));
 
         $resultados = [
-            'entrevistas' => collect(),
-            'personas' => collect(),
-            'documentos' => collect(),
-            'total' => 0,
-            'tiene_mas_entrevistas' => false,
-            'tiene_mas_personas'    => false,
-            'tiene_mas_documentos'  => false,
-            'limite_entrevistas'    => $limiteEntrevistas,
-            'limite_personas'       => $limitePersonas,
-            'limite_documentos'     => $limiteDocumentos,
+            'entrevistas' => new LengthAwarePaginator(collect(), 0, $perPage, $pageE, ['path' => $request->url(), 'pageName' => 'page_e']),
+            'personas'    => new LengthAwarePaginator(collect(), 0, $perPage, $pageP, ['path' => $request->url(), 'pageName' => 'page_p']),
+            'documentos'  => new LengthAwarePaginator(collect(), 0, $perPage, $pageD, ['path' => $request->url(), 'pageName' => 'page_d']),
+            'total'       => 0,
+            'total_e'     => 0,
+            'total_p'     => 0,
+            'total_d'     => 0,
+            'cap_hit_e'   => false,
+            'cap_hit_p'   => false,
+            'cap_hit_d'   => false,
         ];
 
         if ($tiene_busqueda) {
-            $resultados['entrevistas'] = $this->buscarEntrevistas($termino, $request, $limiteEntrevistas);
-            $resultados['personas']    = $this->buscarPersonas($termino, $request, $limitePersonas);
-            $resultados['documentos']  = $this->buscarDocumentos($termino, $request, $limiteDocumentos);
+            $todasEntrevistas = $this->buscarEntrevistas($termino, $request, $limiteTotal);
+            $todasPersonas    = $this->buscarPersonas($termino, $request, $limiteTotal);
+            $todosDocumentos  = $this->buscarDocumentos($termino, $request, $limiteTotal);
 
-            $resultados['tiene_mas_entrevistas'] = $resultados['entrevistas']->count() >= $limiteEntrevistas;
-            $resultados['tiene_mas_personas']    = $resultados['personas']->count() >= $limitePersonas;
-            $resultados['tiene_mas_documentos']  = $resultados['documentos']->count() >= $limiteDocumentos;
+            $totalE = $todasEntrevistas->count();
+            $totalP = $todasPersonas->count();
+            $totalD = $todosDocumentos->count();
 
-            $resultados['total'] = $resultados['entrevistas']->count() +
-                                   $resultados['personas']->count() +
-                                   $resultados['documentos']->count();
+            $resultados['total_e']   = $totalE;
+            $resultados['total_p']   = $totalP;
+            $resultados['total_d']   = $totalD;
+            $resultados['total']     = $totalE + $totalP + $totalD;
+            $resultados['cap_hit_e'] = $totalE >= $limiteTotal;
+            $resultados['cap_hit_p'] = $totalP >= $limiteTotal;
+            $resultados['cap_hit_d'] = $totalD >= $limiteTotal;
+
+            $resultados['entrevistas'] = (new LengthAwarePaginator(
+                $todasEntrevistas->forPage($pageE, $perPage),
+                $totalE,
+                $perPage,
+                $pageE,
+                ['path' => $request->url(), 'pageName' => 'page_e']
+            ))->appends($request->except('page_e'));
+
+            $resultados['personas'] = (new LengthAwarePaginator(
+                $todasPersonas->forPage($pageP, $perPage),
+                $totalP,
+                $perPage,
+                $pageP,
+                ['path' => $request->url(), 'pageName' => 'page_p']
+            ))->appends($request->except('page_p'));
+
+            $resultados['documentos'] = (new LengthAwarePaginator(
+                $todosDocumentos->forPage($pageD, $perPage),
+                $totalD,
+                $perPage,
+                $pageD,
+                ['path' => $request->url(), 'pageName' => 'page_d']
+            ))->appends($request->except('page_d'));
 
             // Registrar búsqueda en traza
             $user = Auth::user();
@@ -295,7 +322,8 @@ class BuscadorController extends Controller
             $e->setAttribute('coincidencias', $coincidencias);
         }
 
-        return $entrevistasDirectas->merge($entrevistasConDocumentos);
+        $merged = $entrevistasDirectas->merge($entrevistasConDocumentos);
+        return $merged->sortByDesc(fn($e) => $this->calcularRelevanciaEntrevista($e))->values();
     }
 
     /**
@@ -341,7 +369,7 @@ class BuscadorController extends Controller
                 ->count());
         }
 
-        return $personas;
+        return $personas->sortByDesc(fn($p) => $this->calcularRelevanciaPersona($p))->values();
     }
 
     /**
@@ -386,6 +414,43 @@ class BuscadorController extends Controller
         }
 
         return $documentos;
+    }
+
+    private function calcularRelevanciaEntrevista($entrevista): int
+    {
+        if ($entrevista->fuente_coincidencia === 'documento') {
+            return 10;
+        }
+        $score = 20;
+        foreach ($entrevista->coincidencias ?? [] as $c) {
+            $score = max($score, match($c) {
+                'Codigo'        => 100,
+                'Titulo'        => 80,
+                'Proyecto'      => 60,
+                'Responsables'  => 55,
+                'Temas'         => 50,
+                'Otras Poblaciones', 'Otras Ocupaciones',
+                'Detalle Etnicos', 'Otros Hechos',
+                'Detalle Resistencias' => 45,
+                'Transcripcion' => 40,
+                default         => 30,
+            });
+        }
+        return $score;
+    }
+
+    private function calcularRelevanciaPersona($persona): int
+    {
+        $score = 0;
+        foreach ($persona->coincidencias ?? [] as $c) {
+            $score = max($score, match($c) {
+                'Nombre', 'Apellido'          => 100,
+                'Alias', 'Nombre identitario' => 80,
+                'Documento'                   => 60,
+                default                       => 40,
+            });
+        }
+        return $score ?: 20;
     }
 
     /**
