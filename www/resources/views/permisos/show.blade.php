@@ -143,11 +143,6 @@
 
 <div class="card">
     <div class="card-footer">
-        @if($permiso->id_estado != 2 && $permiso->esta_vigente)
-        <button type="button" class="btn btn-danger" onclick="$('#modal-revocar-show').modal('show')">
-            <i class="fas fa-ban mr-1"></i> Revocar Permiso
-        </button>
-        @endif
         <a href="{{ route('permisos.index') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left mr-1"></i> Volver
         </a>
@@ -157,39 +152,4 @@
     </div>
 </div>
 
-{{-- Modal revocar --}}
-<div class="modal fade" id="modal-revocar-show" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form action="{{ route('permisos.destroy', $permiso->id_permiso) }}" method="POST">
-                @csrf
-                @method('DELETE')
-                <div class="modal-header bg-danger">
-                    <h5 class="modal-title text-white">
-                        <i class="fas fa-ban mr-2"></i>Revocar Permiso
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-3">¿Está seguro de revocar este permiso? Puede indicar opcionalmente el motivo, que será visible para el usuario.</p>
-                    <div class="form-group mb-0">
-                        <label for="motivo_revocacion_show">Motivo de revocación</label>
-                        <textarea class="form-control" id="motivo_revocacion_show" name="motivo_rechazo"
-                                  rows="3" maxlength="500"
-                                  placeholder="Opcional..."></textarea>
-                        <small class="form-text text-muted">Opcional, máximo 500 caracteres.</small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-ban mr-1"></i> Confirmar Revocación
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection
