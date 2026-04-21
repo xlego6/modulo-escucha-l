@@ -168,6 +168,7 @@
 {{-- Lista de Permisos (Admin/Líder: todos; Gestor: su dependencia) --}}
 @php $puedeVerLista = \App\Models\RolModuloPermiso::alcanceTodas(Auth::user()->id_nivel, 'permisos') || \App\Models\RolModuloPermiso::alcanceDependencia(Auth::user()->id_nivel, 'permisos'); @endphp
 @if($puedeVerLista)
+<h5 class="mt-3 mb-2"><i class="fas fa-key mr-1"></i> Permisos gestionados</h5>
 <div class="card">
     <div class="card-header">
         <div class="row">

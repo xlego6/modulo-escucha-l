@@ -767,7 +767,7 @@ class PermisoController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        flash('Solicitud enviada correctamente. Recibirá una notificación cuando sea procesada.')->success();
+        flash('Solicitud enviada correctamente.')->success();
         return redirect()->back();
     }
 
