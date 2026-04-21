@@ -297,14 +297,10 @@
                                             <i class="fas fa-eye"></i> Ver
                                         </a>
                                         @if(\App\Models\RolModuloPermiso::puedeCrear(Auth::user()->id_nivel, 'permisos') && !$permisosAprobados->contains($entrevista->id_e_ind_fvt) && (!$entrevista->rel_entrevistador || $entrevista->rel_entrevistador->id_usuario != Auth::id()))
-                                        <form action="{{ route('permisos.solicitar') }}" method="POST" style="display:inline">
-                                            @csrf
-                                            <input type="hidden" name="id_e_ind_fvt" value="{{ $entrevista->id_e_ind_fvt }}">
-                                            <input type="hidden" name="tipo_solicitud" value="acceso">
-                                            <button type="submit" class="btn btn-sm btn-outline-info mt-1" onclick="return confirm('¿Solicitar acceso a esta entrevista?')">
-                                                <i class="fas fa-key"></i> Solicitar Acceso
-                                            </button>
-                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-info mt-1"
+                                            onclick="abrirModalSolicitarAcceso({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}')">
+                                            <i class="fas fa-key"></i> Solicitar Acceso
+                                        </button>
                                         @endif
                                     </div>
                                 </div>
@@ -560,10 +556,53 @@
         @endif
     </div>
 </div>
+
+{{-- Modal solicitar acceso --}}
+<div class="modal fade" id="modal-solicitar-acceso" tabindex="-1" role="dialog" aria-labelledby="modal-solicitar-acceso-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="form-solicitar-acceso" action="{{ route('permisos.solicitar') }}" method="POST">
+                @csrf
+                <input type="hidden" id="solicitar-id-entrevista" name="id_e_ind_fvt" value="">
+                <input type="hidden" name="tipo_solicitud" value="acceso">
+                <div class="modal-header bg-info">
+                    <h5 class="modal-title text-white" id="modal-solicitar-acceso-label">
+                        <i class="fas fa-key mr-2"></i>Solicitar Acceso
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Está solicitando acceso a la entrevista <strong id="solicitar-codigo-entrevista"></strong>.</p>
+                    <div class="form-group mb-0">
+                        <label for="justificacion-acceso">Justificación <small class="text-muted">(opcional)</small></label>
+                        <textarea class="form-control" id="justificacion-acceso" name="justificacion"
+                                  rows="3" maxlength="1000"
+                                  placeholder="Indique el motivo por el que necesita acceso a esta entrevista..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-paper-plane mr-1"></i> Enviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
 <script>
+function abrirModalSolicitarAcceso(idEntrevista, codigo) {
+    $('#solicitar-id-entrevista').val(idEntrevista);
+    $('#solicitar-codigo-entrevista').text(codigo);
+    $('#justificacion-acceso').val('');
+    $('#modal-solicitar-acceso').modal('show');
+}
+
 function toggleSeccion(id, header) {
     var el = document.getElementById(id);
     var icon = header.querySelector('.toggle-icon');
