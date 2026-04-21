@@ -117,7 +117,9 @@
             </div>
             <div class="card-body">
                 @if(!empty($hechos_por_anio))
-                <canvas id="chartHechosPorAnio" height="80"></canvas>
+                <div style="position:relative; width:100%; height:220px;">
+                    <canvas id="chartHechosPorAnio"></canvas>
+                </div>
                 @else
                 <p class="text-muted text-center">Sin datos de fechas de hechos</p>
                 @endif
@@ -393,10 +395,11 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
                     y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                    x: { ticks: { maxTicksLimit: 20 } }
+                    x: { ticks: { maxRotation: 45, minRotation: 45, maxTicksLimit: 30 } }
                 }
             }
         });
