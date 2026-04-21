@@ -30,23 +30,6 @@ class EstadisticaController extends Controller
             'entrevistadores' => Entrevistador::count(),
         ];
 
-        // Entrevistas por territorio
-        $entrevistas_por_territorio = Entrevista::where('id_activo', 1)
-            ->whereNotNull('id_territorio')
-            ->join('catalogos.geo', 'e_ind_fvt.id_territorio', '=', 'geo.id_geo')
-            ->select('geo.descripcion as territorio', DB::raw('COUNT(*) as total'))
-            ->groupBy('geo.descripcion')
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
-
-        // Personas por sexo
-        $personas_por_sexo = Persona::whereNotNull('id_sexo')
-            ->join('catalogos.cat_item', 'persona.id_sexo', '=', 'cat_item.id_item')
-            ->select('cat_item.descripcion as sexo', DB::raw('COUNT(*) as total'))
-            ->groupBy('cat_item.descripcion')
-            ->get();
-
         // Personas por grupo étnico
         $personas_por_etnia = Persona::whereNotNull('id_etnia')
             ->join('catalogos.cat_item', 'persona.id_etnia', '=', 'cat_item.id_item')
@@ -169,16 +152,6 @@ class EstadisticaController extends Controller
             FROM max_nivel GROUP BY nivel ORDER BY nivel DESC
         ");
 
-        // Por consentimiento individual
-        $clasif_por_consentimiento = DB::select("
-            WITH base AS (
-                SELECT ({$casoNivel}) AS nivel
-                FROM fichas.consentimiento_informado ci
-            )
-            SELECT {$casoLabel}, nivel, COUNT(*) AS total
-            FROM base GROUP BY nivel ORDER BY nivel DESC
-        ");
-
         // =============================================
         // Dependencia
         // =============================================
@@ -194,9 +167,7 @@ class EstadisticaController extends Controller
 
         return view('estadisticas.index', compact(
             'totales',
-            'entrevistas_por_territorio',
-            'personas_por_sexo',
-            'personas_por_etnia',
+'personas_por_etnia',
             // Paso 3
             'hechos_victimizantes',
             'practicas_resistencia',
@@ -207,8 +178,7 @@ class EstadisticaController extends Controller
             'sexo_testimoniantes',
             // Clasificación y dependencia
             'clasif_por_entrevista',
-            'clasif_por_consentimiento',
-            'entrevistas_por_dependencia'
+'entrevistas_por_dependencia'
         ));
     }
 

@@ -33,9 +33,7 @@
             <div class="icon">
                 <i class="fas fa-users"></i>
             </div>
-            <a href="{{ route('personas.index') }}" class="small-box-footer">
-                Ver todas <i class="fas fa-arrow-circle-right"></i>
-            </a>
+            <span class="small-box-footer">&nbsp;</span>
         </div>
     </div>
     <div class="col-lg-3 col-6">
@@ -66,47 +64,17 @@
 
 <!-- Gráficos -->
 <div class="row">
-    <!-- Personas por sexo -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Personas por Sexo</h3>
-            </div>
-            <div class="card-body">
-                <canvas id="chartPersonasSexo" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-
     <!-- Personas por grupo étnico -->
-    <div class="col-md-6">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-chart-pie"></i> Personas por Grupo Etnico</h3>
             </div>
             <div class="card-body">
                 @if($personas_por_etnia->count() > 0)
-                <canvas id="chartEtnias" height="200"></canvas>
+                <canvas id="chartEtnias" height="80"></canvas>
                 @else
                 <p class="text-muted text-center">Sin datos de grupo etnico</p>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Entrevistas por territorio -->
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Entrevistas por Territorio (Top 10)</h3>
-            </div>
-            <div class="card-body">
-                @if($entrevistas_por_territorio->count() > 0)
-                <canvas id="chartTerritorios" height="80"></canvas>
-                @else
-                <p class="text-muted text-center">Sin datos de territorio</p>
                 @endif
             </div>
         </div>
@@ -208,7 +176,7 @@
     <div class="col-md-5">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-venus-mars"></i> Sexo</h3>
+                <h3 class="card-title"><i class="fas fa-venus-mars"></i> Personas por Sexo</h3>
             </div>
             <div class="card-body">
                 @if($sexo_testimoniantes->count() > 0)
@@ -260,12 +228,11 @@
         -1 => ['hex' => '#6c757d', 'label' => 'Pendiente de Calificación'],
     ];
     $totalClasifE   = collect($clasif_por_entrevista)->sum('total');
-    $totalClasifC   = collect($clasif_por_consentimiento)->sum('total');
 @endphp
 
 <div class="row">
     <!-- Clasificación por entrevista -->
-    <div class="col-md-6">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-chart-pie"></i> Clasificación por Entrevista</h3>
@@ -311,52 +278,6 @@
         </div>
     </div>
 
-    <!-- Clasificación por consentimiento -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Clasificación por Consentimiento</h3>
-                <div class="card-tools">
-                    <small class="text-muted">Cada persona entrevistada cuenta individualmente</small>
-                </div>
-            </div>
-            <div class="card-body">
-                @if(count($clasif_por_consentimiento) > 0)
-                <div class="row">
-                    <div class="col-6">
-                        <canvas id="chartClasifConsentimiento" height="200"></canvas>
-                    </div>
-                    <div class="col-6">
-                        <table class="table table-sm table-borderless mb-0" style="font-size:0.82rem">
-                            @foreach($clasif_por_consentimiento as $row)
-                            @php
-                                $pct = $totalClasifC > 0 ? round($row->total * 100 / $totalClasifC, 1) : 0;
-                                $color = $coloresClasif[$row->nivel]['hex'] ?? '#adb5bd';
-                            @endphp
-                            <tr>
-                                <td style="width:10px">
-                                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ $color }}"></span>
-                                </td>
-                                <td>{{ $row->clasificacion }}</td>
-                                <td class="text-right text-nowrap">
-                                    <strong>{{ $row->total }}</strong>
-                                    <span class="text-muted">({{ $pct }}%)</span>
-                                </td>
-                            </tr>
-                            @endforeach
-                            <tr class="border-top">
-                                <td colspan="2"><strong>Total</strong></td>
-                                <td class="text-right"><strong>{{ $totalClasifC }}</strong></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-                @else
-                <p class="text-muted text-center">Sin consentimientos con prueba de daño registrada</p>
-                @endif
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Dependencia -->
@@ -386,49 +307,6 @@ document.addEventListener('DOMContentLoaded', function() {
         '#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8',
         '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'
     ];
-
-    // Personas por sexo
-    const dataSexo = @json($personas_por_sexo);
-    if (dataSexo.length > 0) {
-        new Chart(document.getElementById('chartPersonasSexo'), {
-            type: 'doughnut',
-            data: {
-                labels: dataSexo.map(d => d.sexo),
-                datasets: [{
-                    data: dataSexo.map(d => d.total),
-                    backgroundColor: colores.slice(0, dataSexo.length)
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-
-    // Entrevistas por territorio
-    const dataTerritorios = @json($entrevistas_por_territorio);
-    if (dataTerritorios.length > 0) {
-        new Chart(document.getElementById('chartTerritorios'), {
-            type: 'bar',
-            data: {
-                labels: dataTerritorios.map(d => d.territorio),
-                datasets: [{
-                    label: 'Entrevistas',
-                    data: dataTerritorios.map(d => d.total),
-                    backgroundColor: '#17a2b8'
-                }]
-            },
-            options: {
-                responsive: true,
-                indexAxis: 'y',
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
-            }
-        });
-    }
 
     // Personas por etnia
     const dataEtnias = @json($personas_por_etnia);
@@ -615,25 +493,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     data: dataClasifE.map(d => d.total),
                     backgroundColor: dataClasifE.map(d => clasifColores[d.nivel] || '#adb5bd')
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    // Clasificación por consentimiento
-    const dataClasifC = @json($clasif_por_consentimiento);
-    if (dataClasifC.length > 0) {
-        new Chart(document.getElementById('chartClasifConsentimiento'), {
-            type: 'doughnut',
-            data: {
-                labels: dataClasifC.map(d => d.clasificacion),
-                datasets: [{
-                    data: dataClasifC.map(d => d.total),
-                    backgroundColor: dataClasifC.map(d => clasifColores[d.nivel] || '#adb5bd')
                 }]
             },
             options: {
