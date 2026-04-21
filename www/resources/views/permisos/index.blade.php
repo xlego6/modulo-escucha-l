@@ -100,6 +100,7 @@
                     <th>Fecha Solicitud</th>
                     <th>Respuesta</th>
                     <th>Vence</th>
+                    <th>Motivo</th>
                 </tr>
             </thead>
             <tbody>
@@ -131,15 +132,27 @@
                     <td><small>{{ $sol->fecha_solicitud ? $sol->fecha_solicitud->format('d/m/Y H:i') : '-' }}</small></td>
                     <td>
                         <small>{{ $sol->fecha_respuesta ? $sol->fecha_respuesta->format('d/m/Y H:i') : '-' }}</small>
-                        @if($sol->estado_solicitud === 'rechazado' && $sol->motivo_rechazo)
-                            <br><small class="text-danger"><i class="fas fa-comment-alt mr-1"></i>{{ $sol->motivo_rechazo }}</small>
+                    </td>
+                    <td>
+                        @if($sol->estado_solicitud === 'aprobado')
+                            @if($sol->fecha_desde || $sol->fecha_hasta)
+                                <small class="{{ ($sol->fecha_hasta && $sol->fecha_hasta < now()) ? 'text-danger' : 'text-muted' }}">
+                                    {{ $sol->fmt_rango_fechas }}
+                                </small>
+                            @elseif($sol->fecha_vencimiento)
+                                <small class="{{ $sol->fecha_vencimiento < now() ? 'text-danger' : 'text-muted' }}">
+                                    {{ $sol->fecha_vencimiento->format('d/m/Y') }}
+                                </small>
+                            @else
+                                <small class="text-muted">Sin límite</small>
+                            @endif
+                        @else
+                            <small class="text-muted">-</small>
                         @endif
                     </td>
                     <td>
-                        @if($sol->estado_solicitud === 'aprobado' && $sol->fecha_vencimiento)
-                            <small class="{{ $sol->fecha_vencimiento < now() ? 'text-danger' : 'text-muted' }}">
-                                {{ $sol->fecha_vencimiento->format('d/m/Y') }}
-                            </small>
+                        @if(in_array($sol->estado_solicitud, ['rechazado', 'revocado']) && $sol->motivo_rechazo)
+                            <small class="text-danger"><i class="fas fa-comment-alt mr-1"></i>{{ $sol->motivo_rechazo }}</small>
                         @else
                             <small class="text-muted">-</small>
                         @endif
@@ -276,13 +289,10 @@
                             <i class="fas fa-eye"></i>
                         </a>
                         @if($permiso->id_estado != 2)
-                        <form action="{{ route('permisos.destroy', $permiso->id_permiso) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Esta seguro de revocar este permiso?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" title="Revocar">
-                                <i class="fas fa-ban"></i>
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-danger" title="Revocar"
+                            onclick="abrirModalRevocar({{ $permiso->id_permiso }})">
+                            <i class="fas fa-ban"></i>
+                        </button>
                         @endif
                     </td>
                 </tr>
@@ -340,6 +350,42 @@
     </div>
 </div>
 
+{{-- Modal para revocar permiso con justificación --}}
+<div class="modal fade" id="modal-revocar" tabindex="-1" role="dialog" aria-labelledby="modal-revocar-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="form-revocar-modal" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="modal-header bg-danger">
+                    <h5 class="modal-title text-white" id="modal-revocar-label">
+                        <i class="fas fa-ban mr-2"></i>Revocar Permiso
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">¿Está seguro de revocar este permiso? Puede indicar opcionalmente el motivo, que será visible para el usuario.</p>
+                    <div class="form-group mb-0">
+                        <label for="motivo_revocacion">Motivo de revocación</label>
+                        <textarea class="form-control" id="motivo_revocacion" name="motivo_rechazo"
+                                  rows="3" maxlength="500"
+                                  placeholder="Opcional..."></textarea>
+                        <small class="form-text text-muted">Opcional, máximo 500 caracteres.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-ban mr-1"></i> Confirmar Revocación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section('js')
 <script>
 function abrirModalRechazar(idPermiso) {
@@ -347,6 +393,12 @@ function abrirModalRechazar(idPermiso) {
     $('#form-rechazar-modal').attr('action', baseUrl + '/' + idPermiso + '/rechazar');
     $('#motivo_rechazo').val('');
     $('#modal-rechazar').modal('show');
+}
+function abrirModalRevocar(idPermiso) {
+    var baseUrl = '{{ url("permisos") }}';
+    $('#form-revocar-modal').attr('action', baseUrl + '/' + idPermiso);
+    $('#motivo_revocacion').val('');
+    $('#modal-revocar').modal('show');
 }
 </script>
 @endsection

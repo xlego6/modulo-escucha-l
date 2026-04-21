@@ -394,8 +394,12 @@ class PermisoController extends Controller
         $permiso = Permiso::findOrFail($id);
         $user = Auth::user();
 
-        // Revocar en lugar de eliminar
         $permiso->revocar($user->id_entrevistador);
+
+        if ($motivo = trim($request->input('motivo_rechazo', ''))) {
+            $permiso->motivo_rechazo = $motivo;
+            $permiso->save();
+        }
 
         // Registrar traza
         TrazaActividad::create([
