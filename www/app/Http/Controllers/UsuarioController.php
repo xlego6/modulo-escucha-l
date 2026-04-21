@@ -218,6 +218,9 @@ class UsuarioController extends Controller
             }
         }
 
+        // Desvincular traza de auditoría (preservar registros históricos)
+        DB::table('traza_actividad')->where('id_usuario', $id)->update(['id_usuario' => null]);
+
         // Eliminar usuario
         $usuario->delete();
 
