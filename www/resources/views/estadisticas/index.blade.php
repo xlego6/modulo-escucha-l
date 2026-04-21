@@ -62,24 +62,6 @@
     </div>
 </div>
 
-<!-- Gráficos -->
-<div class="row">
-    <!-- Personas por grupo étnico -->
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Personas por Grupo Etnico</h3>
-            </div>
-            <div class="card-body">
-                @if($personas_por_etnia->count() > 0)
-                <canvas id="chartEtnias" height="80"></canvas>
-                @else
-                <p class="text-muted text-center">Sin datos de grupo etnico</p>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- ============================================================ -->
 <!-- SECCIÓN: Metadatos de Contenido (Paso 3) -->
@@ -190,15 +172,31 @@
 </div>
 
 <div class="row">
+    <!-- Grupo Étnico -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Personas por Grupo Etnico</h3>
+            </div>
+            <div class="card-body">
+                @if($personas_por_etnia->count() > 0)
+                <canvas id="chartEtnias" height="200"></canvas>
+                @else
+                <p class="text-muted text-center">Sin datos de grupo etnico</p>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <!-- Rango Etario -->
-    <div class="col-12">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-chart-bar"></i> Rango de Edad</h3>
             </div>
             <div class="card-body">
                 @if($rangos_etarios->count() > 0)
-                <canvas id="chartRangosEtarios" height="80"></canvas>
+                <canvas id="chartRangosEtarios" height="200"></canvas>
                 @else
                 <p class="text-muted text-center">Sin datos registrados</p>
                 @endif
