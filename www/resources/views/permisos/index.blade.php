@@ -168,8 +168,10 @@
 {{-- Lista de Permisos (Admin/Líder: todos; Gestor: su dependencia) --}}
 @php $puedeVerLista = \App\Models\RolModuloPermiso::alcanceTodas(Auth::user()->id_nivel, 'permisos') || \App\Models\RolModuloPermiso::alcanceDependencia(Auth::user()->id_nivel, 'permisos'); @endphp
 @if($puedeVerLista)
-<h5 class="mt-3 mb-2"><i class="fas fa-key mr-1"></i> Permisos gestionados</h5>
-<div class="card">
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-key mr-2"></i>Permisos gestionados</h3>
+    </div>
     <div class="card-header">
         <div class="row">
             <div class="col-md-9">
@@ -184,8 +186,12 @@
                     <input type="text" name="codigo" class="form-control form-control-sm mr-2 mb-2" placeholder="Codigo entrevista" value="{{ request('codigo') }}">
                     <select name="estado" class="form-control form-control-sm mr-2 mb-2">
                         <option value="">-- Estado --</option>
-                        <option value="1" {{ request('estado') == '1' ? 'selected' : '' }}>Vigentes</option>
-                        <option value="2" {{ request('estado') == '2' ? 'selected' : '' }}>Revocados</option>
+                        <option value="1"          {{ request('estado') == '1'          ? 'selected' : '' }}>Vigentes</option>
+                        <option value="vencido"    {{ request('estado') == 'vencido'    ? 'selected' : '' }}>Vencidos</option>
+                        <option value="2"          {{ request('estado') == '2'          ? 'selected' : '' }}>Revocados</option>
+                        <option value="rechazado"  {{ request('estado') == 'rechazado'  ? 'selected' : '' }}>Rechazados</option>
+                        <option value="programado" {{ request('estado') == 'programado' ? 'selected' : '' }}>Programados</option>
+                        <option value="pendiente"  {{ request('estado') == 'pendiente'  ? 'selected' : '' }}>Pendientes</option>
                     </select>
                     <select name="tipo" class="form-control form-control-sm mr-2 mb-2">
                         @foreach($tipos as $id => $nombre)
