@@ -55,32 +55,6 @@ class EstadisticaController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        // Adjuntos por tipo
-        $adjuntos_por_tipo = Adjunto::where('existe_archivo', 1)
-            ->whereNotNull('id_tipo')
-            ->join('catalogos.cat_item', 'adjunto.id_tipo', '=', 'cat_item.id_item')
-            ->select('cat_item.descripcion as tipo', DB::raw('COUNT(*) as total'))
-            ->groupBy('cat_item.descripcion')
-            ->get();
-
-        // Tamaño total de adjuntos
-        $tamano_total_adjuntos = Adjunto::where('existe_archivo', 1)->sum('tamano');
-
-        // Entrevistas recientes
-        $entrevistas_recientes = Entrevista::where('id_activo', 1)
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        // Top entrevistadores
-        $top_entrevistadores = Entrevista::where('id_activo', 1)
-            ->join('esclarecimiento.entrevistador', 'e_ind_fvt.id_entrevistador', '=', 'entrevistador.id_entrevistador')
-            ->join('users', 'entrevistador.id_usuario', '=', 'users.id')
-            ->select('users.name', DB::raw('COUNT(*) as total'))
-            ->groupBy('users.name')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
 
         // =============================================
         // Contenido del Testimonio (Paso 3)
@@ -223,10 +197,6 @@ class EstadisticaController extends Controller
             'entrevistas_por_territorio',
             'personas_por_sexo',
             'personas_por_etnia',
-            'adjuntos_por_tipo',
-            'tamano_total_adjuntos',
-            'entrevistas_recientes',
-            'top_entrevistadores',
             // Paso 3
             'hechos_victimizantes',
             'practicas_resistencia',

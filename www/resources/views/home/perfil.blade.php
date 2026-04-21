@@ -89,7 +89,8 @@
     </div>
 
     <div class="col-md-8">
-        <!-- Editar Datos -->
+        <!-- Editar Datos: solo administrador -->
+        @if(Auth::user()->id_nivel == 1)
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-user-edit mr-2"></i>Editar Datos</h3>
@@ -106,16 +107,10 @@
                     </div>
                     <div class="form-group">
                         <label for="email">Correo Electronico</label>
-                        @if(Auth::user()->id_nivel <= 2)
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $user->email) }}" required>
-                            @error('email')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        @else
-                            <input type="email" class="form-control" value="{{ $user->email }}" disabled>
-                            <input type="hidden" name="email" value="{{ $user->email }}">
-                            <small class="form-text text-muted">El correo electronico no puede ser modificado. Contacte al administrador si requiere cambiarlo.</small>
-                        @endif
+                        <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $user->email) }}" required>
+                        @error('email')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
                 <div class="card-footer">
@@ -125,6 +120,7 @@
                 </div>
             </form>
         </div>
+        @endif
 
         <!-- Cambiar Contraseña -->
         @if(Auth::user()->id_nivel == 1)

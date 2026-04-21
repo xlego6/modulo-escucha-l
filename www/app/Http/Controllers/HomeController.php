@@ -54,26 +54,18 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        // Solo administradores pueden cambiar el correo
-        $emailRules = 'required|email|max:255|unique:users,email,' . $user->id;
-        if ($user->id_nivel > 2) {
-            // Usuario no admin: el email no debe cambiar
-            $emailRules = 'required|email|in:' . $user->email;
+        if ($user->id_nivel != 1) {
+            flash('No tiene permisos para editar nombre o correo electronico.')->error();
+            return redirect()->route('perfil');
         }
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => $emailRules,
-        ], [
-            'email.in' => 'No tiene permisos para cambiar el correo electronico.',
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
         ]);
 
-        $user->name = $request->name;
-
-        // Solo actualizar email si es administrador
-        if ($user->id_nivel <= 2) {
-            $user->email = $request->email;
-        }
+        $user->name  = $request->name;
+        $user->email = $request->email;
 
         $user->save();
 

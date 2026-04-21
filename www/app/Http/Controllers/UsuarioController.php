@@ -10,6 +10,7 @@ use App\Models\TrazaActividad;
 use App\Models\RolModuloPermiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UsuarioController extends Controller
@@ -200,8 +201,22 @@ class UsuarioController extends Controller
 
         $nombre = $usuario->name;
 
-        // Eliminar perfil de entrevistador
-        Entrevistador::where('id_usuario', $id)->delete();
+        // Eliminar o desligar perfil de entrevistador
+        $entrevistador = Entrevistador::where('id_usuario', $id)->first();
+        if ($entrevistador) {
+            $tieneEntrevistas = \DB::table('esclarecimiento.e_ind_fvt')
+                ->where('id_entrevistador', $entrevistador->id_entrevistador)
+                ->exists();
+
+            if ($tieneEntrevistas) {
+                // Preservar el entrevistador para mantener integridad referencial;
+                // solo desligar la cuenta de usuario.
+                $entrevistador->id_usuario = null;
+                $entrevistador->save();
+            } else {
+                $entrevistador->delete();
+            }
+        }
 
         // Eliminar usuario
         $usuario->delete();
