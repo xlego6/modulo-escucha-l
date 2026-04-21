@@ -123,6 +123,8 @@ class TrazaActividad extends Model
             'anonimizacion' => 'Anonimización',
             'compromiso_acceso' => 'Compromiso de acceso',
             'compromiso_reserva' => 'Compromiso de reserva',
+            'importacion_masiva' => 'Importación masiva',
+            'buscador' => 'Buscador',
         ];
 
         return $objetos[$this->objeto] ?? ucfirst(str_replace('_', ' ', $this->objeto ?? ''));
