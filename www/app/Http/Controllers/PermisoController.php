@@ -75,13 +75,21 @@ class PermisoController extends Controller
                 $query->porCodigo($request->codigo);
             }
             if ($request->filled('estado')) {
-                if ($request->estado == '1') {
-                    $query->vigentes();
-                } elseif ($request->estado == '2') {
-                    $query->revocados();
-                } elseif ($request->estado == 'pendiente') {
-                    $query->solicitudesPendientes();
-                }
+                match ($request->estado) {
+                    '1'         => $query->vigentes(),
+                    '2'         => $query->revocados(),
+                    'pendiente' => $query->solicitudesPendientes(),
+                    'rechazado' => $query->where('es_solicitud', true)
+                                         ->where('estado_solicitud', Permiso::SOLICITUD_RECHAZADA),
+                    'vencido'   => $query->where('id_estado', Permiso::ESTADO_VIGENTE)
+                                         ->where(function ($q) {
+                                             $q->where('fecha_vencimiento', '<', now())
+                                               ->orWhere('fecha_hasta', '<', now());
+                                         }),
+                    'programado' => $query->where('id_estado', Permiso::ESTADO_VIGENTE)
+                                          ->where('fecha_desde', '>', now()),
+                    default     => null,
+                };
             }
             if ($request->filled('tipo')) {
                 $query->where('id_tipo', $request->tipo);
