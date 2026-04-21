@@ -30,11 +30,13 @@ class EstadisticaController extends Controller
             'entrevistadores' => Entrevistador::count(),
         ];
 
-        // Personas por grupo étnico
-        $personas_por_etnia = Persona::whereNotNull('id_etnia')
-            ->join('catalogos.cat_item', 'persona.id_etnia', '=', 'cat_item.id_item')
-            ->select('cat_item.descripcion as etnia', DB::raw('COUNT(*) as total'))
-            ->groupBy('cat_item.descripcion')
+        // Personas por grupo étnico (solo testimoniantes)
+        $personas_por_etnia = DB::table('fichas.persona as p')
+            ->join('fichas.persona_entrevistada as pe', 'p.id_persona', '=', 'pe.id_persona')
+            ->join('catalogos.cat_item as ci', 'p.id_etnia', '=', 'ci.id_item')
+            ->whereNotNull('p.id_etnia')
+            ->select('ci.descripcion as etnia', DB::raw('COUNT(DISTINCT p.id_persona) as total'))
+            ->groupBy('ci.descripcion')
             ->orderByDesc('total')
             ->get();
 
