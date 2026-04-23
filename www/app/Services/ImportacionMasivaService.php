@@ -706,14 +706,18 @@ class ImportacionMasivaService
 
                 // Fase 2: búsqueda global (todos los departamentos)
                 if (!$encontrado) {
-                    foreach ($allMunis as $geo) {
-                        if ($this->normalizar($geo->descripcion) === $normMuni) {
-                            $encontrado = $geo->id_geo;
-                            $confianza = ($idDeptoSugerido && $geo->id_padre != $idDeptoSugerido)
-                                ? 'otro_depto'
-                                : 'exacto';
-                            break;
-                        }
+                    $matchesGlobales = $allMunis->filter(
+                        fn($g) => $this->normalizar($g->descripcion) === $normMuni
+                    );
+                    if ($matchesGlobales->count() === 1) {
+                        $geo       = $matchesGlobales->first();
+                        $encontrado = $geo->id_geo;
+                        $confianza  = ($idDeptoSugerido && $geo->id_padre != $idDeptoSugerido)
+                            ? 'otro_depto'
+                            : 'exacto';
+                    } elseif ($matchesGlobales->count() > 1) {
+                        // Nombre ambiguo en varios departamentos: no pre-seleccionar
+                        $confianza = 'ambiguo';
                     }
                 }
                 if (!$encontrado) {

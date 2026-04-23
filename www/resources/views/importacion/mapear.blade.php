@@ -172,6 +172,9 @@
              ================================================================ --}}
         @if(!empty($valoresUnicos['lugar_depto']) || !empty($valoresUnicos['lugar_muni_raw']))
         @php
+            // Lookup rápido id_geo → nombre de departamento
+            $deptoMap = $departamentos->pluck('descripcion', 'id_geo');
+
             // Agrupar municipios por departamento del CSV
             $munisPorDepto = [];
             foreach (($valoresUnicos['lugar_muni_raw'] ?? []) as $key) {
@@ -325,20 +328,24 @@
                         @foreach($munisRevision as $mr)
                         @php
                             [, $muniNom] = explode('||', $mr['key'], 2);
-                            $idDeptoMapeado = $actualD;
+                            // Para 'otro_depto' no filtrar por departamento: el municipio
+                            // sugerido no pertenece al depto del CSV, hay que buscar libremente.
+                            $idDeptoSelect = ($mr['conf'] === 'otro_depto') ? '' : ($actualD ?? '');
                         @endphp
                         <tr class="{{ $mr['conf'] === 'parcial' || $mr['conf'] === 'otro_depto' ? 'table-warning' : 'table-danger' }}">
                             <td style="width:45%; padding-left:2rem">
                                 <code>{{ $muniNom }}</code>
                                 <span class="badge badge-light ml-1">Municipio</span>
                                 @if($mr['conf'] === 'otro_depto')
-                                <span class="badge badge-warning ml-1" title="Encontrado en otro departamento"><i class="fas fa-exchange-alt"></i> otro depto</span>
+                                <span class="badge badge-warning ml-1" title="Municipio encontrado en otro departamento — busque el correcto en el selector"><i class="fas fa-exchange-alt"></i> otro depto</span>
+                                @elseif($mr['conf'] === 'ambiguo')
+                                <span class="badge badge-danger ml-1" title="Nombre repetido en varios departamentos — seleccione manualmente"><i class="fas fa-exclamation-triangle"></i> ambiguo</span>
                                 @endif
                             </td>
                             <td>
                                 <select class="form-control form-control-sm select2-muni"
                                     name="mapeos_geo[lugar_muni][{{ $mr['key'] }}]"
-                                    data-depto="{{ $idDeptoMapeado }}"
+                                    data-depto="{{ $idDeptoSelect }}"
                                     data-selected="{{ $mr['act'] ?? '' }}">
                                 </select>
                             </td>
@@ -371,20 +378,24 @@ $(document).ready(function () {
     // ------------------------------------------------------------------
     // Datos de municipios (JSON único, ~100 KB)
     // ------------------------------------------------------------------
+    var deptoNames = @json($deptoMap);
     var todosMunicipios = @json($municipios->map(fn($m) => ['id' => $m->id_geo, 'text' => $m->descripcion, 'padre' => $m->id_padre])->values());
 
     var opcionesCache = {};
     function buildOpcionesMuni(idDepto) {
         var key = idDepto || '_all';
         if (!opcionesCache[key]) {
-            var lista = idDepto
-                ? todosMunicipios.filter(function (m) { return m.padre == idDepto; })
-                : todosMunicipios;
+            var sinFiltro = !idDepto;
+            var lista = sinFiltro
+                ? todosMunicipios
+                : todosMunicipios.filter(function (m) { return m.padre == idDepto; });
             var html = '<option value="">— Sin mapear —</option>';
             for (var i = 0; i < lista.length; i++) {
-                html += '<option value="' + lista[i].id + '">' +
-                    lista[i].text.replace(/&/g,'&amp;').replace(/</g,'&lt;') +
-                    '</option>';
+                var nombre = lista[i].text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+                var label  = sinFiltro && deptoNames[lista[i].padre]
+                    ? nombre + ' — ' + ('' + deptoNames[lista[i].padre]).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                    : nombre;
+                html += '<option value="' + lista[i].id + '">' + label + '</option>';
             }
             opcionesCache[key] = html;
         }
@@ -417,8 +428,13 @@ $(document).ready(function () {
                 }
 
                 // Stagger Select2 init so each runs in its own tick
+                var s2opts = { theme: 'bootstrap4', width: '100%' };
+                if (!idDepto) {
+                    s2opts.minimumInputLength = 2;
+                    s2opts.placeholder = 'Escriba para buscar...';
+                }
                 setTimeout(function () {
-                    $sel.select2({ theme: 'bootstrap4', width: '100%' });
+                    $sel.select2(s2opts);
                 }, idx * 30);
             })(selects[i], i);
         }
