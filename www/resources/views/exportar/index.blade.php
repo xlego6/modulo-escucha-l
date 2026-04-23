@@ -126,6 +126,30 @@
         </div>
     </div>
 
+    <!-- Exportar Traza (solo Admin) -->
+    @if(Auth::user()->id_nivel == 1)
+    <div class="col-lg-4">
+        <div class="card card-dark">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-history mr-2"></i>Exportar Traza de Actividad</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Descarga la traza de actividad del sistema con los filtros que apliques. Máximo 500 registros por exportación.</p>
+                <ul class="list-unstyled text-muted small">
+                    <li><i class="fas fa-check text-dark mr-1"></i> Fecha/hora, usuario, acción, objeto</li>
+                    <li><i class="fas fa-check text-dark mr-1"></i> Código de referencia e IP</li>
+                    <li><i class="fas fa-check text-dark mr-1"></i> Filtros disponibles en /traza</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('traza.index') }}" class="btn btn-dark">
+                    <i class="fas fa-filter mr-2"></i>Ir a Traza para filtrar y exportar
+                </a>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Exportar Usuarios (solo Admin) -->
     @if(Auth::user()->id_nivel == 1)
     <div class="col-lg-4">

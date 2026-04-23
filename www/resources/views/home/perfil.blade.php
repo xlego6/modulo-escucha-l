@@ -50,6 +50,9 @@
                         <p class="mb-0"><strong>Compromiso aceptado</strong></p>
                         <small class="text-muted">{{ $entrevistador->compromiso_reserva->format('d/m/Y H:i') }}</small>
                     </div>
+                    <a href="{{ route('perfil.certificado', 'reserva') }}" class="btn btn-outline-success btn-sm btn-block mt-2">
+                        <i class="fas fa-file-pdf mr-1"></i>Descargar certificado
+                    </a>
                 @else
                     <p class="text-muted">
                         Para acceder a la informacion de testimonios, debe aceptar el compromiso de confidencialidad, reserva y no divulgacion.
@@ -75,6 +78,9 @@
                         <p class="mb-0"><strong>Compromiso aceptado</strong></p>
                         <small class="text-muted">{{ $entrevistador->compromiso_acceso->format('d/m/Y H:i') }}</small>
                     </div>
+                    <a href="{{ route('perfil.certificado', 'acceso') }}" class="btn btn-outline-success btn-sm btn-block mt-2">
+                        <i class="fas fa-file-pdf mr-1"></i>Descargar certificado
+                    </a>
                 @else
                     <p class="text-muted">
                         Para acceder a los módulos del sistema, debe aceptar las condiciones de uso y acceso interno.

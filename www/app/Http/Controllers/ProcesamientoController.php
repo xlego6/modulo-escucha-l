@@ -827,7 +827,7 @@ class ProcesamientoController extends Controller
     /**
      * Edicion de transcripciones
      */
-    public function edicion()
+    public function edicion(Request $request)
     {
         $user = Auth::user();
         $nivel = $user->id_nivel;
@@ -859,13 +859,62 @@ class ProcesamientoController extends Controller
         }
 
         // Admin/Líder: ve todas las entrevistas y asignaciones (excluir anonimizados)
-        $pendientes = Entrevista::where('id_activo', 1)
+        $queryPendientes = Entrevista::where('id_activo', 1)
             ->whereHas('rel_adjuntos', function($q) {
                 $q->where(function($inner) {
                     $inner->where('tipo_mime', 'like', '%audio%')
                           ->orWhere('tipo_mime', 'like', '%video%');
                 })->where('nombre_original', 'not like', '%[Anonimizado]%');
-            })
+            });
+
+        // Filtro dependencia
+        if ($request->filled('filtro_dependencia')) {
+            $queryPendientes->where('id_dependencia_origen', $request->filtro_dependencia);
+        }
+
+        // Filtro código
+        if ($request->filled('filtro_codigo')) {
+            $queryPendientes->where('entrevista_codigo', 'ilike', '%' . $request->filtro_codigo . '%');
+        }
+
+        // Filtro entrevistador
+        if ($request->filled('filtro_entrevistador')) {
+            $queryPendientes->where('id_entrevistador', $request->filtro_entrevistador);
+        }
+
+        // Filtro transcripción automática
+        if ($request->filled('filtro_trans_auto')) {
+            if ($request->filtro_trans_auto === 'con') {
+                $queryPendientes->whereHas('rel_adjuntos', function($q) {
+                    $q->whereNotNull('texto_extraido')
+                      ->where(function($i) { $i->where('tipo_mime', 'like', '%audio%')->orWhere('tipo_mime', 'like', '%video%'); });
+                });
+            } else {
+                $queryPendientes->whereDoesntHave('rel_adjuntos', function($q) {
+                    $q->whereNotNull('texto_extraido')
+                      ->where(function($i) { $i->where('tipo_mime', 'like', '%audio%')->orWhere('tipo_mime', 'like', '%video%'); });
+                });
+            }
+        }
+
+        // Filtro estado de asignación
+        if ($request->filled('filtro_asignacion')) {
+            if ($request->filtro_asignacion === 'sin_asignar') {
+                $queryPendientes->whereNotExists(function($q) {
+                    $q->from('esclarecimiento.asignacion_transcripcion as at')
+                      ->whereColumn('at.id_e_ind_fvt', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                      ->whereNotIn('at.estado', ['aprobada']);
+                });
+            } else {
+                $queryPendientes->whereExists(function($q) use ($request) {
+                    $q->from('esclarecimiento.asignacion_transcripcion as at')
+                      ->whereColumn('at.id_e_ind_fvt', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                      ->where('at.estado', $request->filtro_asignacion);
+                });
+            }
+        }
+
+        $pendientes = $queryPendientes
             ->with(['rel_adjuntos' => function($q) {
                 $q->where(function($inner) {
                     $inner->where('tipo_mime', 'like', '%audio%')
@@ -873,7 +922,8 @@ class ProcesamientoController extends Controller
                 })->where('nombre_original', 'not like', '%[Anonimizado]%');
             }])
             ->orderBy('updated_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->appends($request->query());
 
         // Asignaciones pendientes de revisión
         $pendientesRevision = AsignacionTranscripcion::where('estado', AsignacionTranscripcion::ESTADO_ENVIADA_REVISION)
@@ -920,7 +970,22 @@ class ProcesamientoController extends Controller
                 ->get();
         }
 
-        return view('procesamientos.edicion', compact('pendientes', 'pendientesRevision', 'transcriptores', 'asignacionesPorEntrevista', 'stats', 'misAsignaciones'));
+        // Datos para filtros
+        $dependenciasEdicion = CatItem::where('id_cat', 4)->where('habilitado', 1)->orderBy('orden')->get();
+        $entrevistadoresEdicion = Entrevistador::whereHas('rel_usuario')->with('rel_usuario')->orderBy('id_entrevistador')->get();
+        $estadosAsignacionEdicion = [
+            'sin_asignar'      => 'Sin asignar',
+            'asignada'         => 'Asignada',
+            'en_edicion'       => 'En edición',
+            'enviada_revision'  => 'Enviada a revisión',
+            'rechazada'        => 'Rechazada',
+            'aprobada'         => 'Aprobada',
+        ];
+
+        return view('procesamientos.edicion', compact(
+            'pendientes', 'pendientesRevision', 'transcriptores', 'asignacionesPorEntrevista', 'stats', 'misAsignaciones',
+            'dependenciasEdicion', 'entrevistadoresEdicion', 'estadosAsignacionEdicion'
+        ));
     }
 
     /**

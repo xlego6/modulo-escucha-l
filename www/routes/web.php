@@ -42,6 +42,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/perfil/password', [HomeController::class, 'cambiarPassword'])->name('perfil.password');
     Route::post('/perfil/compromiso', [HomeController::class, 'aceptarCompromisoReserva'])->name('perfil.compromiso');
     Route::post('/perfil/compromiso-acceso', [HomeController::class, 'aceptarCompromisoAcceso'])->name('perfil.compromiso_acceso');
+    Route::get('/perfil/certificado/{tipo}', [HomeController::class, 'descargarCertificado'])->name('perfil.certificado');
 
     // API endpoints (sin restriccion de compromiso ni nivel)
     Route::get('api/municipios', [ApiController::class, 'municipios'])->name('api.municipios');

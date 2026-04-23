@@ -170,7 +170,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
     #anotaciones-editor mark.amarillo { background: #fff3cd; color: #856404; padding: 1px 2px; border-radius: 2px; }
     #anotaciones-editor mark.rojo     { background: #f8d7da; color: #721c24; padding: 1px 2px; border-radius: 2px; }
     #anotaciones-editor mark.verde    { background: #d4edda; color: #155724; padding: 1px 2px; border-radius: 2px; }
-    .anotacion-toolbar { background: #f8f9fa; padding: 6px 8px; border: 1px solid #dee2e6; border-bottom: none; border-radius: 4px 4px 0 0; }
+    .anotacion-toolbar { background: #f8f9fa; padding: 6px 8px; border: 1px solid #dee2e6; border-bottom: none; border-radius: 4px 4px 0 0; position: sticky; top: 57px; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.08); }
     #anotaciones-guardado { transition: opacity .4s; }
 </style>
 @endsection

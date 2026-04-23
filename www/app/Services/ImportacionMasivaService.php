@@ -609,7 +609,7 @@ class ImportacionMasivaService
         foreach (self::CATALOGOS as $campo => $idCat) {
             if (!isset($valoresUnicos[$campo])) continue;
 
-            $items = CatItem::where('id_cat', $idCat)->get()->mapWithKeys(function ($item) {
+            $items = CatItem::where('id_cat', $idCat)->where('habilitado', 1)->get()->mapWithKeys(function ($item) {
                 return [$item->id_item => $this->normalizar($item->descripcion)];
             });
 
