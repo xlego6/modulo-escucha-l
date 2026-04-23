@@ -79,9 +79,14 @@
                     <a href="{{ route('traza.index') }}" class="btn btn-default mr-2">
                         <i class="fas fa-eraser mr-1"></i>Limpiar
                     </a>
-                    <a href="{{ route('traza.estadisticas') }}" class="btn btn-info">
+                    <a href="{{ route('traza.estadisticas') }}" class="btn btn-info mr-2">
                         <i class="fas fa-chart-bar mr-1"></i>Estadisticas
                     </a>
+                    @if(Auth::user()->id_nivel == 1)
+                    <a href="{{ route('traza.exportar', request()->query()) }}" class="btn btn-success">
+                        <i class="fas fa-file-excel mr-1"></i>Exportar Excel
+                    </a>
+                    @endif
                 </div>
             </div>
         </form>

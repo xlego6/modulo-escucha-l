@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
 
 class HomeController extends Controller
 {
@@ -126,6 +128,160 @@ class HomeController extends Controller
 
         flash('Contraseña actualizada correctamente.')->success();
         return redirect()->route('perfil');
+    }
+
+    /**
+     * Descargar certificado PDF de un compromiso aceptado
+     */
+    public function descargarCertificado(string $tipo)
+    {
+        $user = Auth::user();
+        $entrevistador = Entrevistador::where('id_usuario', $user->id)->first();
+
+        if (!$entrevistador) {
+            abort(403, 'Perfil de entrevistador no encontrado.');
+        }
+
+        $tiposPermitidos = ['acceso', 'reserva'];
+        if (!in_array($tipo, $tiposPermitidos)) {
+            abort(404);
+        }
+
+        // Verificar que el compromiso está aceptado
+        $aceptado = ($tipo === 'acceso')
+            ? $entrevistador->compromiso_acceso
+            : $entrevistador->compromiso_reserva;
+
+        if (!$aceptado) {
+            return redirect()->route('perfil')
+                ->with('error', 'Debe aceptar el compromiso antes de descargar el certificado.');
+        }
+
+        $firma = FirmaCompromiso::ultimaFirma($entrevistador->id_entrevistador, $tipo);
+
+        if (!$firma) {
+            return redirect()->route('perfil')
+                ->with('error', 'No se encontró el registro del compromiso firmado.');
+        }
+
+        $docxPath = $this->generarCertificadoDocx($user, $entrevistador, $firma, $tipo);
+        $pdfPath  = $this->convertirDocxAPdf($docxPath);
+
+        $nombreTipo = $tipo === 'acceso' ? 'acceso-interno' : 'confidencialidad-reserva';
+        $nombreArchivo = "certificado-{$nombreTipo}-{$user->id}.pdf";
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion'     => 'descargar',
+            'objeto'     => 'certificado_compromiso',
+            'id_registro' => $entrevistador->id_entrevistador,
+            'referencia' => "Descarga certificado {$tipo} (version: {$firma->version_texto})",
+            'ip'         => request()->ip(),
+        ]);
+
+        return response()->download($pdfPath, $nombreArchivo)->deleteFileAfterSend(true);
+    }
+
+    private function generarCertificadoDocx($user, $entrevistador, FirmaCompromiso $firma, string $tipo): string
+    {
+        $phpWord = new PhpWord();
+
+        $phpWord->setDefaultFontName('Barlow');
+        $phpWord->setDefaultFontSize(11);
+
+        $section = $phpWord->addSection([
+            'marginTop'    => 1440,
+            'marginBottom' => 1440,
+            'marginLeft'   => 1800,
+            'marginRight'  => 1800,
+        ]);
+
+        $styleTitle = ['bold' => true, 'size' => 13, 'name' => 'Barlow'];
+        $styleSubtitle = ['bold' => true, 'size' => 11, 'name' => 'Barlow'];
+        $styleNormal = ['size' => 10, 'name' => 'Barlow'];
+        $styleMuted = ['size' => 9, 'name' => 'Barlow', 'color' => '666666'];
+        $parCenter = ['alignment' => 'center'];
+        $parBoth   = ['alignment' => 'both', 'spaceAfter' => 120];
+
+        // Encabezado institucional
+        $section->addText('Centro Nacional de Memoria Histórica', $styleTitle, $parCenter);
+        $section->addText('Dirección de Archivos de los Derechos Humanos', $styleSubtitle, $parCenter);
+        $section->addTextBreak(1);
+
+        // Título del certificado
+        $labelTipo = $tipo === 'acceso'
+            ? 'COMPROMISO DE ACCESO INTERNO'
+            : 'COMPROMISO DE CONFIDENCIALIDAD, RESERVA Y NO DIVULGACIÓN';
+
+        $section->addText('CERTIFICADO DE', ['bold' => true, 'size' => 14, 'name' => 'Barlow'], $parCenter);
+        $section->addText($labelTipo, ['bold' => true, 'size' => 14, 'name' => 'Barlow'], $parCenter);
+        $section->addTextBreak(1);
+
+        // Datos del firmante
+        $fechaFirma = $firma->fecha_firma->format('d') . ' de ' .
+            collect(['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'])
+                ->get((int)$firma->fecha_firma->format('m') - 1) .
+            ' de ' . $firma->fecha_firma->format('Y');
+
+        $section->addText('Datos de la firma', $styleSubtitle, ['spaceAfter' => 60]);
+        $section->addText("Nombre: {$user->name}", $styleNormal, ['spaceAfter' => 40]);
+        $section->addText("Versión del compromiso: {$firma->version_texto}", $styleNormal, ['spaceAfter' => 40]);
+        $section->addText("Fecha de aceptación: {$fechaFirma}", $styleNormal, ['spaceAfter' => 40]);
+        $section->addText("Sistema: Módulo de Escucha — CNMH", $styleNormal, ['spaceAfter' => 0]);
+        $section->addTextBreak(1);
+
+        // Separador visual (párrafo con borde inferior)
+        $phpWord->addParagraphStyle('separador', ['borderBottomSize' => 6, 'borderBottomColor' => 'CCCCCC', 'spaceAfter' => 120]);
+        $section->addText('', null, 'separador');
+        $section->addTextBreak(1);
+
+        // Texto del compromiso
+        $section->addText('Texto del compromiso aceptado', $styleSubtitle, ['spaceAfter' => 80]);
+
+        $lineas = explode("\n", $firma->texto_firmado);
+        foreach ($lineas as $linea) {
+            $linea = trim($linea);
+            if ($linea === '') {
+                $section->addTextBreak(1);
+            } else {
+                $section->addText($linea, $styleNormal, $parBoth);
+            }
+        }
+
+        $section->addTextBreak(2);
+        $section->addText(
+            'Este certificado fue generado automáticamente por el Módulo de Escucha del CNMH el ' .
+            now()->format('d/m/Y H:i') . '.',
+            $styleMuted,
+            $parCenter
+        );
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'CER_') . '.docx';
+        $writer  = IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($tmpPath);
+
+        return $tmpPath;
+    }
+
+    private function convertirDocxAPdf(string $docxPath): string
+    {
+        $tmpDir = dirname($docxPath);
+        $cmd = sprintf(
+            'HOME=/tmp soffice --headless --norestore --convert-to pdf --outdir %s %s 2>/dev/null',
+            escapeshellarg($tmpDir),
+            escapeshellarg($docxPath)
+        );
+        shell_exec($cmd);
+
+        $pdfPath = substr($docxPath, 0, -5) . '.pdf';
+        @unlink($docxPath);
+
+        if (!file_exists($pdfPath)) {
+            throw new \Exception('Error al convertir el certificado a PDF. Asegúrese de que LibreOffice esté instalado.');
+        }
+
+        return $pdfPath;
     }
 
     /**

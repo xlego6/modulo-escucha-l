@@ -216,6 +216,82 @@
 </div>
 @endif
 
+{{-- Filtros para Entrevistas con Audio/Video --}}
+<div class="card card-outline card-secondary mb-0">
+    <div class="card-header py-2">
+        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filtros</h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+        </div>
+    </div>
+    <div class="card-body py-2">
+        <form action="{{ route('procesamientos.edicion') }}" method="GET">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Dependencia</label>
+                        <select name="filtro_dependencia" class="form-control form-control-sm">
+                            <option value="">-- Todas --</option>
+                            @foreach($dependenciasEdicion as $dep)
+                                <option value="{{ $dep->id_item }}" {{ request('filtro_dependencia') == $dep->id_item ? 'selected' : '' }}>{{ $dep->descripcion }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Código</label>
+                        <input type="text" name="filtro_codigo" class="form-control form-control-sm" value="{{ request('filtro_codigo') }}" placeholder="Buscar código...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Entrevistador</label>
+                        <select name="filtro_entrevistador" class="form-control form-control-sm">
+                            <option value="">-- Todos --</option>
+                            @foreach($entrevistadoresEdicion as $ent)
+                                <option value="{{ $ent->id_entrevistador }}" {{ request('filtro_entrevistador') == $ent->id_entrevistador ? 'selected' : '' }}>{{ $ent->rel_usuario->name ?? 'N/A' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Transcripción Auto</label>
+                        <select name="filtro_trans_auto" class="form-control form-control-sm">
+                            <option value="">-- Todas --</option>
+                            <option value="con" {{ request('filtro_trans_auto') === 'con' ? 'selected' : '' }}>Con transcripción</option>
+                            <option value="sin" {{ request('filtro_trans_auto') === 'sin' ? 'selected' : '' }}>Sin transcripción</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Estado Asignación</label>
+                        <select name="filtro_asignacion" class="form-control form-control-sm">
+                            <option value="">-- Todos --</option>
+                            @foreach($estadosAsignacionEdicion as $val => $label)
+                                <option value="{{ $val }}" {{ request('filtro_asignacion') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <button type="submit" class="btn btn-sm btn-primary mr-2">
+                    <i class="fas fa-search mr-1"></i>Filtrar
+                </button>
+                <a href="{{ route('procesamientos.edicion') }}" class="btn btn-sm btn-default">
+                    <i class="fas fa-eraser mr-1"></i>Limpiar
+                </a>
+                @if(request()->hasAny(['filtro_dependencia','filtro_codigo','filtro_entrevistador','filtro_trans_auto','filtro_asignacion']))
+                    <span class="badge badge-info ml-2">Filtros activos</span>
+                @endif
+            </div>
+        </form>
+    </div>
+</div>
+
 {{-- Lista de Entrevistas para Asignar --}}
 <div class="card">
     <div class="card-header">

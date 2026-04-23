@@ -460,6 +460,7 @@ class ImportacionMasivaController extends Controller
         $resultado = [];
         foreach (ImportacionMasivaService::CATALOGOS as $campo => $idCat) {
             $resultado[$campo] = CatItem::where('id_cat', $idCat)
+                ->where('habilitado', 1)
                 ->orderBy('orden')
                 ->pluck('descripcion', 'id_item');
         }

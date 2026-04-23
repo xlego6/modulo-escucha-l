@@ -430,10 +430,10 @@
                     <div class="form-group">
                         <label for="archivo">Archivo <span class="text-danger">*</span></label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="archivo" name="archivo" required>
-                            <label class="custom-file-label" for="archivo" data-browse="Buscar">Seleccionar archivo...</label>
+                            <input type="file" class="custom-file-input" id="archivo" name="archivo" required multiple>
+                            <label class="custom-file-label" for="archivo" data-browse="Buscar">Seleccionar archivo(s)...</label>
                         </div>
-                        <small class="text-muted">Maximo 500MB. Archivos de audio/video mayores se convertiran automaticamente a .m4a (hasta 2GB).</small>
+                        <small class="text-muted">Maximo 500MB por archivo. Archivos de audio/video mayores se convertiran automaticamente a .m4a (hasta 2GB). Para varios archivos del mismo tipo, seleccionelos todos a la vez (Ctrl+clic o Shift+clic).</small>
                     </div>
 
                     <!-- Aviso de conversion automatica -->
@@ -718,13 +718,19 @@ $(document).ready(function() {
         return div.innerHTML;
     }
 
-    // Mostrar nombre del archivo seleccionado
+    // Mostrar nombre(s) del archivo(s) seleccionado(s)
     var archivoInput = document.getElementById('archivo');
     if (archivoInput) {
         archivoInput.addEventListener('change', function(e) {
-            var fileName = e.target.files[0] ? e.target.files[0].name : 'Seleccionar archivo...';
+            var files = e.target.files;
             var label = this.nextElementSibling;
-            label.textContent = fileName;
+            if (files.length > 1) {
+                label.textContent = files.length + ' archivos seleccionados';
+            } else if (files.length === 1) {
+                label.textContent = files[0].name;
+            } else {
+                label.textContent = 'Seleccionar archivo(s)...';
+            }
         });
     }
 
@@ -742,32 +748,51 @@ $(document).ready(function() {
     var _extensionesMedia = ['mp3','mp4','m4a','wav','flac','ogg','wma','aac','avi','mov','mkv','wmv','flv','webm','3gp','opus','amr'];
 
     $('#archivo').on('change', function() {
-        var file = this.files[0];
+        var files = this.files;
         _esMediaFile = false;
         _supera500mb = false;
         $('#btn-convertir').hide();
         $('#conversion-info').hide();
+        $('#btn-subir').show().prop('disabled', false);
 
-        if (!file) return;
+        if (!files || files.length === 0) return;
 
+        // Con múltiples archivos: no mostrar opciones de conversión (aplica solo a archivo único grande)
+        if (files.length > 1) {
+            var invalidos = [];
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                var ext = f.name.split('.').pop().toLowerCase();
+                var tipo = f.type || '';
+                var esMedia = tipo.startsWith('audio/') || tipo.startsWith('video/') || _extensionesMedia.indexOf(ext) !== -1;
+                if (!esMedia && f.size > 524288000) {
+                    invalidos.push(f.name);
+                }
+            }
+            if (invalidos.length > 0) {
+                $('#conversion-info').show().removeClass('alert-info alert-warning').addClass('alert-danger');
+                $('#conversion-info-text').text('Estos archivos superan 500MB y no son audio/video, no se pueden subir: ' + invalidos.join(', '));
+                $('#btn-subir').prop('disabled', true);
+            }
+            return;
+        }
+
+        var file = files[0];
         var ext = file.name.split('.').pop().toLowerCase();
         var tipo = file.type || '';
         _esMediaFile = tipo.startsWith('audio/') || tipo.startsWith('video/') || _extensionesMedia.indexOf(ext) !== -1;
         _supera500mb = file.size > 524288000; // 500MB
 
         if (_esMediaFile && !_supera500mb) {
-            // Audio/video <= 500MB: mostrar boton de conversion como opcion
             $('#btn-convertir').show();
             $('#conversion-info').show();
             $('#conversion-info-text').text('Archivo de audio/video detectado. Puede subirlo directamente o convertirlo a .m4a (mas liviano).');
         } else if (_supera500mb && _esMediaFile) {
-            // Audio/video > 500MB: conversion obligatoria
             $('#btn-convertir').show();
             $('#btn-subir').hide();
             $('#conversion-info').show().removeClass('alert-info').addClass('alert-warning');
             $('#conversion-info-text').text('El archivo supera 500MB (' + formatBytes(file.size) + '). Se convertira automaticamente a .m4a antes de guardarse.');
         } else if (_supera500mb && !_esMediaFile) {
-            // No media > 500MB: no se puede subir
             $('#conversion-info').show().removeClass('alert-info').addClass('alert-danger');
             $('#conversion-info-text').text('El archivo supera 500MB y no es audio/video. No se puede subir.');
             $('#btn-subir').prop('disabled', true);
@@ -877,25 +902,113 @@ $(document).ready(function() {
         }
     }
 
-    // Subida normal
+    // Subida normal (single o multiple)
     $('#form-subir-archivo').on('submit', function(e) {
         e.preventDefault();
 
-        // Si supera 500MB y es media, forzar conversion
-        if (_supera500mb && _esMediaFile) {
-            enviarArchivo(
-                '{{ route("adjuntos.subir_convertido", $entrevista->id_e_ind_fvt) }}',
-                'Subiendo archivo...',
-                'Convirtiendo a .m4a en el servidor... (puede tardar varios minutos)'
-            );
+        var tipoSelect = document.getElementById('id_tipo');
+        var fileInput = document.getElementById('archivo');
+
+        if (!tipoSelect.value) { alert('Debe seleccionar un tipo de archivo.'); return; }
+        if (!fileInput.files.length) { alert('Debe seleccionar un archivo.'); return; }
+
+        var files = Array.from(fileInput.files);
+
+        if (files.length === 1) {
+            // Archivo único: lógica de conversión existente
+            if (_supera500mb && _esMediaFile) {
+                enviarArchivo(
+                    '{{ route("adjuntos.subir_convertido", $entrevista->id_e_ind_fvt) }}',
+                    'Subiendo archivo...',
+                    'Convirtiendo a .m4a en el servidor... (puede tardar varios minutos)'
+                );
+            } else {
+                enviarArchivo(
+                    '{{ route("adjuntos.subir", $entrevista->id_e_ind_fvt) }}',
+                    'Subiendo archivo...',
+                    'Procesando archivo en el servidor...'
+                );
+            }
         } else {
-            enviarArchivo(
-                '{{ route("adjuntos.subir", $entrevista->id_e_ind_fvt) }}',
-                'Subiendo archivo...',
-                'Procesando archivo en el servidor...'
-            );
+            // Múltiples archivos: subida secuencial
+            subirSecuencial(files, 0, tipoSelect.value);
         }
     });
+
+    function subirSecuencial(files, index, idTipo) {
+        if (index >= files.length) {
+            $('#upload-status-text').text('Todos los archivos subidos correctamente.');
+            $('#upload-progress-bar').css('width', '100%');
+            $('#upload-percent-text').text('100%');
+            setTimeout(function() { window.location.reload(); }, 800);
+            return;
+        }
+
+        var file = files[index];
+        var total = files.length;
+        var startTime = Date.now();
+
+        $('#upload-progress-container').show();
+        $('#btn-subir').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Subiendo...');
+        $('#upload-progress-bar').css('width', '0%').attr('aria-valuenow', 0).removeClass('bg-danger').addClass('bg-success progress-bar-animated');
+        $('#upload-status-text').text('Subiendo ' + (index + 1) + ' de ' + total + ': ' + file.name);
+        $('#upload-percent-text').text('0%');
+        $('#upload-detail-text').text('');
+
+        var formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('archivo', file);
+        formData.append('id_tipo', idTipo);
+
+        var xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', function(evt) {
+            if (evt.lengthComputable) {
+                var percent = Math.round((evt.loaded / evt.total) * 100);
+                $('#upload-progress-bar').css('width', percent + '%').attr('aria-valuenow', percent);
+                $('#upload-percent-text').text(percent + '%');
+                var elapsed = (Date.now() - startTime) / 1000;
+                if (elapsed > 0.5) {
+                    var speed = evt.loaded / elapsed;
+                    var remaining = (evt.total - evt.loaded) / speed;
+                    var detalle = formatBytes(evt.loaded) + ' / ' + formatBytes(evt.total);
+                    if (remaining > 0 && percent < 100) {
+                        detalle += ' — ~' + (remaining >= 60 ? Math.ceil(remaining / 60) + ' min' : Math.ceil(remaining) + ' seg') + ' restante(s)';
+                        detalle += ' (' + formatBytes(speed) + '/s)';
+                    }
+                    $('#upload-detail-text').text(detalle);
+                }
+                if (percent >= 100) {
+                    $('#upload-status-text').text('Procesando ' + (index + 1) + ' de ' + total + '...');
+                    $('#upload-progress-bar').removeClass('progress-bar-animated');
+                }
+            }
+        });
+
+        xhr.addEventListener('load', function() {
+            if (xhr.status >= 200 && xhr.status < 400) {
+                subirSecuencial(files, index + 1, idTipo);
+            } else {
+                var msg = 'Error al subir: ' + file.name;
+                try { var resp = JSON.parse(xhr.responseText); if (resp.message) msg = resp.message; } catch(ex) {}
+                $('#upload-status-text').text(msg);
+                $('#upload-progress-bar').removeClass('bg-success progress-bar-animated').addClass('bg-danger').css('width', '100%');
+                $('#upload-percent-text').text('Error');
+                $('#btn-subir').prop('disabled', false).html('<i class="fas fa-upload"></i> Subir Archivo');
+            }
+        });
+
+        xhr.addEventListener('error', function() {
+            $('#upload-status-text').text('Error de conexion al subir: ' + file.name);
+            $('#upload-progress-bar').removeClass('bg-success progress-bar-animated').addClass('bg-danger').css('width', '100%');
+            $('#upload-percent-text').text('Error');
+            $('#btn-subir').prop('disabled', false).html('<i class="fas fa-upload"></i> Subir Archivo');
+        });
+
+        xhr.open('POST', '{{ route("adjuntos.subir", $entrevista->id_e_ind_fvt) }}');
+        xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+        xhr.send(formData);
+    }
 
     // Boton de conversion manual
     $('#btn-convertir').on('click', function() {
