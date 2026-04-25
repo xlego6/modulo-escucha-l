@@ -112,7 +112,7 @@ class LoginController extends Controller
                 'id_usuario'           => $user->id,
                 'numero_entrevistador' => $numero,
                 'id_nivel'             => 3,
-                'solo_lectura'         => 0,
+                'solo_lectura'         => 1,
             ]);
 
             TrazaActividad::create([

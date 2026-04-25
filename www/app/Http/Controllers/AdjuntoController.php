@@ -190,7 +190,7 @@ class AdjuntoController extends Controller
      */
     public function descargar($id)
     {
-        $adjunto = Adjunto::findOrFail($id);
+        $adjunto = Adjunto::with('rel_entrevista.rel_entrevistador')->findOrFail($id);
 
         if (!$adjunto->existe_archivo || !Storage::disk('public')->exists($adjunto->ubicacion)) {
             flash('El archivo no existe o fue eliminado.')->error();
@@ -198,6 +198,10 @@ class AdjuntoController extends Controller
         }
 
         $user = Auth::user();
+
+        if (!$this->puedeVerAdjunto($adjunto, $user)) {
+            abort(403);
+        }
 
         // Gestor de conocimiento (nivel 5): solo puede visualizar, no descargar
         if ($user->id_nivel == 5) {
@@ -248,7 +252,7 @@ class AdjuntoController extends Controller
      */
     public function ver($id)
     {
-        $adjunto = Adjunto::with('rel_entrevista')->findOrFail($id);
+        $adjunto = Adjunto::with('rel_entrevista.rel_entrevistador')->findOrFail($id);
 
         if (!$adjunto->existe_archivo || !Storage::disk('public')->exists($adjunto->ubicacion)) {
             flash('El archivo no existe o fue eliminado.')->error();
@@ -256,6 +260,11 @@ class AdjuntoController extends Controller
         }
 
         $user = Auth::user();
+
+        if (!$this->puedeVerAdjunto($adjunto, $user)) {
+            abort(403);
+        }
+
         TrazaActividad::create([
             'fecha_hora'  => now(),
             'id_usuario'  => $user->id,

@@ -735,6 +735,20 @@ class PermisoController extends Controller
             return redirect()->back();
         }
 
+        // Limitar solicitudes pendientes simultáneas para evitar enumeración masiva
+        $pendientes = Permiso::where('id_entrevistador', $entrevistador->id_entrevistador)
+            ->where('es_solicitud', true)
+            ->where('estado_solicitud', Permiso::SOLICITUD_PENDIENTE)
+            ->count();
+
+        if ($pendientes >= 10) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json(['error' => 'Ha alcanzado el límite de solicitudes pendientes.'], 429);
+            }
+            flash('Tiene demasiadas solicitudes pendientes. Espere a que sean procesadas antes de enviar nuevas.')->warning();
+            return redirect()->back();
+        }
+
         $entrevista = Entrevista::findOrFail($request->id_e_ind_fvt);
 
         // Check if already has a pending or approved solicitud of same type

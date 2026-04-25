@@ -54,6 +54,15 @@ class CheckNivelAcceso
             return redirect()->route('home');
         }
 
+        // Usuario solo lectura: bloquear cualquier mutación
+        if ($user->solo_lectura && !in_array($request->method(), ['GET', 'HEAD'])) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'Su perfil es de solo lectura.'], 403);
+            }
+            flash('Su perfil es de solo lectura y no puede realizar modificaciones.')->error();
+            return redirect()->back();
+        }
+
         return $next($request);
     }
 
