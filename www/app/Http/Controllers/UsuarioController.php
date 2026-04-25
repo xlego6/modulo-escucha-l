@@ -155,6 +155,7 @@ class UsuarioController extends Controller
         if ($perfil) {
             // Invalidar caché de permisos si cambia el nivel
             if ($perfil->id_nivel != $request->id_nivel) {
+                RolModuloPermiso::clearCache((int) $perfil->id_nivel);
                 RolModuloPermiso::clearCache((int) $request->id_nivel);
             }
             $perfil->update([
