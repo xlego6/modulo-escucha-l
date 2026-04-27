@@ -223,6 +223,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('procesamientos/asignacion/{id}/editar', [ProcesamientoController::class, 'editarTranscripcionAsignada'])->name('procesamientos.editar-asignacion');
             Route::post('procesamientos/asignacion/{id}/guardar', [ProcesamientoController::class, 'guardarTranscripcionAsignada'])->name('procesamientos.guardar-asignacion');
             Route::post('procesamientos/asignacion/{id}/enviar-revision', [ProcesamientoController::class, 'enviarARevision'])->name('procesamientos.enviar-revision');
+            Route::post('procesamientos/asignacion/{id}/heartbeat', [ProcesamientoController::class, 'heartbeatEdicion'])->name('procesamientos.heartbeat');
 
             // Revisión de transcripciones (Admin/Líder)
             Route::get('procesamientos/revision/{id}', [ProcesamientoController::class, 'verRevision'])->name('procesamientos.ver-revision');
