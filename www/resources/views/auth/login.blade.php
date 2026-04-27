@@ -19,7 +19,7 @@
         .login-logo-title {
             font-family: 'Barlow', sans-serif;
             font-weight: 700;
-            font-size: 2.2rem;
+            font-size: 2.6rem;
             color: #ebc01a;
             line-height: 1.2;
             text-transform: uppercase;
@@ -55,7 +55,7 @@
         <br>
         <span class="login-logo-title">MÓDULO DE ESCUCHA<br>CNMH</span>
         <br>
-        <small class="text-muted" style="font-family: 'Barlow', sans-serif; font-size: 0.95rem; letter-spacing: 1px;">Sistema de escucha CNMH</small>
+        <small class="text-muted" style="font-family: 'Barlow', sans-serif; font-size: 1.1rem; letter-spacing: 1px;">Sistema de escucha CNMH</small>
     </div>
     <div class="card">
         <div class="card-body login-card-body">
