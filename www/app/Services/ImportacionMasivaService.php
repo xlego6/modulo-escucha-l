@@ -168,16 +168,18 @@ class ImportacionMasivaService
             rewind($handle);
         }
 
-        // Leer fila 1 (encabezados principales) – se descarta
-        fgetcsv($handle, 0, ';', '"', '\\');
+        // Detectar delimitador desde la primera línea (encabezados, sin comas en sus nombres)
+        $primeraLinea = fgets($handle);
+        $sep = substr_count($primeraLinea, ';') >= substr_count($primeraLinea, ',') ? ';' : ',';
+
         // Leer fila 2 (sub-encabezados) – se descarta
-        fgetcsv($handle, 0, ';', '"', '\\');
+        fgetcsv($handle, 0, $sep, '"', '\\');
 
         $grupoActual = null;
         $idActual    = null;
         $total       = 0;
 
-        while (($fila = fgetcsv($handle, 0, ';', '"', '\\')) !== false) {
+        while (($fila = fgetcsv($handle, 0, $sep, '"', '\\')) !== false) {
             // Normalizar: padding si hay menos columnas de las esperadas
             while (count($fila) < 82) {
                 $fila[] = '';
