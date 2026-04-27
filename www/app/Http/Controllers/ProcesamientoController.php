@@ -204,8 +204,7 @@ class ProcesamientoController extends Controller
             if (in_array($estado, ['en_edicion', 'enviada_revision', 'rechazada', 'aprobada'])) {
                 $q = DB::table($table . ' as at')
                     ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.' . $personaCol)
-                    ->where('at.estado', $estado)
-                    ->whereNotNull('at.fecha_inicio_edicion');
+                    ->where('at.estado', $estado);
 
                 if (!empty($filtroIds)) {
                     $q->whereIn('at.' . $personaCol, (array)$filtroIds);
@@ -213,13 +212,10 @@ class ProcesamientoController extends Controller
                     $q->where('e.id_dependencia_origen', $filtroDependencia);
                 }
 
-                // Para en_edicion: tiempo transcurrido desde inicio hasta ahora
-                // Para los demás: tiempo entre inicio de edición y envío a revisión
-                if ($estado === 'en_edicion') {
-                    $s['tiempo_edicion'] = (int)$q->sum(DB::raw("EXTRACT(EPOCH FROM (NOW() - at.fecha_inicio_edicion))"));
-                } else {
-                    $q->whereNotNull('at.fecha_envio_revision');
-                    $s['tiempo_edicion'] = (int)$q->sum(DB::raw("EXTRACT(EPOCH FROM (at.fecha_envio_revision - at.fecha_inicio_edicion))"));
+                // Solo mostrar tiempo si hay datos de heartbeat (medición activa)
+                $segundosActivos = (int)$q->sum('at.segundos_edicion_activa');
+                if ($segundosActivos > 0) {
+                    $s['tiempo_edicion'] = $segundosActivos;
                 }
             }
 
@@ -1693,6 +1689,13 @@ class ProcesamientoController extends Controller
     /**
      * Enviar transcripción a revisión (Transcriptor)
      */
+    public function heartbeatEdicion($id)
+    {
+        $asignacion = AsignacionTranscripcion::findOrFail($id);
+        $asignacion->increment('segundos_edicion_activa', 30);
+        return response()->json(['ok' => true]);
+    }
+
     public function enviarARevision($id)
     {
         $user = Auth::user();

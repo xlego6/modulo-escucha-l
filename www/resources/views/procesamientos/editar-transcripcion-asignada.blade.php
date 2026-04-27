@@ -682,5 +682,25 @@ $(document).ready(function() {
 
     $(document).on('mouseup', function() { dragging = false; });
 });
+
+// Heartbeat de tiempo activo de edición
+(function () {
+    const heartbeatUrl = '{{ route("procesamientos.heartbeat", $asignacion->id_asignacion) }}';
+    const token = '{{ csrf_token() }}';
+    let activo = !document.hidden;
+
+    document.addEventListener('visibilitychange', function () {
+        activo = !document.hidden;
+    });
+
+    setInterval(function () {
+        if (!activo) return;
+        fetch(heartbeatUrl, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
+            keepalive: true,
+        });
+    }, 30000);
+})();
 </script>
 @endsection
