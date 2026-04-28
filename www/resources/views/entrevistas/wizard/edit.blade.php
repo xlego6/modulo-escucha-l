@@ -427,6 +427,13 @@ $(document).ready(function() {
                     if (response.id_e_ind_fvt) {
                         $('#id_e_ind_fvt').val(response.id_e_ind_fvt);
                     }
+                    if (step === 2 && response.testimoniantes) {
+                        response.testimoniantes.forEach(function(t, index) {
+                            let card = $('.testimoniante-card[data-index="' + index + '"]');
+                            card.find('[name="id_persona_' + index + '"]').val(t.id_persona);
+                            card.find('[name="id_persona_entrevistada_' + index + '"]').val(t.id_persona_entrevistada);
+                        });
+                    }
                     if (callback) callback(response);
                 } else {
                     alert('Error: ' + response.message);

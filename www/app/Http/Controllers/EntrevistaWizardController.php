@@ -197,6 +197,7 @@ class EntrevistaWizardController extends Controller
                 ->toArray();
 
             $procesados = [];
+            $testimoniantes_resp = [];
 
             foreach ($request->testimoniantes as $index => $datos) {
                 // Crear o actualizar persona
@@ -241,6 +242,10 @@ class EntrevistaWizardController extends Controller
                 }
 
                 $procesados[] = $pe->id_persona_entrevistada;
+                $testimoniantes_resp[] = [
+                    'id_persona' => $persona->id_persona,
+                    'id_persona_entrevistada' => $pe->id_persona_entrevistada,
+                ];
 
                 // Guardar consentimiento informado
                 $tieneDoc = $datos['consentimiento']['tiene_documento'] ?? 0;
@@ -349,7 +354,8 @@ class EntrevistaWizardController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Paso 2 guardado correctamente.'
+                'message' => 'Paso 2 guardado correctamente.',
+                'testimoniantes' => $testimoniantes_resp,
             ]);
 
         } catch (\Exception $e) {
