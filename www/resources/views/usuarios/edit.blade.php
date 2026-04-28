@@ -33,6 +33,7 @@
                         <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $usuario->email) }}" required>
                     </div>
 
+                    @if(!(bool) $usuario->is_login_directory_active)
                     <div class="form-group">
                         <label for="password">Nueva Contrasena</label>
                         <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password">
@@ -43,6 +44,11 @@
                         <label for="password_confirmation">Confirmar Contrasena</label>
                         <input type="password" class="form-control" id="password_confirmation" name="password_confirmation">
                     </div>
+                    @else
+                    <div class="alert alert-info mb-0" role="alert">
+                        Este usuario usa Directorio Activo (LDAP). La contrasena se administra externamente.
+                    </div>
+                    @endif
                 </div>
 
                 <div class="col-md-6">

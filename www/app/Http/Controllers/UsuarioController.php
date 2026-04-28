@@ -144,8 +144,11 @@ class UsuarioController extends Controller
             'email' => $request->email,
         ]);
 
-        // Actualizar password solo si se proporciona
-        if ($request->filled('password')) {
+        // Usuarios LDAP administran su contrasena en Directorio Activo.
+        $isLdapUser = (bool) $usuario->is_login_directory_active;
+
+        // Actualizar password solo si se proporciona y el usuario no es LDAP.
+        if (!$isLdapUser && $request->filled('password')) {
             $request->validate(['password' => 'min:6|confirmed']);
             $usuario->update(['password' => Hash::make($request->password)]);
         }
