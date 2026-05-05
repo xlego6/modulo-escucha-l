@@ -167,10 +167,9 @@
                                 <i class="fas fa-hourglass-half"></i> En revisión
                             </span>
                         @elseif($asignacion->estado == 'aprobada')
-                            <a href="{{ route('procesamientos.editar-asignacion', $asignacion->id_asignacion) }}"
-                               class="btn btn-sm btn-success">
-                                <i class="fas fa-eye"></i> Ver historial
-                            </a>
+                            <span class="text-success">
+                                <i class="fas fa-check-circle"></i> Completada
+                            </span>
                         @endif
                     </td>
                 </tr>
