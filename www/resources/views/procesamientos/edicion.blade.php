@@ -153,6 +153,8 @@
                         @php $histJsonMis = e(json_encode($asig->historial_comentarios ?: [])); @endphp
                         <span class="badge {{ $badgeClass }} js-historial-pop"
                               data-historial="{{ $histJsonMis }}"
+                              data-estado="{{ $asig->estado }}"
+                              data-comentario="{{ e($asig->comentario_revision ?? '') }}"
                               tabindex="0">{{ $labelEstado }}</span>
                     </td>
                     <td>
@@ -387,6 +389,8 @@
                                     @php $histJson = e(json_encode($asigAdjunto->historial_comentarios ?: [])); @endphp
                                     <span class="badge {{ $asigAdjunto->estado_badge_class }} js-historial-pop"
                                           data-historial="{{ $histJson }}"
+                                          data-estado="{{ $asigAdjunto->estado }}"
+                                          data-comentario="{{ e($asigAdjunto->comentario_revision ?? '') }}"
                                           tabindex="0">{{ $asigAdjunto->fmt_estado }}</span>
                                     <small class="text-muted">{{ $asigAdjunto->rel_transcriptor->rel_usuario->name ?? '' }}</small>
                                 @else
@@ -607,12 +611,24 @@ function abrirModalAsignar(id, codigo, adjuntosJson) {
 }
 
 // Popover historial de revisión
-function renderHistorial(historial) {
-    if (!Array.isArray(historial) || historial.length === 0) {
-        return '<em class="text-muted">Sin historial de revisión</em>';
-    }
+function renderHistorial(historial, estado, comentarioFallback) {
     function esc(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    if (!Array.isArray(historial)) historial = [];
+
+    // Si el estado actual (aprobada/rechazada) no está en el historial pero hay
+    // comentario_revision, lo inyectamos como entrada sintética para no perderlo.
+    var estadosConComentario = ['aprobada', 'rechazada'];
+    if (estadosConComentario.indexOf(estado) !== -1) {
+        var yaEsta = historial.some(function(e) { return e.accion === estado; });
+        if (!yaEsta && comentarioFallback) {
+            historial = historial.concat([{ accion: estado, fecha: '', revisor: '', comentario: comentarioFallback }]);
+        }
+    }
+
+    if (historial.length === 0) {
+        return '<em class="text-muted">Sin historial de revisión</em>';
     }
     var html = '';
     historial.slice().reverse().forEach(function(entrada, i) {
@@ -662,7 +678,13 @@ $(function() {
                 container: 'body',
                 template:  '<div class="popover historial-popover" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body"></div></div>',
                 title:     '<i class="fas fa-history mr-1"></i>Historial de revisión',
-                content:   function() { return renderHistorial($(this).data('historial')); }
+                content:   function() {
+                    return renderHistorial(
+                        $(this).data('historial'),
+                        $(this).attr('data-estado'),
+                        $(this).attr('data-comentario')
+                    );
+                }
             });
         }
         $el.popover('show');
