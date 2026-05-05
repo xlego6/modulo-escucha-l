@@ -211,6 +211,10 @@ $(document).ready(function() {
     // Ejecutar al inicio por si ya tiene "Otro(s)" seleccionado
     actualizarDetalleIdiomas();
 
+    // Auto-navegar al paso indicado por query param (?paso=N)
+    var pasoInicial = parseInt(new URLSearchParams(window.location.search).get('paso')) || 1;
+    if (pasoInicial > 1) { showStep(pasoInicial); }
+
     // Navegacion entre pasos
     function showStep(step) {
         $('.step-content').removeClass('active');

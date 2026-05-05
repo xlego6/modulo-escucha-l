@@ -235,7 +235,29 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 </span>
             </div>
 
-            @if($asignacion->estado == 'rechazada' && $asignacion->comentario_revision)
+            @if($asignacion->historial_comentarios && count($asignacion->historial_comentarios) > 0)
+            <div class="card-body py-2 px-3 border-bottom">
+                <h6 class="mb-2"><i class="fas fa-history mr-1 text-secondary"></i>Historial de revision</h6>
+                @foreach(array_reverse($asignacion->historial_comentarios) as $entrada)
+                @php
+                    $esRechazo = $entrada['accion'] === 'rechazada';
+                    $fechaFmt = \Carbon\Carbon::parse($entrada['fecha'])->format('d/m/Y H:i');
+                @endphp
+                <div class="alert {{ $esRechazo ? 'alert-danger' : 'alert-success' }} py-2 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <strong>
+                            <i class="fas fa-{{ $esRechazo ? 'times-circle' : 'check-circle' }} mr-1"></i>
+                            {{ $esRechazo ? 'Rechazada' : 'Aprobada' }} por {{ $entrada['revisor'] }}
+                        </strong>
+                        <small>{{ $fechaFmt }}</small>
+                    </div>
+                    @if(!empty($entrada['comentario']))
+                    <div class="mt-1">{{ $entrada['comentario'] }}</div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            @elseif($asignacion->estado == 'rechazada' && $asignacion->comentario_revision)
             <div class="card-body py-2 px-3 border-bottom">
                 <div class="alert alert-danger mb-0">
                     <strong><i class="fas fa-exclamation-triangle mr-1"></i> Motivo del rechazo:</strong>

@@ -322,7 +322,15 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                             @csrf
                             <div class="form-group mb-2">
                                 <label class="small mb-1">Comentario (opcional)</label>
-                                <textarea name="comentario" class="form-control form-control-sm" rows="2" placeholder="Comentario de aprobacion..."></textarea>
+                                <textarea name="comentario" id="comentario-aprobacion" class="form-control form-control-sm" rows="2" placeholder="Comentario de aprobacion..."></textarea>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <button type="button" class="btn btn-xs btn-outline-secondary" onclick="guardarBorradorComentario('aprobacion')">
+                                        <i class="fas fa-save mr-1"></i>Guardar borrador
+                                    </button>
+                                    <small id="borrador-aprobacion-estado" class="text-success" style="display:none">
+                                        <i class="fas fa-check mr-1"></i>Borrador guardado
+                                    </small>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-success btn-block" onclick="return confirm('¿Aprobar esta transcripcion como version final?')">
                                 <i class="fas fa-check mr-1"></i> Aprobar Transcripcion
@@ -342,6 +350,42 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
         </div>
     </div>
 </div>
+
+{{-- Historial de comentarios de revision --}}
+@if($asignacion->historial_comentarios && count($asignacion->historial_comentarios) > 0)
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card card-outline card-secondary collapsed-card">
+            <div class="card-header py-2">
+                <h3 class="card-title"><i class="fas fa-history mr-1"></i>Historial de revision ({{ count($asignacion->historial_comentarios) }} entradas)</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="card-body" style="display:none;">
+                @foreach(array_reverse($asignacion->historial_comentarios) as $entrada)
+                @php
+                    $esRechazo = $entrada['accion'] === 'rechazada';
+                    $fechaFmt = \Carbon\Carbon::parse($entrada['fecha'])->format('d/m/Y H:i');
+                @endphp
+                <div class="alert {{ $esRechazo ? 'alert-danger' : 'alert-success' }} py-2 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <strong>
+                            <i class="fas fa-{{ $esRechazo ? 'times-circle' : 'check-circle' }} mr-1"></i>
+                            {{ $esRechazo ? 'Rechazada' : 'Aprobada' }} por {{ $entrada['revisor'] }}
+                        </strong>
+                        <small>{{ $fechaFmt }}</small>
+                    </div>
+                    @if(!empty($entrada['comentario']))
+                    <div class="mt-1">{{ $entrada['comentario'] }}</div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Panel de anotaciones del revisor --}}
 <div class="row mt-3">
@@ -432,8 +476,16 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     </p>
                     <div class="form-group">
                         <label>Motivo del rechazo <span class="text-danger">*</span></label>
-                        <textarea name="comentario" class="form-control" rows="4" required
+                        <textarea name="comentario" id="comentario-rechazo" class="form-control" rows="4" required
                                   placeholder="Ej: Hay errores de ortografia en varios parrafos. Revisar la seccion donde habla del evento del 15 de marzo..."></textarea>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="guardarBorradorComentario('rechazo')">
+                                <i class="fas fa-save mr-1"></i>Guardar borrador
+                            </button>
+                            <small id="borrador-rechazo-estado" class="text-success" style="display:none">
+                                <i class="fas fa-check mr-1"></i>Borrador guardado
+                            </small>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -542,21 +594,25 @@ function resaltar(color) {
 function limpiarMarca() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed) { return; }
-    var range = sel.getRangeAt(0);
+    var range = sel.getRangeAt(0).cloneRange();
     var editor = document.getElementById('anotaciones-editor');
     if (!editor.contains(range.commonAncestorContainer)) { return; }
 
-    // Buscar mark ancestro y quitarlo
-    var node = range.commonAncestorContainer;
-    while (node && node !== editor) {
-        if (node.nodeName === 'MARK') {
-            var parent = node.parentNode;
-            while (node.firstChild) parent.insertBefore(node.firstChild, node);
-            parent.removeChild(node);
-            break;
+    // Recopilar todos los <mark> que intersectan con la selección y quitarlos
+    var marks = Array.from(editor.querySelectorAll('mark'));
+    var toUnwrap = marks.filter(function(mark) {
+        return range.intersectsNode(mark);
+    });
+
+    toUnwrap.forEach(function(mark) {
+        var parent = mark.parentNode;
+        while (mark.firstChild) {
+            parent.insertBefore(mark.firstChild, mark);
         }
-        node = node.parentNode;
-    }
+        parent.removeChild(mark);
+    });
+
+    editor.normalize();
 }
 
 function guardarAnotaciones() {
@@ -581,6 +637,22 @@ function guardarAnotaciones() {
     });
 }
 
+// Borradores de comentarios de revisión
+var _draftKeyAprobacion = 'draft_comentario_aprobacion_{{ $asignacion->id_asignacion }}';
+var _draftKeyRechazo = 'draft_comentario_rechazo_{{ $asignacion->id_asignacion }}';
+
+function guardarBorradorComentario(tipo) {
+    if (tipo === 'aprobacion') {
+        localStorage.setItem(_draftKeyAprobacion, $('#comentario-aprobacion').val());
+        $('#borrador-aprobacion-estado').show();
+        setTimeout(function() { $('#borrador-aprobacion-estado').hide(); }, 2500);
+    } else {
+        localStorage.setItem(_draftKeyRechazo, $('#comentario-rechazo').val());
+        $('#borrador-rechazo-estado').show();
+        setTimeout(function() { $('#borrador-rechazo-estado').hide(); }, 2500);
+    }
+}
+
 // Clave localStorage para preservar tiempo de reproducción
 var _draftTimeKey = 'draft_time_revision_{{ $asignacion->id_asignacion }}';
 
@@ -601,6 +673,20 @@ function restaurarTiempoMedia() {
 }
 
 $(document).ready(function() {
+    // Restaurar borradores de comentarios
+    var borradorAprobacion = localStorage.getItem(_draftKeyAprobacion);
+    if (borradorAprobacion) { $('#comentario-aprobacion').val(borradorAprobacion); }
+    var borradorRechazo = localStorage.getItem(_draftKeyRechazo);
+    if (borradorRechazo) { $('#comentario-rechazo').val(borradorRechazo); }
+
+    // Limpiar borradores al aprobar/rechazar
+    $('form[action*="aprobar"]').on('submit', function() {
+        localStorage.removeItem(_draftKeyAprobacion);
+    });
+    $('form[action*="rechazar"]').on('submit', function() {
+        localStorage.removeItem(_draftKeyRechazo);
+    });
+
     // Restaurar tiempo de reproducción
     restaurarTiempoMedia();
 
