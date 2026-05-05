@@ -65,14 +65,17 @@ class ProcesamientoController extends Controller
         $filtroIds = array_filter((array)$request->get('ids', []));
         $filtroDependencia = $request->get('dependencia');
         $filtroEstado = $request->get('estado');
+        $filtroFechaDesde = $request->get('fecha_desde');
+        $filtroFechaHasta = $request->get('fecha_hasta');
+        $verTodos = $request->boolean('ver_todos');
 
-        // Stats y listado detalle si hay filtro activo
+        // Stats y listado detalle si hay filtro activo o se pidió ver todos
         $detalleStats = null;
         $detalleAsignaciones = collect();
 
-        if (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado)) {
+        if ($verTodos || !empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado) || !empty($filtroFechaDesde) || !empty($filtroFechaHasta)) {
             $detalleStats = $this->calcDetalleStats($tipo, $filtroIds, $filtroDependencia);
-            $detalleAsignaciones = $this->calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia, $filtroEstado);
+            $detalleAsignaciones = $this->calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia, $filtroEstado, $filtroFechaDesde, $filtroFechaHasta);
         }
 
         // Trabajos en cola
@@ -86,7 +89,7 @@ class ProcesamientoController extends Controller
             'tipo',
             'statsTranscripcion', 'statsAnonimizacion',
             'transcriptores', 'anonimizadores', 'dependencias',
-            'filtroIds', 'filtroDependencia', 'filtroEstado',
+            'filtroIds', 'filtroDependencia', 'filtroEstado', 'filtroFechaDesde', 'filtroFechaHasta', 'verTodos',
             'detalleStats', 'detalleAsignaciones',
             'trabajosEnCola', 'trabajosProcesando',
             'servicios'
@@ -228,7 +231,7 @@ class ProcesamientoController extends Controller
         return $stats;
     }
 
-    private function calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia, $filtroEstado = null)
+    private function calcDetalleAsignaciones($tipo, $filtroIds, $filtroDependencia, $filtroEstado = null, $fechaDesde = null, $fechaHasta = null)
     {
         $table = $tipo === 'transcripcion'
             ? 'esclarecimiento.asignacion_transcripcion'
@@ -262,7 +265,8 @@ class ProcesamientoController extends Controller
                 'adj_asig.nombre_original as nombre_audio',
                 'adj_asig.duracion as duracion_audio',
                 DB::raw('COALESCE(adj.duracion_total, 0) as duracion_total'),
-                DB::raw('COALESCE(adj.num_audios, 0) as num_audios')
+                DB::raw('COALESCE(adj.num_audios, 0) as num_audios'),
+                'at.historial_comentarios'
             )
             ->orderBy('at.fecha_asignacion');
 
@@ -274,6 +278,14 @@ class ProcesamientoController extends Controller
 
         if (!empty($filtroEstado)) {
             $query->where('at.estado', $filtroEstado);
+        }
+
+        if (!empty($fechaDesde)) {
+            $query->whereDate('at.fecha_asignacion', '>=', $fechaDesde);
+        }
+
+        if (!empty($fechaHasta)) {
+            $query->whereDate('at.fecha_asignacion', '<=', $fechaHasta);
         }
 
         return $query->get();
@@ -1810,6 +1822,14 @@ class ProcesamientoController extends Controller
         $asignacion->fecha_revision = now();
         $asignacion->id_revisor = $user->id;
         $asignacion->comentario_revision = $request->comentario;
+        $historial = $asignacion->historial_comentarios ?? [];
+        $historial[] = [
+            'accion'   => 'aprobada',
+            'fecha'    => now()->toIso8601String(),
+            'revisor'  => $user->name,
+            'comentario' => $request->comentario ?? '',
+        ];
+        $asignacion->historial_comentarios = $historial;
         $asignacion->save();
 
         TrazaActividad::create([
@@ -1851,6 +1871,14 @@ class ProcesamientoController extends Controller
         $asignacion->fecha_revision = now();
         $asignacion->id_revisor = $user->id;
         $asignacion->comentario_revision = $request->comentario;
+        $historial = $asignacion->historial_comentarios ?? [];
+        $historial[] = [
+            'accion'   => 'rechazada',
+            'fecha'    => now()->toIso8601String(),
+            'revisor'  => $user->name,
+            'comentario' => $request->comentario,
+        ];
+        $asignacion->historial_comentarios = $historial;
         $asignacion->save();
 
         TrazaActividad::create([

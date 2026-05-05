@@ -182,7 +182,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Personas: Solo Admin(1)
         Route::middleware(['nivel:personas'])->group(function () {
-            Route::resource('personas', PersonaController::class);
+            Route::resource('personas', PersonaController::class)->except(['edit', 'update']);
         });
 
         // Buscador: Admin(1), Entrevistador(3), Gestor de Conocimiento(5)

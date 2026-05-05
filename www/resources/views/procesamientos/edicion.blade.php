@@ -306,7 +306,7 @@
                     <th>Audios</th>
                     <th>Duración</th>
                     <th>Trans. Auto</th>
-                    <th>Asignacion por Audio</th>
+                    <th>Nombre audio/Estado/Asignado a</th>
                     <th>Acciones</th>
                 </tr>
             </thead>

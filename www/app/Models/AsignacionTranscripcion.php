@@ -23,6 +23,7 @@ class AsignacionTranscripcion extends Model
         'fecha_revision',
         'id_revisor',
         'comentario_revision',
+        'historial_comentarios',
         'transcripcion_editada',
         'calificacion_audio',
         'observaciones_envio',
@@ -37,6 +38,7 @@ class AsignacionTranscripcion extends Model
         'fecha_revision' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'historial_comentarios' => 'array',
     ];
 
     // Estados posibles

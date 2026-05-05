@@ -106,7 +106,7 @@
                             <a href="{{ route('personas.show', $persona->id_persona) }}" class="btn btn-info" title="Ver">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ route('personas.edit', $persona->id_persona) }}" class="btn btn-warning" title="Editar">
+                            <a href="{{ route('personas.show', $persona->id_persona) }}" class="btn btn-warning" title="Editar (ver entrevistas)">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <form action="{{ route('personas.destroy', $persona->id_persona) }}" method="POST" style="display:inline" onsubmit="return confirm('Esta seguro de eliminar esta persona?')">

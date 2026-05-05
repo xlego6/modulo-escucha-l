@@ -78,9 +78,6 @@
 
     {{-- Grupo: Marcas especiales --}}
     <div class="btn-group btn-group-sm mr-2" role="group" title="Marcas">
-        <button type="button" class="btn btn-outline-warning" onclick="editorInsert('[inaudible]', '{{ $targetId }}')" title="Marcar inaudible">
-            <i class="fas fa-volume-mute"></i>
-        </button>
         <button type="button" class="btn btn-outline-warning" onclick="editorInsert('[pausa]', '{{ $targetId }}')" title="Marcar pausa">
             <i class="fas fa-pause"></i>
         </button>

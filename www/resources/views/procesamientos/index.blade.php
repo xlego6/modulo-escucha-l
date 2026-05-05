@@ -170,7 +170,7 @@ function fmtDur($seg) {
             </a>
             @endif
         </div>
-        <form method="GET" action="{{ route('procesamientos.index') }}">
+        <form method="GET" action="{{ route('procesamientos.index') }}" id="form-filtro-transcripcion">
             <input type="hidden" name="tipo" value="transcripcion">
             <div class="card-body">
                 <div class="row">
@@ -228,11 +228,30 @@ function fmtDur($seg) {
                         <button type="submit" class="btn btn-primary mr-2">
                             <i class="fas fa-search mr-1"></i>Ver detalle
                         </button>
-                        @if(($tipo === 'transcripcion') && (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado)))
+                        <button type="button" class="btn btn-outline-secondary mr-2" onclick="verTodosTrans()">
+                            <i class="fas fa-list mr-1"></i>Ver todos
+                        </button>
+                        @if(($tipo === 'transcripcion') && (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado) || !empty($filtroFechaDesde) || !empty($filtroFechaHasta) || $verTodos))
                             <a href="{{ route('procesamientos.index') }}?tipo=transcripcion" class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i>
                             </a>
                         @endif
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            <label class="text-sm font-weight-bold">Fecha asignación desde</label>
+                            <input type="date" name="fecha_desde" class="form-control form-control-sm"
+                                   value="{{ $tipo === 'transcripcion' ? ($filtroFechaDesde ?? '') : '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            <label class="text-sm font-weight-bold">Fecha asignación hasta</label>
+                            <input type="date" name="fecha_hasta" class="form-control form-control-sm"
+                                   value="{{ $tipo === 'transcripcion' ? ($filtroFechaHasta ?? '') : '' }}">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -299,6 +318,7 @@ function fmtDur($seg) {
                             <th>Transcriptor</th>
                             <th>Fecha asig.</th>
                             <th>Estado</th>
+                            <th>Rechazos</th>
                             <th>F. Revisión</th>
                             <th>Revisado por</th>
                             <th class="text-right">Duración</th>
@@ -322,6 +342,8 @@ function fmtDur($seg) {
                                 'aprobada'        => 'Aprobada',
                             ][$asig->estado] ?? $asig->estado;
                             $duracion = $asig->id_adjunto ? $asig->duracion_audio : $asig->duracion_total;
+                            $historial = $asig->historial_comentarios ? json_decode($asig->historial_comentarios, true) : [];
+                            $rechazos = array_filter($historial ?? [], fn($h) => $h['accion'] === 'rechazada');
                         @endphp
                         <tr>
                             <td>
@@ -339,6 +361,16 @@ function fmtDur($seg) {
                             <td>{{ $asig->nombre_persona }}</td>
                             <td>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</td>
                             <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
+                            <td>
+                                @if(count($rechazos) > 0)
+                                    @php $tooltipLines = array_map(fn($r) => \Carbon\Carbon::parse($r['fecha'])->format('d/m/Y') . ': ' . \Illuminate\Support\Str::limit($r['comentario'] ?? '', 60), array_values($rechazos)); @endphp
+                                    <span class="badge badge-danger" title="{{ implode(' | ', $tooltipLines) }}" data-toggle="tooltip">
+                                        {{ count($rechazos) }} rechazo(s)
+                                    </span>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td>
                                 @if($asig->fecha_revision)
                                     <small>{{ \Carbon\Carbon::parse($asig->fecha_revision)->format('d/m/Y') }}</small>
@@ -461,7 +493,7 @@ function fmtDur($seg) {
         <div class="card-header py-2">
             <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Detalle por anonimizador o dependencia</h3>
         </div>
-        <form method="GET" action="{{ route('procesamientos.index') }}">
+        <form method="GET" action="{{ route('procesamientos.index') }}" id="form-filtro-anonimizacion">
             <input type="hidden" name="tipo" value="anonimizacion">
             <div class="card-body">
                 <div class="row">
@@ -519,11 +551,30 @@ function fmtDur($seg) {
                         <button type="submit" class="btn btn-danger mr-2">
                             <i class="fas fa-search mr-1"></i>Ver detalle
                         </button>
-                        @if(($tipo === 'anonimizacion') && (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado)))
+                        <button type="button" class="btn btn-outline-secondary mr-2" onclick="verTodosAnon()">
+                            <i class="fas fa-list mr-1"></i>Ver todos
+                        </button>
+                        @if(($tipo === 'anonimizacion') && (!empty($filtroIds) || !empty($filtroDependencia) || !empty($filtroEstado) || !empty($filtroFechaDesde) || !empty($filtroFechaHasta) || $verTodos))
                             <a href="{{ route('procesamientos.index') }}?tipo=anonimizacion" class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i>
                             </a>
                         @endif
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            <label class="text-sm font-weight-bold">Fecha asignación desde</label>
+                            <input type="date" name="fecha_desde" class="form-control form-control-sm"
+                                   value="{{ $tipo === 'anonimizacion' ? ($filtroFechaDesde ?? '') : '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            <label class="text-sm font-weight-bold">Fecha asignación hasta</label>
+                            <input type="date" name="fecha_hasta" class="form-control form-control-sm"
+                                   value="{{ $tipo === 'anonimizacion' ? ($filtroFechaHasta ?? '') : '' }}">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -676,10 +727,27 @@ function fmtDur($seg) {
 <script>
 $(document).ready(function() {
     $('.select2').select2({ placeholder: 'Seleccionar...', allowClear: true, width: '100%' });
+    $('[data-toggle="tooltip"]').tooltip();
 });
 
 function cambiarTipo(tipo) {
     window.location.href = '{{ route('procesamientos.index') }}?tipo=' + tipo;
+}
+
+function verTodosTrans() {
+    var form = $('#form-filtro-transcripcion');
+    form.find('select').val(null).trigger('change');
+    form.find('input[type="date"]').val('');
+    $('<input type="hidden" name="ver_todos" value="1">').appendTo(form);
+    form.submit();
+}
+
+function verTodosAnon() {
+    var form = $('#form-filtro-anonimizacion');
+    form.find('select').val(null).trigger('change');
+    form.find('input[type="date"]').val('');
+    $('<input type="hidden" name="ver_todos" value="1">').appendTo(form);
+    form.submit();
 }
 </script>
 @endsection

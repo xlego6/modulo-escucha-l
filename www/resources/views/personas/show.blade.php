@@ -40,9 +40,6 @@
                     @endif
                 </h3>
                 <div class="card-tools">
-                    <a href="{{ route('personas.edit', $persona->id_persona) }}" class="btn btn-warning btn-sm">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
                     <a href="{{ route('personas.index') }}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left"></i> Volver
                     </a>
@@ -225,7 +222,7 @@
                             <td>{{ \Illuminate\Support\Str::limit($entrevista->titulo, 50) }}</td>
                             <td>
                                 @if($entrevista->edad)
-                                    {{ $entrevista->edad }} anos
+                                    {{ $entrevista->edad }} años
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -238,11 +235,12 @@
                                 @endif
                             </td>
                             <td>
+                                <a href="{{ route('entrevistas.wizard.edit', $entrevista->id_e_ind_fvt) }}?paso=2"
+                                   class="btn btn-warning btn-sm" title="Editar testimoniante en entrevista">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                                 <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}" class="btn btn-info btn-sm" title="Ver entrevista">
                                     <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('adjuntos.gestionar', $entrevista->id_e_ind_fvt) }}" class="btn btn-secondary btn-sm" title="Ver adjuntos">
-                                    <i class="fas fa-paperclip"></i>
                                 </a>
                             </td>
                         </tr>
@@ -266,9 +264,12 @@
                 <h3 class="card-title"><i class="fas fa-cogs"></i> Acciones</h3>
             </div>
             <div class="card-body">
-                <a href="{{ route('personas.edit', $persona->id_persona) }}" class="btn btn-warning btn-block mb-2">
-                    <i class="fas fa-edit"></i> Editar Persona
-                </a>
+                @if($entrevistas && count($entrevistas) > 0)
+                <p class="text-muted small mb-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Para editar los datos de este testimoniante, use el botón <i class="fas fa-edit"></i> junto a la entrevista correspondiente.
+                </p>
+                @endif
                 <a href="{{ route('personas.index') }}" class="btn btn-secondary btn-block mb-2">
                     <i class="fas fa-list"></i> Ver Listado
                 </a>
