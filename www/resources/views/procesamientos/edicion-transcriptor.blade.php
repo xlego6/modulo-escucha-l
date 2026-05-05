@@ -128,6 +128,12 @@
                                 <i class="fas fa-exclamation-circle"></i>
                                 {{ \Illuminate\Support\Str::limit($asignacion->comentario_revision, 30) }}
                             </small>
+                        @elseif($asignacion->estado == 'aprobada' && $asignacion->comentario_revision)
+                            <br>
+                            <small class="text-success" title="{{ $asignacion->comentario_revision }}">
+                                <i class="fas fa-comment-dots"></i>
+                                {{ \Illuminate\Support\Str::limit($asignacion->comentario_revision, 30) }}
+                            </small>
                         @endif
                     </td>
                     <td>
@@ -161,9 +167,10 @@
                                 <i class="fas fa-hourglass-half"></i> En revisión
                             </span>
                         @elseif($asignacion->estado == 'aprobada')
-                            <span class="text-success">
-                                <i class="fas fa-check-circle"></i> Completada
-                            </span>
+                            <a href="{{ route('procesamientos.editar-asignacion', $asignacion->id_asignacion) }}"
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-eye"></i> Ver historial
+                            </a>
                         @endif
                     </td>
                 </tr>
