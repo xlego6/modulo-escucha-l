@@ -16,6 +16,10 @@
 .bg-rechazadas  { background: linear-gradient(135deg,#b71c1c,#e53935); }
 .bg-aprobadas   { background: linear-gradient(135deg,#1b5e20,#388e3c); }
 .bg-totales     { background: linear-gradient(135deg,#4a148c,#7b1fa2); }
+.js-historial-pop { cursor: pointer; }
+.js-historial-pop:focus { outline: none; box-shadow: none; }
+.popover.historial-popover { min-width: 300px; max-width: 380px; font-size: 12px; }
+.popover.historial-popover .popover-header { font-size: 12px; }
 </style>
 @endsection
 
@@ -145,7 +149,12 @@
                         @endif
                     </td>
                     <td><small>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</small></td>
-                    <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
+                    <td>
+                        @php $histJsonMis = e(json_encode($asig->historial_comentarios ?: [])); @endphp
+                        <span class="badge {{ $badgeClass }} js-historial-pop"
+                              data-historial="{{ $histJsonMis }}"
+                              tabindex="0">{{ $labelEstado }}</span>
+                    </td>
                     <td>
                         <a href="{{ route('procesamientos.editar-asignacion', $asig->id_asignacion) }}"
                            class="btn btn-sm btn-primary">
@@ -375,9 +384,10 @@
                                     {{ \Illuminate\Support\Str::limit($adjunto->nombre_original, 22) }}
                                 </small>
                                 @if($asigAdjunto)
-                                    <span class="badge {{ $asigAdjunto->estado_badge_class }}">
-                                        {{ $asigAdjunto->fmt_estado }}
-                                    </span>
+                                    @php $histJson = e(json_encode($asigAdjunto->historial_comentarios ?: [])); @endphp
+                                    <span class="badge {{ $asigAdjunto->estado_badge_class }} js-historial-pop"
+                                          data-historial="{{ $histJson }}"
+                                          tabindex="0">{{ $asigAdjunto->fmt_estado }}</span>
                                     <small class="text-muted">{{ $asigAdjunto->rel_transcriptor->rel_usuario->name ?? '' }}</small>
                                 @else
                                     <span class="badge badge-light">Sin asignar</span>
@@ -595,6 +605,76 @@ function abrirModalAsignar(id, codigo, adjuntosJson) {
 
     $('#modalAsignar').modal('show');
 }
+
+// Popover historial de revisión
+function renderHistorial(historial) {
+    if (!Array.isArray(historial) || historial.length === 0) {
+        return '<em class="text-muted">Sin historial de revisión</em>';
+    }
+    function esc(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    var html = '';
+    historial.slice().reverse().forEach(function(entrada, i) {
+        var esRechazo = entrada.accion === 'rechazada';
+        var icon  = esRechazo ? 'times-circle text-danger' : 'check-circle text-success';
+        var label = esRechazo ? 'Rechazada' : 'Aprobada';
+        var fecha = '';
+        if (entrada.fecha) {
+            try {
+                fecha = new Date(entrada.fecha).toLocaleString('es-CO', {
+                    day:'2-digit', month:'2-digit', year:'numeric',
+                    hour:'2-digit', minute:'2-digit'
+                });
+            } catch(ex) { fecha = entrada.fecha; }
+        }
+        var borde = i < historial.length - 1 ? ' border-bottom pb-1 mb-1' : '';
+        html += '<div class="' + borde + '">';
+        html += '<div class="d-flex justify-content-between">';
+        html += '<span><i class="fas fa-' + esc(icon) + ' mr-1"></i><strong>' + esc(label) + '</strong>';
+        if (entrada.revisor) html += ' <small class="text-muted">por ' + esc(entrada.revisor) + '</small>';
+        html += '</span>';
+        if (fecha) html += '<small class="text-muted ml-2">' + esc(fecha) + '</small>';
+        html += '</div>';
+        if (entrada.comentario) html += '<div class="text-muted mt-1">' + esc(entrada.comentario) + '</div>';
+        html += '</div>';
+    });
+    return html;
+}
+
+$(function() {
+    $('body').on('click', '.js-historial-pop', function() {
+        var $el = $(this);
+        // Si el popover ya está visible, cerrarlo (toggle)
+        if ($el.data('bs.popover') && $el.data('bs.popover').tip && $el.data('bs.popover').tip.hasClass('show')) {
+            $el.popover('hide');
+            return;
+        }
+        // Cerrar cualquier otro popover abierto
+        $('.js-historial-pop').not($el).popover('hide');
+
+        if (!$el.data('popover-init')) {
+            $el.data('popover-init', true);
+            $el.popover({
+                html:      true,
+                trigger:   'manual',
+                placement: 'left',
+                container: 'body',
+                template:  '<div class="popover historial-popover" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body"></div></div>',
+                title:     '<i class="fas fa-history mr-1"></i>Historial de revisión',
+                content:   function() { return renderHistorial($(this).data('historial')); }
+            });
+        }
+        $el.popover('show');
+    });
+
+    // Cerrar al hacer click fuera
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.js-historial-pop, .popover').length) {
+            $('.js-historial-pop').popover('hide');
+        }
+    });
+});
 
 $('#formAsignar').on('submit', function(e) {
     e.preventDefault();

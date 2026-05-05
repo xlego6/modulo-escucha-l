@@ -266,6 +266,19 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
             </div>
             @endif
 
+            @if($asignacion->estado === 'aprobada')
+            <div class="card-body p-2">
+                <div class="alert alert-success py-2 mb-2">
+                    <i class="fas fa-lock mr-1"></i> Transcripción aprobada — solo lectura
+                </div>
+                <textarea id="transcripcion" class="form-control" readonly>{{ $asignacion->transcripcion_editada ?? $entrevista->getTextoParaProcesamiento() }}</textarea>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('procesamientos.edicion') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Volver
+                </a>
+            </div>
+            @else
             <form action="{{ route('procesamientos.guardar-asignacion', $asignacion->id_asignacion) }}" method="POST" id="formTranscripcion">
                 @csrf
                 <div class="card-body p-2">
@@ -293,6 +306,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     </div>
                 </div>
             </form>
+            @endif
         </div>
     </div>
 </div>
