@@ -344,6 +344,15 @@ function fmtDur($seg) {
                             $duracion = $asig->id_adjunto ? $asig->duracion_audio : $asig->duracion_total;
                             $historial = $asig->historial_comentarios ? json_decode($asig->historial_comentarios, true) : [];
                             $rechazos = array_filter($historial ?? [], fn($h) => $h['accion'] === 'rechazada');
+                            $aprobaciones = array_filter($historial ?? [], fn($h) => $h['accion'] === 'aprobada');
+                            $comentarioEstado = null;
+                            if (in_array($asig->estado, ['aprobada', 'rechazada'])) {
+                                $filtroComentario = $asig->estado === 'aprobada' ? array_values($aprobaciones) : array_values($rechazos);
+                                if (count($filtroComentario) > 0) {
+                                    $ult = end($filtroComentario);
+                                    $comentarioEstado = \Carbon\Carbon::parse($ult['fecha'])->format('d/m/Y') . ': ' . \Illuminate\Support\Str::limit($ult['comentario'] ?? '', 80);
+                                }
+                            }
                         @endphp
                         <tr>
                             <td>
@@ -360,7 +369,13 @@ function fmtDur($seg) {
                             </td>
                             <td>{{ $asig->nombre_persona }}</td>
                             <td>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</td>
-                            <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
+                            <td>
+                                @if($comentarioEstado)
+                                    <span class="badge {{ $badgeClass }}" title="{{ $comentarioEstado }}" data-toggle="tooltip">{{ $labelEstado }}</span>
+                                @else
+                                    <span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span>
+                                @endif
+                            </td>
                             <td>
                                 @if(count($rechazos) > 0)
                                     @php $tooltipLines = array_map(fn($r) => \Carbon\Carbon::parse($r['fecha'])->format('d/m/Y') . ': ' . \Illuminate\Support\Str::limit($r['comentario'] ?? '', 60), array_values($rechazos)); @endphp
@@ -396,7 +411,7 @@ function fmtDur($seg) {
                                       + $detalleAsignaciones->filter(fn($a) => !$a->id_adjunto)->unique('id_e_ind_fvt')->sum('duracion_total');
                         @endphp
                         <tr>
-                            <td colspan="7"><strong>Total asignaciones (audios únicos)</strong></td>
+                            <td colspan="8"><strong>Total asignaciones (audios únicos)</strong></td>
                             <td class="text-right text-monospace"><strong>{{ fmtDur($durTotal) }}</strong></td>
                         </tr>
                     </tfoot>
