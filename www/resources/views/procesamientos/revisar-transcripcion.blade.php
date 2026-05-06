@@ -178,6 +178,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @section('content')
 
 {{-- Reproductor flotante --}}
+@php $sinDescarga = in_array(auth()->user()->id_nivel, [2]); @endphp
 @if($entrevista->rel_adjuntos && $entrevista->rel_adjuntos->count() > 0)
 <div id="floating-player">
     <div class="card">
@@ -192,11 +193,13 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
             <div class="media-item">
                 <label title="{{ $adjunto->nombre_original }}">{{ $adjunto->nombre_original }}</label>
                 @if(strpos($adjunto->tipo_mime, 'audio') !== false)
-                <audio controls preload="metadata" id="media-{{ $adjunto->id_adjunto }}" class="w-100">
+                <audio controls preload="metadata" id="media-{{ $adjunto->id_adjunto }}" class="w-100"
+                    @if($sinDescarga) controlslist="nodownload" oncontextmenu="return false" @endif>
                     <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
                 </audio>
                 @elseif(strpos($adjunto->tipo_mime, 'video') !== false)
                 <video controls preload="metadata" style="max-height: 160px;" id="media-{{ $adjunto->id_adjunto }}"
+                    @if($sinDescarga) controlslist="nodownload" oncontextmenu="return false" @endif
                     @if($adjunto->tipo_mime === 'video/x-flv') data-flv-src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" @endif>
                     @if($adjunto->tipo_mime !== 'video/x-flv')
                     <source src="{{ route('adjuntos.ver', $adjunto->id_adjunto) }}" type="{{ $adjunto->tipo_mime }}">
