@@ -208,6 +208,12 @@ class AdjuntoController extends Controller
             abort(403, 'No tiene permiso para descargar archivos. Solo puede visualizarlos.');
         }
 
+        // Líder (nivel 2): no puede descargar archivos de audio ni video
+        $esAudioVideo = str_contains($adjunto->tipo_mime ?? '', 'audio') || str_contains($adjunto->tipo_mime ?? '', 'video');
+        if ($user->id_nivel == 2 && $esAudioVideo) {
+            abort(403, 'No tiene permiso para descargar archivos de audio/video.');
+        }
+
         // Rol 3 (Entrevistador) no puede descargar transcripciones
         $esTranscripcion = in_array($adjunto->id_tipo, [
             \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
@@ -278,10 +284,22 @@ class AdjuntoController extends Controller
 
         $path = Storage::disk('public')->path($adjunto->ubicacion);
 
-        return response()->file($path, [
-            'Content-Type' => $adjunto->tipo_mime,
-            'Content-Disposition' => 'inline; filename="' . $adjunto->nombre_original . '"'
-        ]);
+        $headers = [
+            'Content-Type'        => $adjunto->tipo_mime,
+            'Content-Disposition' => 'inline; filename="' . $adjunto->nombre_original . '"',
+        ];
+
+        // El perfil Líder (id_nivel 2) no puede descargar: forzar inline sin caché
+        if ($user->id_nivel == 2) {
+            $headers['Cache-Control'] = 'no-store, no-cache, must-revalidate';
+            $headers['X-Content-Type-Options'] = 'nosniff';
+            // Si el navegador pide descarga explícita, rechazar
+            if (request()->query('download') || request()->header('Content-Disposition') === 'attachment') {
+                abort(403);
+            }
+        }
+
+        return response()->file($path, $headers);
     }
 
     /**
