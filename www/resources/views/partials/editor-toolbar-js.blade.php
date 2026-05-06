@@ -7,6 +7,9 @@
 var editorHistory = {};
 var editorHistoryIndex = {};
 
+// Último timestamp clicado en el preview, por targetId
+var _lastClickedTs = {};
+
 // Inicializar editor
 function initEditor(targetId) {
     var $textarea = $('#' + targetId);
@@ -471,6 +474,23 @@ function togglePreview(targetId) {
         // Volver a modo edicion
         $preview.hide();
         $textarea.show();
+
+        // Si se clicó un timestamp en el preview, posicionar el cursor en esa etiqueta
+        var lastTs = _lastClickedTs[targetId];
+        if (lastTs) {
+            var text = $textarea.val();
+            var pos = text.indexOf(lastTs);
+            if (pos !== -1) {
+                var textarea = $textarea[0];
+                textarea.selectionStart = pos;
+                textarea.selectionEnd = pos + lastTs.length;
+                var lineHeight = parseInt($textarea.css('line-height')) || 20;
+                var linesAbove = text.substring(0, pos).split('\n').length - 1;
+                textarea.scrollTop = Math.max(0, linesAbove * lineHeight - 100);
+            }
+            _lastClickedTs[targetId] = null;
+        }
+
         $textarea.focus();
 
         // Restaurar boton
@@ -499,12 +519,19 @@ $(document).ready(function() {
     });
 
     // Click en timestamp del preview → saltar al segundo en el reproductor
+    // y recordar la etiqueta para posicionar el cursor al volver al editor
     $(document).on('click', '.ts-seekable', function() {
         var sec = parseInt($(this).data('time'), 10);
         var $media = $('audio, video').first();
         if (!$media.length) return;
         $media[0].currentTime = sec;
         if ($media[0].paused) $media[0].play().catch(function() {});
+
+        var $preview = $(this).closest('[id$="-preview"]');
+        if ($preview.length) {
+            var tid = $preview.attr('id').replace('-preview', '');
+            _lastClickedTs[tid] = $(this).text();
+        }
     });
 });
 </script>
