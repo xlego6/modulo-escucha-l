@@ -406,6 +406,12 @@ function renderPreview(targetId) {
     return html;
 }
 
+// Convertir HH:MM:SS a segundos
+function tsToSec(ts) {
+    var p = ts.split(':').map(Number);
+    return p[0] * 3600 + p[1] * 60 + (p[2] || 0);
+}
+
 // Aplicar formato inline (negrita, cursiva, subrayado, marcas especiales)
 function applyInlineFormat(text) {
     // Negrita: **texto**
@@ -418,8 +424,11 @@ function applyInlineFormat(text) {
     // Marcas de hablante: [Entrevistador]:, [Entrevistado]:, [Testigo]:, [Nombre]:
     text = text.replace(/\[([^\]]+)\]:/g, '<span class="preview-speaker">[$1]:</span>');
 
-    // Timestamps: [00:00] o [00:00:00]
-    text = text.replace(/\[(\d{2}:\d{2}(?::\d{2})?)\]/g, '<span class="preview-timestamp">[$1]</span>');
+    // Timestamps: [HH:MM:SS], [HH:MM:SS DUD], [HH:MM:SS NSE], [HH:MM:SS - HH:MM:SS ...]
+    text = text.replace(/\[(\d{2}:\d{2}:\d{2})([^\]]*)\]/g, function(match, ts, rest) {
+        var sec = tsToSec(ts);
+        return '<span class="preview-timestamp ts-seekable" data-time="' + sec + '" style="cursor:pointer" title="&#9654; Ir a ' + ts + '">[' + ts + rest + ']</span>';
+    });
 
     // Marcas especiales: [inaudible], [pausa], [risas], [llanto]
     text = text.replace(/\[(inaudible|pausa|risas|llanto)\]/gi, '<span class="preview-mark">[$1]</span>');
@@ -487,6 +496,15 @@ $(document).ready(function() {
                 togglePreview(targetId);
             }
         });
+    });
+
+    // Click en timestamp del preview → saltar al segundo en el reproductor
+    $(document).on('click', '.ts-seekable', function() {
+        var sec = parseInt($(this).data('time'), 10);
+        var $media = $('audio, video').first();
+        if (!$media.length) return;
+        $media[0].currentTime = sec;
+        if ($media[0].paused) $media[0].play().catch(function() {});
     });
 });
 </script>
