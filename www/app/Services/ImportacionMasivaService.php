@@ -164,13 +164,23 @@ class ImportacionMasivaService
 
         // Detectar BOM UTF-8
         $bom = fread($handle, 3);
-        if ($bom !== "\xEF\xBB\xBF") {
+        $tieneUtf8Bom = ($bom === "\xEF\xBB\xBF");
+        if (!$tieneUtf8Bom) {
             rewind($handle);
         }
 
         // Detectar delimitador desde la primera línea (encabezados, sin comas en sus nombres)
         $primeraLinea = fgets($handle);
         $sep = substr_count($primeraLinea, ';') >= substr_count($primeraLinea, ',') ? ';' : ',';
+
+        // Detectar encoding: si no hay BOM UTF-8 y la línea no es UTF-8 válido,
+        // usar Windows-1252 como fuente (superconjunto de ISO-8859-1 que cubre
+        // también comillas tipográficas, rayas y otros caracteres 0x80-0x9F que
+        // suelen aparecer en documentos exportados desde Excel / Word).
+        $encoding = null;
+        if (!$tieneUtf8Bom && !mb_check_encoding($primeraLinea, 'UTF-8')) {
+            $encoding = 'Windows-1252';
+        }
 
         // Leer fila 2 (sub-encabezados) – se descarta
         fgetcsv($handle, 0, $sep, '"', '\\');
@@ -183,6 +193,14 @@ class ImportacionMasivaService
             // Normalizar: padding si hay menos columnas de las esperadas
             while (count($fila) < 82) {
                 $fila[] = '';
+            }
+
+            // Convertir a UTF-8 si el archivo no es UTF-8
+            if ($encoding !== null) {
+                $fila = array_map(
+                    fn($v) => mb_convert_encoding($v, 'UTF-8', $encoding),
+                    $fila
+                );
             }
 
             $id_csv = trim($fila[0]);
