@@ -15,19 +15,37 @@ class MigrarExportarCommand extends Command
     protected $signature = 'migrar:exportar
                             {--ids= : IDs de e_ind_fvt separados por coma}
                             {--all  : Exportar todas las entrevistas activas}
-                            {--output= : Ruta del ZIP de salida (por defecto storage/app/migracion_export.zip)}';
+                            {--listar : Muestra los expedientes disponibles con su ID y código, sin exportar}';
 
     protected $description = 'Exporta entrevistas a un ZIP con datos JSON + archivos físicos para migración entre servidores';
 
     public function handle(): int
     {
+        // --- Modo listar ---
+        if ($this->option('listar')) {
+            $rows = Entrevista::where('id_activo', 1)
+                ->orderBy('id_e_ind_fvt')
+                ->get(['id_e_ind_fvt', 'entrevista_codigo', 'titulo', 'entrevista_fecha'])
+                ->map(fn($e) => [
+                    $e->id_e_ind_fvt,
+                    $e->entrevista_codigo ?? '—',
+                    Str::limit($e->titulo ?? '—', 60),
+                    $e->entrevista_fecha ?? '—',
+                ])->toArray();
+
+            $this->table(['ID', 'Código', 'Título', 'Fecha'], $rows);
+            $this->line('');
+            $this->line('Use: php artisan migrar:exportar --ids=<ID1,ID2,...>');
+            return 0;
+        }
+
         // --- Resolver IDs ---
         if ($this->option('all')) {
             $ids = Entrevista::where('id_activo', 1)->pluck('id_e_ind_fvt')->toArray();
         } elseif ($this->option('ids')) {
             $ids = array_map('intval', explode(',', $this->option('ids')));
         } else {
-            $this->error('Debe especificar --ids=1,2,3 o --all');
+            $this->error('Debe especificar --ids=1,2,3 o --all  (use --listar para ver los disponibles)');
             return 1;
         }
 
@@ -38,7 +56,7 @@ class MigrarExportarCommand extends Command
 
         $this->info('Exportando ' . count($ids) . ' entrevista(s)...');
 
-        $outputPath = $this->option('output') ?? storage_path('app/migracion_export.zip');
+        $outputPath = '/tmp/migracion_export_' . date('Ymd_His') . '.zip';
 
         // Crear ZIP
         $zip = new ZipArchive();
@@ -78,7 +96,12 @@ class MigrarExportarCommand extends Command
         $zip->addFromString('data.json', $json);
         $zip->close();
 
-        $this->info("ZIP generado en: $outputPath (" . round(filesize($outputPath) / 1048576, 2) . ' MB)');
+        $mb          = round(filesize($outputPath) / 1048576, 2);
+        $containerName = gethostname(); // nombre del container
+        $this->info("ZIP generado: $outputPath ({$mb} MB)");
+        $this->newLine();
+        $this->line('Para descargarlo a tu máquina local, corre este comando <comment>fuera del container</comment>:');
+        $this->line("  docker cp modulo-escucha-l-php-1:{$outputPath} ~/migracion_export.zip");
         return 0;
     }
 
