@@ -33,6 +33,7 @@ class AsignacionesTranscripcionExport implements FromQuery, WithHeadings, WithMa
                 'at.fecha_inicio_edicion',
                 'at.fecha_envio_revision',
                 'at.fecha_revision',
+                DB::raw("COALESCE(at.segundos_edicion_activa, 0) as segundos_edicion_activa"),
                 'u_asig.name as asignado_por',
                 'u_rev.name as revisado_por',
                 'at.comentario_revision',
@@ -56,6 +57,7 @@ class AsignacionesTranscripcionExport implements FromQuery, WithHeadings, WithMa
             'Fecha Inicio Edición',
             'Fecha Envío Revisión',
             'Fecha Revisión',
+            'Tiempo activo edición',
             'Asignado Por',
             'Revisado Por',
             'Comentario Revisión',
@@ -86,6 +88,12 @@ class AsignacionesTranscripcionExport implements FromQuery, WithHeadings, WithMa
             $row->fecha_inicio_edicion,
             $row->fecha_envio_revision,
             $row->fecha_revision,
+            $row->segundos_edicion_activa > 0
+                ? sprintf('%02d:%02d:%02d',
+                    floor($row->segundos_edicion_activa / 3600),
+                    floor(($row->segundos_edicion_activa % 3600) / 60),
+                    $row->segundos_edicion_activa % 60)
+                : '',
             $row->asignado_por,
             $row->revisado_por,
             $row->comentario_revision,

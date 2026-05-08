@@ -322,6 +322,7 @@ function fmtDur($seg) {
                             <th>F. Revisión</th>
                             <th>Revisado por</th>
                             <th class="text-right">Duración</th>
+                            <th class="text-right" title="Tiempo activo de edición medido por heartbeat">T. edición</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -401,18 +402,32 @@ function fmtDur($seg) {
                                 @endif
                             </td>
                             <td class="text-right text-monospace">{{ fmtDur($duracion) }}</td>
+                            <td class="text-right text-monospace">
+                                @if($asig->segundos_edicion_activa > 0)
+                                    {{ fmtDur($asig->segundos_edicion_activa) }}
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="table-dark">
                         @php
-                            // Sumar duración de audios únicos (sin repetir el mismo audio en distintos estados)
                             $durTotal = $detalleAsignaciones->filter(fn($a) => $a->id_adjunto)->unique('id_adjunto')->sum('duracion_audio')
                                       + $detalleAsignaciones->filter(fn($a) => !$a->id_adjunto)->unique('id_e_ind_fvt')->sum('duracion_total');
+                            $edicionTotal = $detalleAsignaciones->sum('segundos_edicion_activa');
                         @endphp
                         <tr>
                             <td colspan="8"><strong>Total asignaciones (audios únicos)</strong></td>
                             <td class="text-right text-monospace"><strong>{{ fmtDur($durTotal) }}</strong></td>
+                            <td class="text-right text-monospace">
+                                @if($edicionTotal > 0)
+                                    <strong>{{ fmtDur($edicionTotal) }}</strong>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                         </tr>
                     </tfoot>
                 </table>
@@ -640,6 +655,7 @@ function fmtDur($seg) {
                             <th>Estado</th>
                             <th class="text-center">Audios</th>
                             <th class="text-right">Duración</th>
+                            <th class="text-right" title="Tiempo activo de edición medido por heartbeat">T. edición</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -659,14 +675,29 @@ function fmtDur($seg) {
                             <td><span class="badge {{ $badgeClass }}">{{ $labelEstado }}</span></td>
                             <td class="text-center">{{ $asig->num_audios }}</td>
                             <td class="text-right text-monospace">{{ fmtDur($asig->duracion_total) }}</td>
+                            <td class="text-right text-monospace">
+                                @if($asig->segundos_edicion_activa > 0)
+                                    {{ fmtDur($asig->segundos_edicion_activa) }}
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="table-dark">
+                        @php $edicionTotalAnon = $detalleAsignaciones->sum('segundos_edicion_activa'); @endphp
                         <tr>
                             <td colspan="4"><strong>Totales</strong></td>
                             <td class="text-center"><strong>{{ $detalleAsignaciones->sum('num_audios') }}</strong></td>
                             <td class="text-right text-monospace"><strong>{{ fmtDur($detalleAsignaciones->sum('duracion_total')) }}</strong></td>
+                            <td class="text-right text-monospace">
+                                @if($edicionTotalAnon > 0)
+                                    <strong>{{ fmtDur($edicionTotalAnon) }}</strong>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                         </tr>
                     </tfoot>
                 </table>

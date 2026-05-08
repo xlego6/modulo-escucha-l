@@ -228,6 +228,25 @@
             </form>
         </div>
 
+        {{-- Centro de control / Asignaciones (solo Admin y Líder) --}}
+        @if(Auth::user()->id_nivel <= 2)
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tasks mr-2 text-muted"></i>Exportar asignaciones</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-0">
+                    Todas las asignaciones de transcripción: transcriptor, audio, estado, fechas, tiempo activo de edición, calificación y revisión.
+                </p>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('procesamientos.exportar-asignaciones') }}" class="btn btn-primary">
+                    <i class="fas fa-file-excel mr-1"></i>Descargar Excel de asignaciones
+                </a>
+            </div>
+        </div>
+        @endif
+
         {{-- Traza (solo Admin) --}}
         <div class="card">
             <div class="card-header">
