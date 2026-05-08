@@ -55,35 +55,52 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
                 'rel_contenido.rel_practicas_resistencia',
             ]);
 
-        if (!empty($this->filtros['fecha_desde'])) {
-            $query->where('fecha_toma_inicial', '>=', $this->filtros['fecha_desde']);
+        // Códigos explícitos: si se dan, ignoran todos los demás filtros
+        $codigos = [];
+        if (!empty($this->filtros['codigos'])) {
+            $codigos = array_values(array_filter(
+                array_map('trim', preg_split('/[\s,;]+/', $this->filtros['codigos']))
+            ));
         }
-        if (!empty($this->filtros['fecha_hasta'])) {
-            $query->where('fecha_toma_final', '<=', $this->filtros['fecha_hasta']);
-        }
-        if (!empty($this->filtros['id_territorio'])) {
-            $query->where('id_territorio', $this->filtros['id_territorio']);
-        }
-        if (!empty($this->filtros['id_entrevistador'])) {
-            $query->where('id_entrevistador', $this->filtros['id_entrevistador']);
-        }
-        if (!empty($this->filtros['id_dependencia_origen'])) {
-            $query->where('id_dependencia_origen', $this->filtros['id_dependencia_origen']);
-        }
-        if (!empty($this->filtros['id_tipo_testimonio'])) {
-            $query->where('id_tipo_testimonio', $this->filtros['id_tipo_testimonio']);
-        }
-        if (isset($this->filtros['tiene_adjuntos']) && $this->filtros['tiene_adjuntos'] !== '') {
-            if ($this->filtros['tiene_adjuntos'] == '1') {
-                $query->whereHas('rel_adjuntos');
-            } elseif ($this->filtros['tiene_adjuntos'] == '0') {
-                $query->whereDoesntHave('rel_adjuntos');
+        if (!empty($codigos)) {
+            $query->whereIn('entrevista_codigo', $codigos);
+        } else {
+            if (!empty($this->filtros['fecha_desde'])) {
+                $query->where('fecha_toma_inicial', '>=', $this->filtros['fecha_desde']);
             }
-        }
-        if (!empty($this->filtros['id_tipo_adjunto'])) {
-            $query->whereHas('rel_adjuntos', function ($q) {
-                $q->where('id_tipo', $this->filtros['id_tipo_adjunto']);
-            });
+            if (!empty($this->filtros['fecha_hasta'])) {
+                $query->where('fecha_toma_final', '<=', $this->filtros['fecha_hasta']);
+            }
+            if (!empty($this->filtros['carga_desde'])) {
+                $query->whereDate('created_at', '>=', $this->filtros['carga_desde']);
+            }
+            if (!empty($this->filtros['carga_hasta'])) {
+                $query->whereDate('created_at', '<=', $this->filtros['carga_hasta']);
+            }
+            if (!empty($this->filtros['id_territorio'])) {
+                $query->where('id_territorio', $this->filtros['id_territorio']);
+            }
+            if (!empty($this->filtros['id_entrevistador'])) {
+                $query->where('id_entrevistador', $this->filtros['id_entrevistador']);
+            }
+            if (!empty($this->filtros['id_dependencia_origen'])) {
+                $query->where('id_dependencia_origen', $this->filtros['id_dependencia_origen']);
+            }
+            if (!empty($this->filtros['id_tipo_testimonio'])) {
+                $query->where('id_tipo_testimonio', $this->filtros['id_tipo_testimonio']);
+            }
+            if (isset($this->filtros['tiene_adjuntos']) && $this->filtros['tiene_adjuntos'] !== '') {
+                if ($this->filtros['tiene_adjuntos'] == '1') {
+                    $query->whereHas('rel_adjuntos');
+                } elseif ($this->filtros['tiene_adjuntos'] == '0') {
+                    $query->whereDoesntHave('rel_adjuntos');
+                }
+            }
+            if (!empty($this->filtros['id_tipo_adjunto'])) {
+                $query->whereHas('rel_adjuntos', function ($q) {
+                    $q->where('id_tipo', $this->filtros['id_tipo_adjunto']);
+                });
+            }
         }
 
         return $query->orderBy('created_at', 'desc');
