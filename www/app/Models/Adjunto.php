@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
 
 class Adjunto extends Model
@@ -148,7 +149,7 @@ class Adjunto extends Model
      */
     public static function aplicarMarcaAguaDescarga(string $ubicacion, string $textoUsuario): ?string
     {
-        $rutaOriginal = \Storage::disk('public')->path($ubicacion);
+        $rutaOriginal = Storage::disk('public')->path($ubicacion);
 
         if (!file_exists($rutaOriginal)) {
             return null;
