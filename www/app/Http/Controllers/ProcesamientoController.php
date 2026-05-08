@@ -228,6 +228,21 @@ class ProcesamientoController extends Controller
         $idsTotales = $this->getEntrevistaIdsFiltradas($tipo, $filtroIds, $filtroDependencia);
         $stats['totales'] = $this->audioStatsForIds($idsTotales);
 
+        // Tiempo de edición total: suma acumulada de TODOS los estados
+        // (independiente de en cuál está la asignación ahora, para que el tiempo
+        // no "desaparezca" al avanzar el flujo ni quede fragmentado por estado)
+        $qTotalEdicion = DB::table($table . ' as at')
+            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'at.' . $personaCol);
+        if (!empty($filtroIds)) {
+            $qTotalEdicion->whereIn('at.' . $personaCol, (array)$filtroIds);
+        } elseif (!empty($filtroDependencia)) {
+            $qTotalEdicion->where('e.id_dependencia_origen', $filtroDependencia);
+        }
+        $totalSegundosEdicion = (int)$qTotalEdicion->sum('at.segundos_edicion_activa');
+        if ($totalSegundosEdicion > 0) {
+            $stats['totales']['tiempo_edicion'] = $totalSegundosEdicion;
+        }
+
         return $stats;
     }
 
@@ -266,6 +281,7 @@ class ProcesamientoController extends Controller
                 'adj_asig.duracion as duracion_audio',
                 DB::raw('COALESCE(adj.duracion_total, 0) as duracion_total'),
                 DB::raw('COALESCE(adj.num_audios, 0) as num_audios'),
+                DB::raw('COALESCE(at.segundos_edicion_activa, 0) as segundos_edicion_activa'),
                 'at.historial_comentarios'
             )
             ->orderBy('at.fecha_asignacion');
