@@ -394,12 +394,26 @@ class MigrarImportarCommand extends Command
     // Utilidades
     // -------------------------------------------------------------------------
 
+    // IDs geo que no existen en el servidor destino pero tienen equivalente conocido
+    private const GEO_REMAP = [
+        2355 => 2159, // "Sin Información" (muni) → equivalente en destino
+    ];
+
     private function geo(mixed $id): ?int
     {
         if (!$id) return null;
         $id = (int) $id;
+
+        // Remapeo explícito de IDs que difieren entre servidores
+        if (array_key_exists($id, self::GEO_REMAP)) {
+            return self::GEO_REMAP[$id];
+        }
+
         if (!array_key_exists($id, $this->geoCache)) {
             $this->geoCache[$id] = DB::table('catalogos.geo')->where('id_geo', $id)->exists() ? $id : null;
+            if ($this->geoCache[$id] === null) {
+                $this->warn("    ⚠ geo ID {$id} no existe en este servidor — se omite");
+            }
         }
         return $this->geoCache[$id];
     }
