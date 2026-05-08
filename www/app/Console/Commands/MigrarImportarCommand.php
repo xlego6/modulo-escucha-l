@@ -30,6 +30,7 @@ class MigrarImportarCommand extends Command
     private bool $dryRun;
     private array $entrevistadorCache = [];
     private array $usuarioCache       = [];
+    private array $geoCache           = [];
 
     public function handle(): int
     {
@@ -130,13 +131,17 @@ class MigrarImportarCommand extends Command
             $correlativo     = $this->calcularCorrelativo();
             $nuevoCodigo     = $this->generarCodigo($entrevistador, $siguienteNumero, $exp['e_ind_fvt']['id_dependencia_origen'] ?? null);
 
-            // --- Insertar e_ind_fvt ---
+            // --- Insertar e_ind_fvt (geo IDs se nullifican si no existen en este servidor) ---
             $eData = array_merge($exp['e_ind_fvt'], [
                 'id_entrevistador'       => $entrevistador->id_entrevistador,
                 'numero_entrevistador'   => $entrevistador->numero_entrevistador,
                 'entrevista_codigo'      => $nuevoCodigo,
                 'entrevista_numero'      => $siguienteNumero,
                 'entrevista_correlativo' => $correlativo,
+                'entrevista_lugar'       => $this->geo($exp['e_ind_fvt']['entrevista_lugar'] ?? null),
+                'id_territorio'          => $this->geo($exp['e_ind_fvt']['id_territorio'] ?? null),
+                'hechos_lugar'           => $this->geo($exp['e_ind_fvt']['hechos_lugar'] ?? null),
+                'id_macroterritorio'     => $this->geo($exp['e_ind_fvt']['id_macroterritorio'] ?? null),
             ]);
             $entrevista = Entrevista::create($eData);
             $newId      = $entrevista->id_e_ind_fvt;
@@ -173,11 +178,13 @@ class MigrarImportarCommand extends Command
                 }
 
                 foreach ($ct['lugares'] ?? [] as $lugar) {
-                    if (!empty($lugar['id_departamento']) || !empty($lugar['id_municipio'])) {
+                    $idDepto = $this->geo($lugar['id_departamento'] ?? null);
+                    $idMuni  = $this->geo($lugar['id_municipio'] ?? null);
+                    if ($idDepto || $idMuni) {
                         DB::table('esclarecimiento.contenido_lugar')->insert([
-                            'id_e_ind_fvt'   => $newId,
-                            'id_departamento' => $lugar['id_departamento'] ?? null,
-                            'id_municipio'    => $lugar['id_municipio'] ?? null,
+                            'id_e_ind_fvt'    => $newId,
+                            'id_departamento' => $idDepto,
+                            'id_municipio'    => $idMuni,
                         ]);
                     }
                 }
@@ -185,7 +192,12 @@ class MigrarImportarCommand extends Command
 
             // --- Personas ---
             foreach ($exp['personas'] ?? [] as $pData) {
-                $persona = Persona::create($pData['persona']);
+                $p = $pData['persona'];
+                // Nullificar geo IDs que no existan en este servidor
+                foreach (['id_lugar_nacimiento', 'id_lugar_nacimiento_depto', 'id_lugar_residencia', 'id_lugar_residencia_muni', 'id_lugar_residencia_depto'] as $col) {
+                    if (isset($p[$col])) $p[$col] = $this->geo($p[$col]);
+                }
+                $persona = Persona::create($p);
 
                 foreach ($pData['poblaciones'] ?? [] as $idItem) {
                     DB::table('fichas.persona_poblacion')->insert(['id_persona' => $persona->id_persona, 'id_poblacion' => $idItem]);
@@ -208,37 +220,37 @@ class MigrarImportarCommand extends Command
             }
 
             // --- Adjuntos + archivos físicos ---
-            $nuevoCarpeta = 'adjuntos/' . Str::slug($nuevoCodigo);
+            $carpeta = 'adjuntos/' . Str::slug($nuevoCodigo);
 
             foreach ($exp['adjuntos'] ?? [] as $adjData) {
-                $datos     = $adjData['datos'];
-                $fileInZip = $adjData['file_in_zip'];
+                $datos        = $adjData['datos'];
+                $fileInZip    = $adjData['file_in_zip'];
                 $livianoInZip = $adjData['liviano_in_zip'] ?? null;
 
                 // Copiar archivo principal
                 $nuevaUbicacion = '';
                 if ($fileInZip && file_exists($tmpDir . '/' . $fileInZip)) {
-                    $ext            = pathinfo($fileInZip, PATHINFO_EXTENSION);
-                    $nombreArchivo  = time() . '_' . Str::random(8) . '.' . $ext;
-                    $dirDisco       = storage_path('app/public/' . $nuevaCarpeta);
+                    $ext           = pathinfo($fileInZip, PATHINFO_EXTENSION);
+                    $nombreArchivo = time() . '_' . Str::random(8) . '.' . $ext;
+                    $dirDisco      = storage_path('app/public/' . $carpeta);
                     if (!is_dir($dirDisco)) {
                         mkdir($dirDisco, 0775, true);
                     }
                     copy($tmpDir . '/' . $fileInZip, $dirDisco . '/' . $nombreArchivo);
-                    $nuevaUbicacion = $nuevaCarpeta . '/' . $nombreArchivo;
+                    $nuevaUbicacion = $carpeta . '/' . $nombreArchivo;
                 }
 
                 // Copiar archivo liviano
                 $nuevaUbicacionLiviana = null;
                 if ($livianoInZip && file_exists($tmpDir . '/' . $livianoInZip)) {
-                    $ext            = pathinfo($livianoInZip, PATHINFO_EXTENSION);
-                    $nombreLiviano  = 'lv_' . time() . '_' . Str::random(8) . '.' . $ext;
-                    $dirDisco       = storage_path('app/public/' . $nuevaCarpeta);
+                    $ext           = pathinfo($livianoInZip, PATHINFO_EXTENSION);
+                    $nombreLiviano = 'lv_' . time() . '_' . Str::random(8) . '.' . $ext;
+                    $dirDisco      = storage_path('app/public/' . $carpeta);
                     if (!is_dir($dirDisco)) {
                         mkdir($dirDisco, 0775, true);
                     }
                     copy($tmpDir . '/' . $livianoInZip, $dirDisco . '/' . $nombreLiviano);
-                    $nuevaUbicacionLiviana = $nuevaCarpeta . '/' . $nombreLiviano;
+                    $nuevaUbicacionLiviana = $carpeta . '/' . $nombreLiviano;
                 }
 
                 $adj = Adjunto::create(array_merge($datos, [
@@ -381,6 +393,16 @@ class MigrarImportarCommand extends Command
     // -------------------------------------------------------------------------
     // Utilidades
     // -------------------------------------------------------------------------
+
+    private function geo(mixed $id): ?int
+    {
+        if (!$id) return null;
+        $id = (int) $id;
+        if (!array_key_exists($id, $this->geoCache)) {
+            $this->geoCache[$id] = DB::table('catalogos.geo')->where('id_geo', $id)->exists() ? $id : null;
+        }
+        return $this->geoCache[$id];
+    }
 
     private function sinColumnas(array $attrs, array $excluir): array
     {
