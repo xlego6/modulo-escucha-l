@@ -722,15 +722,17 @@ class ImportacionMasivaService
                     }
                 }
 
-                $encontrado = null;
-                $confianza  = null;
+                $encontrado    = null;
+                $confianza     = null;
+                $deptoEncontrado = null;
 
                 // Fase 1: buscar dentro del departamento (del hint o del CSV)
                 if ($idDeptoSugerido && isset($munisByDepto[$idDeptoSugerido])) {
                     foreach ($munisByDepto[$idDeptoSugerido] as $geo) {
                         if ($this->normalizar($geo->descripcion) === $normMuni) {
-                            $encontrado = $geo->id_geo;
-                            $confianza  = 'exacto';
+                            $encontrado      = $geo->id_geo;
+                            $deptoEncontrado = $geo->id_padre;
+                            $confianza       = 'exacto';
                             break;
                         }
                     }
@@ -738,8 +740,9 @@ class ImportacionMasivaService
                         foreach ($munisByDepto[$idDeptoSugerido] as $geo) {
                             $normDesc = $this->normalizar($geo->descripcion);
                             if (str_contains($normDesc, $normMuni) || str_contains($normMuni, $normDesc)) {
-                                $encontrado = $geo->id_geo;
-                                $confianza  = 'parcial';
+                                $encontrado      = $geo->id_geo;
+                                $deptoEncontrado = $geo->id_padre;
+                                $confianza       = 'parcial';
                                 break;
                             }
                         }
@@ -752,9 +755,10 @@ class ImportacionMasivaService
                         fn($g) => $this->normalizar($g->descripcion) === $normMuni
                     );
                     if ($matchesGlobales->count() === 1) {
-                        $geo       = $matchesGlobales->first();
-                        $encontrado = $geo->id_geo;
-                        $confianza  = ($idDeptoSugerido && $geo->id_padre != $idDeptoSugerido)
+                        $geo             = $matchesGlobales->first();
+                        $encontrado      = $geo->id_geo;
+                        $deptoEncontrado = $geo->id_padre;
+                        $confianza       = ($idDeptoSugerido && $geo->id_padre != $idDeptoSugerido)
                             ? 'otro_depto'
                             : 'exacto';
                     } elseif ($matchesGlobales->count() > 1) {
@@ -766,15 +770,17 @@ class ImportacionMasivaService
                     foreach ($allMunis as $geo) {
                         $normDesc = $this->normalizar($geo->descripcion);
                         if (str_contains($normDesc, $normMuni) || str_contains($normMuni, $normDesc)) {
-                            $encontrado = $geo->id_geo;
-                            $confianza  = 'parcial';
+                            $encontrado      = $geo->id_geo;
+                            $deptoEncontrado = $geo->id_padre;
+                            $confianza       = 'parcial';
                             break;
                         }
                     }
                 }
 
-                $sugerencias['lugar_muni'][$key]            = $encontrado;
-                $sugerencias['lugar_muni_confianza'][$key]   = $confianza;
+                $sugerencias['lugar_muni'][$key]           = $encontrado;
+                $sugerencias['lugar_muni_confianza'][$key] = $confianza;
+                $sugerencias['lugar_muni_depto'][$key]     = $deptoEncontrado;
             }
         }
 
