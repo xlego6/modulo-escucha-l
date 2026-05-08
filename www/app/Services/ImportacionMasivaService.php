@@ -538,20 +538,27 @@ class ImportacionMasivaService
         }
 
         // Geografía (departamentos y municipios)
-        // Las celdas pueden tener múltiples valores separados por " | " (deptos)
-        // o por ", " (munis). Se dividen para que cada nombre individual aparezca
-        // como una entrada de mapeo en el paso 2.
+        //
+        // Toma (15/16) y origen persona (27/28): emparejamiento posicional
+        //   depto[i] ↔ muni[i]; munis sin depto emparejado → clave "||muni".
+        //
+        // Hechos del contenido (62/63): listas completamente independientes.
+        //   Los deptos son el ámbito geográfico general; los munis son lugares
+        //   específicos que no guardan relación posicional con los deptos. Cada
+        //   muni se resuelve globalmente (clave "||muni") sin atar a ningún
+        //   depto del CSV, ya que la mayoría tienen nombre único a nivel nacional.
+        //   Los ambiguos se marcan para resolución manual en el paso 2.
         $valores['lugar_depto']    = [];
-        $valores['lugar_muni_raw'] = []; // formato "primer_depto||muni"
+        $valores['lugar_muni_raw'] = []; // formato "deptoCSV||muni" o "||muni" para global
 
-        $colParejas = [[15, 16], [27, 28], [62, 63]];
         foreach ($expedientes as $exp) {
             $datos = $exp['datos'];
-            foreach ($colParejas as [$cDepto, $cMuni]) {
+
+            // --- Toma y origen persona: emparejamiento posicional ---
+            foreach ([[15, 16], [27, 28]] as [$cDepto, $cMuni]) {
                 $deptoRaw = trim($datos[$cDepto] ?? '');
                 $muniRaw  = trim($datos[$cMuni]  ?? '');
 
-                // Dividir departamentos por "|"
                 if ($deptoRaw !== '' && strtolower($deptoRaw) !== 'n/a') {
                     foreach (preg_split('/\s*\|\s*/', $deptoRaw) as $depto) {
                         $depto = trim($depto);
@@ -561,10 +568,6 @@ class ImportacionMasivaService
                     }
                 }
 
-                // Emparejar municipios con departamentos por índice posicional
-                // (depto[0]↔muni[0], depto[1]↔muni[1], etc.), replicando la
-                // misma lógica de resolverLugares() en el Job. Si hay más
-                // municipios que departamentos se reutiliza el último departamento.
                 if ($muniRaw !== '' && strtolower($muniRaw) !== 'n/a') {
                     $deptoParts = array_values(array_filter(
                         array_map('trim', preg_split('/\s*\|\s*/', $deptoRaw))
@@ -572,16 +575,35 @@ class ImportacionMasivaService
                     $muniParts = array_values(array_filter(
                         array_map('trim', preg_split('/\s*,\s*/', $muniRaw))
                     ));
-                    $count = max(count($deptoParts), count($muniParts), 1);
-
-                    for ($i = 0; $i < $count; $i++) {
-                        $depto = $deptoParts[$i] ?? ($deptoParts[count($deptoParts) - 1] ?? '');
-                        $muni  = $muniParts[$i]  ?? '';
-                        if ($muni === '') continue;
-                        $key = "$depto||$muni";
+                    foreach ($muniParts as $i => $muni) {
+                        $key = ($deptoParts[$i] ?? '') . "||$muni";
                         if (!in_array($key, $valores['lugar_muni_raw'])) {
                             $valores['lugar_muni_raw'][] = $key;
                         }
+                    }
+                }
+            }
+
+            // --- Hechos del contenido (62/63): resolución global de munis ---
+            $deptoRaw62 = trim($datos[62] ?? '');
+            $muniRaw63  = trim($datos[63] ?? '');
+
+            if ($deptoRaw62 !== '' && strtolower($deptoRaw62) !== 'n/a') {
+                foreach (preg_split('/\s*\|\s*/', $deptoRaw62) as $depto) {
+                    $depto = trim($depto);
+                    if ($depto !== '' && !in_array($depto, $valores['lugar_depto'])) {
+                        $valores['lugar_depto'][] = $depto;
+                    }
+                }
+            }
+
+            if ($muniRaw63 !== '' && strtolower($muniRaw63) !== 'n/a') {
+                foreach (preg_split('/\s*,\s*/', $muniRaw63) as $muni) {
+                    $muni = trim($muni);
+                    if ($muni === '') continue;
+                    $key = "||$muni";
+                    if (!in_array($key, $valores['lugar_muni_raw'])) {
+                        $valores['lugar_muni_raw'][] = $key;
                     }
                 }
             }

@@ -283,7 +283,7 @@
                                 {{ $departamentos->firstWhere('id_geo', $actualD)->descripcion ?? '?' }}
                                 <i class="fas fa-check text-success ml-1"></i>
                                 @else
-                                <select class="form-control form-control-sm lazy-select2"
+                                <select class="form-control form-control-sm lazy-select2 select2-geo-depto"
                                     name="mapeos_geo[lugar_depto][{{ $deptoNom }}]">
                                     <option value="">— Sin mapear —</option>
                                     @foreach($departamentos as $geo)
@@ -482,6 +482,34 @@ $(document).ready(function () {
         $target.toggle();
         var $icon = $(this).find('i');
         $icon.toggleClass('fa-eye fa-eye-slash');
+    });
+
+    // ------------------------------------------------------------------
+    // Cuando el usuario cambia el departamento, recargar los selects de
+    // municipio dentro del mismo card con la lista filtrada del nuevo depto.
+    // ------------------------------------------------------------------
+    $(document).on('change', 'select.select2-geo-depto', function () {
+        var newDeptoId = parseInt($(this).val()) || 0;
+        var $card = $(this).closest('.card-mapeo');
+
+        $card.find('select.select2-muni').each(function () {
+            var $sel = $(this);
+
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2('destroy');
+            }
+
+            $sel.html(buildOpcionesMuni(newDeptoId));
+            $sel.attr('data-depto', newDeptoId || '');
+            $sel.val('');
+
+            var s2opts = { theme: 'bootstrap4', width: '100%' };
+            if (!newDeptoId) {
+                s2opts.minimumInputLength = 2;
+                s2opts.placeholder = 'Escriba para buscar...';
+            }
+            $sel.select2(s2opts);
+        });
     });
 });
 </script>

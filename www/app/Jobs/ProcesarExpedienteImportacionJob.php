@@ -718,38 +718,56 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
     }
 
     /**
-     * Divide las celdas de departamento (sep "|") y municipio (sep ",") y devuelve
-     * todos los pares ['id_departamento' => ?, 'id_municipio' => ?] que resuelvan.
-     * Se emparejan por índice: depto[0]↔muni[0], depto[1]↔muni[1], etc.
-     * Si hay más municipios que departamentos se reutiliza el último departamento.
+     * Convierte las celdas de hechos (cols 62/63) en filas para contenido_lugar.
+     *
+     * Munis (sep ","): resolución global — la clave del mapeo es "||muni", y el
+     * depto se deriva del id_padre del municipio en BD, no del CSV. Esto evita
+     * emparejar munis con el depto equivocado cuando ambas columnas son listas
+     * independientes (caso habitual en estos CSVs).
+     *
+     * Deptos (sep "|"): se insertan como fila standalone (muni=null) solo si
+     * ningún municipio resuelto ya representa a ese departamento.
      */
     private function resolverLugares(array $mapeosGeo, string $deptoRaw, string $muniRaw): array
     {
         $deptos = array_values(array_filter(array_map('trim', preg_split('/\s*\|\s*/', $deptoRaw))));
         $munis  = array_values(array_filter(array_map('trim', preg_split('/\s*,\s*/',  $muniRaw))));
 
-        $count  = max(count($deptos), count($munis), 1);
+        if (empty($deptos) && empty($munis)) return [];
+
+        // Precargar el depto padre de cada muni mapeado (una sola query)
+        $idsMapeados = array_values(array_filter(array_map(
+            fn($v) => $v ? (int) $v : null,
+            $mapeosGeo['lugar_muni'] ?? []
+        )));
+        $muniParents = $idsMapeados
+            ? Geo::whereIn('id_geo', $idsMapeados)->pluck('id_padre', 'id_geo')->toArray()
+            : [];
+
         $vistos = [];
         $result = [];
 
-        for ($i = 0; $i < $count; $i++) {
-            $deptoStr = $deptos[$i] ?? ($deptos[count($deptos) - 1] ?? '');
-            $muniStr  = $munis[$i]  ?? '';
+        // 1. Un row por municipio resuelto; el depto viene de BD (id_padre)
+        foreach ($munis as $muniStr) {
+            $idMuni = ($id = $mapeosGeo['lugar_muni']["||$muniStr"] ?? null) ? (int) $id : null;
+            if (!$idMuni) continue;
 
-            $idDepto = $deptoStr ? (($id = $mapeosGeo['lugar_depto'][$deptoStr] ?? null) ? (int) $id : null) : null;
-            $idMuni  = null;
-            if ($muniStr) {
-                $key    = "$deptoStr||$muniStr";
-                $idMuni = ($id = $mapeosGeo['lugar_muni'][$key] ?? null) ? (int) $id : null;
-            }
-
-            if (!$idDepto && !$idMuni) continue;
-
+            $idDepto = isset($muniParents[$idMuni]) ? (int) $muniParents[$idMuni] : null;
             $clave = "$idDepto|$idMuni";
             if (isset($vistos[$clave])) continue;
             $vistos[$clave] = true;
-
             $result[] = ['id_departamento' => $idDepto, 'id_municipio' => $idMuni];
+        }
+
+        // 2. Deptos del CSV sin ningún municipio resuelto bajo ellos
+        $deptosYaCubiertos = array_filter(array_column($result, 'id_departamento'));
+        foreach ($deptos as $deptoStr) {
+            $idDepto = ($id = $mapeosGeo['lugar_depto'][$deptoStr] ?? null) ? (int) $id : null;
+            if (!$idDepto || in_array($idDepto, $deptosYaCubiertos)) continue;
+            $clave = "$idDepto|";
+            if (isset($vistos[$clave])) continue;
+            $vistos[$clave] = true;
+            $result[] = ['id_departamento' => $idDepto, 'id_municipio' => null];
         }
 
         return $result;
