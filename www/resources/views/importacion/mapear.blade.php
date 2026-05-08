@@ -328,9 +328,15 @@
                         @foreach($munisRevision as $mr)
                         @php
                             [, $muniNom] = explode('||', $mr['key'], 2);
-                            // Para 'otro_depto' no filtrar por departamento: el municipio
-                            // sugerido no pertenece al depto del CSV, hay que buscar libremente.
-                            $idDeptoSelect = ($mr['conf'] === 'otro_depto') ? '' : ($actualD ?? '');
+                            // Para parcial/sin confianza: usar depto del card padre o,
+                            // si el card no tiene depto, el depto donde se encontró el municipio.
+                            // Para otro_depto/ambiguo: no pre-seleccionar (el usuario elige).
+                            if (in_array($mr['conf'], ['otro_depto', 'ambiguo'])) {
+                                $deptoPresel = '';
+                            } else {
+                                $deptoPresel = $actualD
+                                    ?? ($sugerencias['lugar_muni_depto'][$mr['key']] ?? '');
+                            }
                         @endphp
                         <tr class="{{ $mr['conf'] === 'parcial' || $mr['conf'] === 'otro_depto' ? 'table-warning' : 'table-danger' }}">
                             <td style="width:45%; padding-left:2rem">
@@ -343,11 +349,23 @@
                                 @endif
                             </td>
                             <td>
-                                <select class="form-control form-control-sm select2-muni"
-                                    name="mapeos_geo[lugar_muni][{{ $mr['key'] }}]"
-                                    data-depto="{{ $idDeptoSelect }}"
-                                    data-selected="{{ $mr['act'] ?? '' }}">
-                                </select>
+                                <div class="muni-cascade-pair">
+                                    <select class="form-control form-control-sm lazy-select2 select2-depto-muni-helper mb-1"
+                                        data-muni-selected="{{ $mr['act'] ?? '' }}"
+                                        data-placeholder="— Departamento —">
+                                        <option value="">— Departamento —</option>
+                                        @foreach($departamentos as $geo)
+                                        <option value="{{ $geo->id_geo }}" @selected($deptoPresel == $geo->id_geo)>{{ $geo->descripcion }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select class="form-control form-control-sm select2-muni-cascade"
+                                        name="mapeos_geo[lugar_muni][{{ $mr['key'] }}]">
+                                        <option value="">— Sin mapear (se omite) —</option>
+                                        @if($mr['act'] && ($muniSug = $municipios->firstWhere('id_geo', $mr['act'])))
+                                        <option value="{{ $mr['act'] }}" selected>{{ $muniSug->descripcion }}</option>
+                                        @endif
+                                    </select>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -375,84 +393,23 @@
 @section('scripts')
 <script>
 $(document).ready(function () {
-    // ------------------------------------------------------------------
-    // Datos de municipios (JSON único, ~100 KB)
-    // ------------------------------------------------------------------
-    var deptoNames = @json($deptoMap);
-    var todosMunicipios = @json($municipios->map(fn($m) => ['id' => $m->id_geo, 'text' => $m->descripcion, 'padre' => $m->id_padre])->values());
-
-    var opcionesCache = {};
-    function buildOpcionesMuni(idDepto) {
-        var key = idDepto || '_all';
-        if (!opcionesCache[key]) {
-            var sinFiltro = !idDepto;
-            var lista = sinFiltro
-                ? todosMunicipios
-                : todosMunicipios.filter(function (m) { return m.padre == idDepto; });
-            var html = '<option value="">— Sin mapear —</option>';
-            for (var i = 0; i < lista.length; i++) {
-                var nombre = lista[i].text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-                var label  = sinFiltro && deptoNames[lista[i].padre]
-                    ? nombre + ' — ' + ('' + deptoNames[lista[i].padre]).replace(/&/g,'&amp;').replace(/</g,'&lt;')
-                    : nombre;
-                html += '<option value="' + lista[i].id + '">' + label + '</option>';
-            }
-            opcionesCache[key] = html;
-        }
-        return opcionesCache[key];
-    }
-
-    function initMunisEnCard($card) {
-        // Collect all selects first, then process — avoids DOM mutation
-        // from Select2 breaking the jQuery .each() iterator.
-        var selects = $card.find('select.select2-muni:not(.select2-hidden-accessible)').toArray();
-
-        for (var i = 0; i < selects.length; i++) {
-            (function (el, idx) {
-                var $sel     = $(el);
-                var idDepto  = parseInt($sel.data('depto'))    || 0;
-                var selected = parseInt($sel.data('selected')) || 0;
-
-                // Populate options (fast DOM op)
-                $sel.html(buildOpcionesMuni(idDepto));
-
-                if (selected && !$sel.find('option[value="' + selected + '"]').length) {
-                    var extra = todosMunicipios.find(function (m) { return m.id == selected; });
-                    if (extra) {
-                        $sel.prepend('<option value="' + extra.id + '">' +
-                            extra.text.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</option>');
-                    }
-                }
-                if (selected) {
-                    $sel.val(String(selected));
-                }
-
-                // Stagger Select2 init so each runs in its own tick
-                var s2opts = { theme: 'bootstrap4', width: '100%' };
-                if (!idDepto) {
-                    s2opts.minimumInputLength = 2;
-                    s2opts.placeholder = 'Escriba para buscar...';
-                }
-                setTimeout(function () {
-                    $sel.select2(s2opts);
-                }, idx * 30);
-            })(selects[i], i);
-        }
-    }
 
     // ------------------------------------------------------------------
-    // Lazy init: Select2 de catálogos Y municipios solo al entrar al viewport
+    // Lazy init: Select2 de catálogos y departamentos solo al entrar al viewport
     // ------------------------------------------------------------------
     var select2Opts = { theme: 'bootstrap4', width: '100%', minimumResultsForSearch: 5 };
 
     function initCardSelects(card) {
         var $card = $(card);
-        // Catálogos y departamentos
         $card.find('select.lazy-select2:not(.select2-hidden-accessible)').each(function () {
             $(this).select2(select2Opts);
         });
-        // Municipios
-        initMunisEnCard($card);
+        // Para los dept-helpers con un depto pre-seleccionado, cargar municipios
+        $card.find('select.select2-depto-muni-helper').each(function () {
+            if ($(this).val()) {
+                cargarMunicipios($(this), true);
+            }
+        });
     }
 
     if ('IntersectionObserver' in window) {
@@ -480,35 +437,56 @@ $(document).ready(function () {
         e.preventDefault();
         var $target = $($(this).data('target'));
         $target.toggle();
-        var $icon = $(this).find('i');
-        $icon.toggleClass('fa-eye fa-eye-slash');
+        $(this).find('i').toggleClass('fa-eye fa-eye-slash');
     });
 
     // ------------------------------------------------------------------
-    // Cuando el usuario cambia el departamento, recargar los selects de
-    // municipio dentro del mismo card con la lista filtrada del nuevo depto.
+    // Cascade depto → municipio via AJAX (con caché por departamento)
+    // ------------------------------------------------------------------
+    var muniCache = {};
+
+    function cargarMunicipios($deptoSel, preserveSelected) {
+        var deptoId  = $deptoSel.val();
+        var $pair    = $deptoSel.closest('.muni-cascade-pair');
+        var $muniSel = $pair.find('select.select2-muni-cascade');
+        var prevVal  = preserveSelected ? $muniSel.val() : '';
+
+        $muniSel.empty().append('<option value="">— Sin mapear (se omite) —</option>');
+        if (!deptoId) return;
+
+        function poblarOpciones(data) {
+            $.each(data, function (id, nombre) {
+                $muniSel.append('<option value="' + id + '">' + nombre + '</option>');
+            });
+            if (prevVal) $muniSel.val(prevVal);
+        }
+
+        if (muniCache[deptoId]) {
+            poblarOpciones(muniCache[deptoId]);
+            return;
+        }
+
+        $.get('{{ route("api.municipios") }}', { id_departamento: deptoId }, function (data) {
+            muniCache[deptoId] = data;
+            poblarOpciones(data);
+        });
+    }
+
+    $(document).on('change', 'select.select2-depto-muni-helper', function () {
+        cargarMunicipios($(this), false);
+    });
+
+    // ------------------------------------------------------------------
+    // Cuando cambia el mapeo de departamento del card, sincronizar todos
+    // los dept-helpers internos con el nuevo departamento.
     // ------------------------------------------------------------------
     $(document).on('change', 'select.select2-geo-depto', function () {
-        var newDeptoId = parseInt($(this).val()) || 0;
+        var newDeptoId = $(this).val();
         var $card = $(this).closest('.card-mapeo');
 
-        $card.find('select.select2-muni').each(function () {
-            var $sel = $(this);
-
-            if ($sel.hasClass('select2-hidden-accessible')) {
-                $sel.select2('destroy');
-            }
-
-            $sel.html(buildOpcionesMuni(newDeptoId));
-            $sel.attr('data-depto', newDeptoId || '');
-            $sel.val('');
-
-            var s2opts = { theme: 'bootstrap4', width: '100%' };
-            if (!newDeptoId) {
-                s2opts.minimumInputLength = 2;
-                s2opts.placeholder = 'Escriba para buscar...';
-            }
-            $sel.select2(s2opts);
+        $card.find('select.select2-depto-muni-helper').each(function () {
+            $(this).val(newDeptoId);
+            cargarMunicipios($(this), false);
         });
     });
 });
