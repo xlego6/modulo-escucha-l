@@ -81,9 +81,12 @@ class ExportController extends Controller
         $user = Auth::user();
 
         $filtros = [
-            'fecha_desde' => $request->fecha_desde,
-            'fecha_hasta' => $request->fecha_hasta,
-            'id_territorio' => $request->id_territorio,
+            'fecha_desde'          => $request->fecha_desde,
+            'fecha_hasta'          => $request->fecha_hasta,
+            'carga_desde'          => $request->carga_desde,
+            'carga_hasta'          => $request->carga_hasta,
+            'codigos'              => $request->codigos,
+            'id_territorio'        => $request->id_territorio,
             'id_entrevistador' => $request->id_entrevistador,
             'id_dependencia_origen' => $request->id_dependencia_origen,
             'id_tipo_testimonio' => $request->id_tipo_testimonio,

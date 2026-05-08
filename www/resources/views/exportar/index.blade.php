@@ -1,49 +1,84 @@
 @extends('layouts.app')
 
-@section('title', 'Exportar Datos')
-@section('content_header', 'Exportar Datos a Excel')
+@section('title', 'Exportar datos')
+@section('content_header', 'Exportar datos')
 
 @section('content')
 <div class="row">
-    <!-- Exportar Entrevistas -->
+
+    {{-- ================================================================
+         COLUMNA PRINCIPAL — Entrevistas
+         ================================================================ --}}
     <div class="col-lg-8">
-        <div class="card card-primary">
+        <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-microphone mr-2"></i>Exportar Entrevistas</h3>
+                <h3 class="card-title"><i class="fas fa-microphone mr-2 text-muted"></i>Exportar entrevistas</h3>
             </div>
             <form action="{{ route('exportar.entrevistas') }}" method="POST">
                 @csrf
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Seccion: Filtros por Fecha -->
-                        <div class="col-12">
-                            <h6 class="text-muted border-bottom pb-2 mb-3">
-                                <i class="fas fa-calendar-alt mr-2"></i>Filtros por Fecha
-                            </h6>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="fecha_desde">Fecha Desde</label>
-                                <input type="date" class="form-control" id="fecha_desde" name="fecha_desde">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="fecha_hasta">Fecha Hasta</label>
-                                <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta">
-                            </div>
-                        </div>
+                <div class="card-body pb-1">
 
-                        <!-- Seccion: Filtros por Ubicacion y Entrevistador -->
+                    {{-- Códigos --}}
+                    <p class="filter-section-label">
+                        <i class="fas fa-hashtag mr-1"></i>Códigos de entrevista
+                    </p>
+                    <div class="row">
                         <div class="col-12">
-                            <h6 class="text-muted border-bottom pb-2 mb-3 mt-2">
-                                <i class="fas fa-map-marker-alt mr-2"></i>Ubicacion y Entrevistador
-                            </h6>
+                            <div class="form-group">
+                                <textarea class="form-control form-control-sm" name="codigos" rows="2"
+                                    placeholder="DAV-0001-001, DAV-0001-002 — coma, punto y coma o salto de línea"></textarea>
+                                <small class="text-muted">Si se indican códigos, los demás filtros se ignoran.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Fechas de toma --}}
+                    <p class="filter-section-label mt-1">
+                        <i class="fas fa-calendar-alt mr-1"></i>Fecha de toma
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="filter-label">Desde</label>
+                                <input type="date" class="form-control form-control-sm" name="fecha_desde">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_territorio">Departamento</label>
-                                <select class="form-control" id="id_territorio" name="id_territorio">
+                                <label class="filter-label">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" name="fecha_hasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Fechas de carga --}}
+                    <p class="filter-section-label mt-1">
+                        <i class="fas fa-cloud-upload-alt mr-1"></i>Fecha de carga al sistema
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="filter-label">Desde</label>
+                                <input type="date" class="form-control form-control-sm" name="carga_desde">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="filter-label">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" name="carga_hasta">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Lugar y entrevistador --}}
+                    <p class="filter-section-label mt-1">
+                        <i class="fas fa-map-marker-alt mr-1"></i>Lugar y entrevistador
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="filter-label">Departamento de toma</label>
+                                <select class="form-control form-control-sm" name="id_territorio">
                                     @foreach($territorios as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
@@ -52,25 +87,25 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_entrevistador">Entrevistador</label>
-                                <select class="form-control" id="id_entrevistador" name="id_entrevistador">
+                                <label class="filter-label">Entrevistador</label>
+                                <select class="form-control form-control-sm" name="id_entrevistador">
                                     @foreach($entrevistadores as $id => $nombre)
                                         <option value="{{ $id }}">{{ $nombre }}</option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Seccion: Filtros por Tipo de Testimonio -->
-                        <div class="col-12">
-                            <h6 class="text-muted border-bottom pb-2 mb-3 mt-2">
-                                <i class="fas fa-file-alt mr-2"></i>Tipo de Testimonio
-                            </h6>
-                        </div>
+                    {{-- Tipo de testimonio --}}
+                    <p class="filter-section-label mt-1">
+                        <i class="fas fa-file-alt mr-1"></i>Tipo de testimonio
+                    </p>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_dependencia_origen">Dependencia de Origen</label>
-                                <select class="form-control" id="id_dependencia_origen" name="id_dependencia_origen">
+                                <label class="filter-label">Dependencia de origen</label>
+                                <select class="form-control form-control-sm" name="id_dependencia_origen">
                                     @foreach($dependencias as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
@@ -79,136 +114,85 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_tipo_testimonio">Tipo de Testimonio</label>
-                                <select class="form-control" id="id_tipo_testimonio" name="id_tipo_testimonio">
+                                <label class="filter-label">Tipo de testimonio</label>
+                                <select class="form-control form-control-sm" name="id_tipo_testimonio">
                                     @foreach($tipos_testimonio as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Seccion: Filtros por Adjuntos -->
-                        <div class="col-12">
-                            <h6 class="text-muted border-bottom pb-2 mb-3 mt-2">
-                                <i class="fas fa-paperclip mr-2"></i>Filtros por Adjuntos
-                            </h6>
-                        </div>
+                    {{-- Adjuntos --}}
+                    <p class="filter-section-label mt-1">
+                        <i class="fas fa-paperclip mr-1"></i>Adjuntos
+                    </p>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tiene_adjuntos">Tiene Adjuntos</label>
-                                <select class="form-control" id="tiene_adjuntos" name="tiene_adjuntos">
-                                    <option value="">-- Todos --</option>
-                                    <option value="1">Si - Con adjuntos</option>
-                                    <option value="0">No - Sin adjuntos</option>
+                                <label class="filter-label">Tiene adjuntos</label>
+                                <select class="form-control form-control-sm" name="tiene_adjuntos">
+                                    <option value="">— Todos —</option>
+                                    <option value="1">Con adjuntos</option>
+                                    <option value="0">Sin adjuntos</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_tipo_adjunto">Tipo de Adjunto</label>
-                                <select class="form-control" id="id_tipo_adjunto" name="id_tipo_adjunto">
+                                <label class="filter-label">Tipo de adjunto</label>
+                                <select class="form-control form-control-sm" name="id_tipo_adjunto">
                                     @foreach($tipos_adjunto as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
                                 </select>
-                                <small class="form-text text-muted">Filtra entrevistas que contengan este tipo de adjunto</small>
                             </div>
                         </div>
                     </div>
+
                 </div>
                 <div class="card-footer">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-file-excel mr-2"></i>Descargar Excel de Entrevistas
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-excel mr-1"></i>Descargar Excel de entrevistas
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Exportar Traza (solo Admin) -->
-    @if(Auth::user()->id_nivel == 1)
+    {{-- ================================================================
+         COLUMNA LATERAL — Otras exportaciones
+         ================================================================ --}}
     <div class="col-lg-4">
-        <div class="card card-dark">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-history mr-2"></i>Exportar Traza de Actividad</h3>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">Descarga la traza de actividad del sistema con los filtros que apliques. Máximo 500 registros por exportación.</p>
-                <ul class="list-unstyled text-muted small">
-                    <li><i class="fas fa-check text-dark mr-1"></i> Fecha/hora, usuario, acción, objeto</li>
-                    <li><i class="fas fa-check text-dark mr-1"></i> Código de referencia e IP</li>
-                    <li><i class="fas fa-check text-dark mr-1"></i> Filtros disponibles en /traza</li>
-                </ul>
-            </div>
-            <div class="card-footer">
-                <a href="{{ route('traza.index') }}" class="btn btn-dark">
-                    <i class="fas fa-filter mr-2"></i>Ir a Traza para filtrar y exportar
-                </a>
-            </div>
-        </div>
-    </div>
-    @endif
 
-    <!-- Exportar Usuarios (solo Admin) -->
-    @if(Auth::user()->id_nivel == 1)
-    <div class="col-lg-4">
-        <div class="card card-secondary">
+        {{-- Personas --}}
+        <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>Exportar Usuarios</h3>
-            </div>
-            <form action="{{ route('exportar.usuarios') }}" method="POST">
-                @csrf
-                <div class="card-body">
-                    <p class="text-muted">Exporta el listado completo de usuarios registrados en el sistema, incluyendo:</p>
-                    <ul class="list-unstyled text-muted small">
-                        <li><i class="fas fa-check text-secondary mr-1"></i> Nombre, correo, rol, dependencia</li>
-                        <li><i class="fas fa-check text-secondary mr-1"></i> Fecha de registro en el sistema</li>
-                        <li><i class="fas fa-check text-secondary mr-1"></i> Fecha y texto del compromiso de acceso interno firmado</li>
-                        <li><i class="fas fa-check text-secondary mr-1"></i> Fecha y texto del compromiso de reserva firmado</li>
-                    </ul>
-                    <div class="alert alert-info py-2 mb-0">
-                        <small><i class="fas fa-info-circle mr-1"></i> Incluye el texto exacto que cada usuario firmó en el momento de la aceptación.</small>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-secondary">
-                        <i class="fas fa-file-excel mr-2"></i>Descargar Excel de Usuarios
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endif
-
-    <!-- Exportar Personas -->
-    <div class="col-lg-4">
-        <div class="card card-success">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-users mr-2"></i>Exportar Personas</h3>
+                <h3 class="card-title"><i class="fas fa-users mr-2 text-muted"></i>Exportar personas</h3>
             </div>
             <form action="{{ route('exportar.personas') }}" method="POST">
                 @csrf
-                <div class="card-body">
+                <div class="card-body pb-1">
                     <div class="form-group">
-                        <label for="id_sexo">Sexo</label>
-                        <select class="form-control" id="id_sexo" name="id_sexo">
+                        <label class="filter-label">Sexo</label>
+                        <select class="form-control form-control-sm" name="id_sexo">
                             @foreach($sexos as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="id_etnia">Grupo Etnico</label>
-                        <select class="form-control" id="id_etnia" name="id_etnia">
+                        <label class="filter-label">Grupo étnico</label>
+                        <select class="form-control form-control-sm" name="id_etnia">
                             @foreach($etnias as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="id_lugar_residencia_depto">Departamento de Residencia</label>
-                        <select class="form-control" id="id_lugar_residencia_depto" name="id_lugar_residencia_depto">
+                        <label class="filter-label">Departamento de residencia</label>
+                        <select class="form-control form-control-sm" name="id_lugar_residencia_depto">
                             @foreach($territorios as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
                             @endforeach
@@ -216,75 +200,72 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-file-excel mr-2"></i>Descargar Excel
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-excel mr-1"></i>Descargar Excel de personas
                     </button>
                 </div>
             </form>
         </div>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card card-info">
+        {{-- Usuarios (solo Admin) --}}
+        @if(Auth::user()->id_nivel == 1)
+        <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Contenido de los Archivos Excel</h3>
+                <h3 class="card-title"><i class="fas fa-user-shield mr-2 text-muted"></i>Exportar usuarios</h3>
+            </div>
+            <form action="{{ route('exportar.usuarios') }}" method="POST">
+                @csrf
+                <div class="card-body">
+                    <p class="text-muted small mb-0">
+                        Listado completo de usuarios: nombre, correo, rol, dependencia, fecha de registro y texto de compromisos firmados.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-excel mr-1"></i>Descargar Excel de usuarios
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {{-- Traza (solo Admin) --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-history mr-2 text-muted"></i>Exportar traza de actividad</h3>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-microphone text-primary mr-2"></i>Exportacion de Entrevistas</h6>
-                        <p class="text-muted">El archivo Excel incluye los siguientes campos organizados por secciones:</p>
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <strong>Datos Tecnicos:</strong>
-                                <span class="text-muted">ID, Codigo, Fecha de creacion</span>
-                            </li>
-                            <li class="mb-2">
-                                <strong>Datos Testimoniales:</strong>
-                                <span class="text-muted">Titulo, Dependencia, Tipo testimonio, Formato(s), Num. testimoniantes, Lugar de toma, Modalidad, Idioma(s), Detalle idiomas, Fechas de toma, Necesidades reparacion, Areas compatibles, Anexos, Observaciones, Entrevistador</span>
-                            </li>
-                            <li class="mb-2">
-                                <strong>Testimoniantes:</strong>
-                                <span class="text-muted">Nombres, Tipo (victima/testigo/familiar), Estado de consentimiento</span>
-                            </li>
-                            <li class="mb-2">
-                                <strong>Contenido:</strong>
-                                <span class="text-muted">Fechas de hechos, Poblaciones mencionadas, Otras poblaciones, Ocupaciones, Otras ocupaciones, Hechos victimizantes, Otros hechos, Practicas de resistencia, Detalle resistencias, Detalle grupos etnicos, Responsables colectivos e individuales, Temas abordados</span>
-                            </li>
-                            <li class="mb-2">
-                                <strong>Adjuntos:</strong>
-                                <span class="text-muted">Tiene adjuntos, Cantidad total, Tipos de adjuntos, Cantidad por tipo (audio/video/documento), Duracion total</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-users text-success mr-2"></i>Exportacion de Personas</h6>
-                        <p class="text-muted">El archivo Excel incluye:</p>
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <strong>Identificacion:</strong>
-                                <span class="text-muted">Nombres, Apellidos, Tipo documento, Numero documento</span>
-                            </li>
-                            <li class="mb-2">
-                                <strong>Datos personales:</strong>
-                                <span class="text-muted">Fecha y lugar de nacimiento, Sexo, Etnia, Ocupacion</span>
-                            </li>
-                            <li class="mb-2">
-                                <strong>Contacto:</strong>
-                                <span class="text-muted">Lugar de residencia, Telefono, Email</span>
-                            </li>
-                        </ul>
-
-                        <div class="alert alert-warning mt-4">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            <strong>Nota de seguridad:</strong> Todas las exportaciones quedan registradas en la traza de actividad del sistema. Maneje la informacion con responsabilidad.
-                        </div>
-                    </div>
-                </div>
+                <p class="text-muted small mb-0">
+                    La traza se exporta desde su propia vista, donde se pueden aplicar filtros antes de descargar.
+                </p>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('traza.index') }}" class="btn btn-primary">
+                    <i class="fas fa-filter mr-1"></i>Ir a Traza
+                </a>
             </div>
         </div>
+        @endif
+
     </div>
+
 </div>
+@endsection
+
+@section('css')
+<style>
+.filter-section-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6c757d;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: .25rem;
+    margin-bottom: .75rem;
+}
+.filter-label {
+    font-size: .8rem;
+    color: #495057;
+    margin-bottom: .2rem;
+}
+</style>
 @endsection
