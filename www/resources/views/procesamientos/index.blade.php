@@ -343,9 +343,10 @@ function fmtDur($seg) {
                                 'aprobada'        => 'Aprobada',
                             ][$asig->estado] ?? $asig->estado;
                             $duracion = $asig->id_adjunto ? $asig->duracion_audio : $asig->duracion_total;
-                            $historial = $asig->historial_comentarios ? json_decode($asig->historial_comentarios, true) : [];
-                            $rechazos = array_filter($historial ?? [], fn($h) => $h['accion'] === 'rechazada');
-                            $aprobaciones = array_filter($historial ?? [], fn($h) => $h['accion'] === 'aprobada');
+                            $historialRaw = $asig->historial_comentarios ? json_decode($asig->historial_comentarios, true) : [];
+                            $historial = is_array($historialRaw) ? $historialRaw : [];
+                            $rechazos = array_filter($historial, fn($h) => $h['accion'] === 'rechazada');
+                            $aprobaciones = array_filter($historial, fn($h) => $h['accion'] === 'aprobada');
                             $comentarioEstado = null;
                             if (in_array($asig->estado, ['aprobada', 'rechazada'])) {
                                 $filtroComentario = $asig->estado === 'aprobada' ? array_values($aprobaciones) : array_values($rechazos);
