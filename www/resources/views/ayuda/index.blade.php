@@ -5,6 +5,28 @@
 @section('content_header', 'Ayuda')
 
 @section('content')
+
+{{-- Manual de usuario --}}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card card-secondary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-book mr-2"></i>
+                    Manual de Usuario
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Descargue el manual completo del Módulo de Escucha CNMH con instrucciones detalladas para todos los perfiles de usuario.</p>
+                <a href="{{ asset('documentos/manual_modulo_escucha.pdf') }}" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    Descargar Manual de Usuario (PDF)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card card-primary card-outline">
@@ -311,7 +333,7 @@
             <div class="card-body">
                 <p>Si tiene problemas tecnicos o necesita asistencia adicional, contacte al equipo de soporte:</p>
                 <ul class="list-unstyled">
-                    <li><i class="fas fa-envelope mr-2 text-muted"></i> soporte@ejemplo.com</li>
+                    <li><i class="fas fa-envelope mr-2 text-muted"></i> leonardo.sarmiento@cnmh.gov.co</li>
                     <li><i class="fas fa-clock mr-2 text-muted"></i> Lunes a Viernes, 8:00 AM - 6:00 PM</li>
                 </ul>
             </div>
