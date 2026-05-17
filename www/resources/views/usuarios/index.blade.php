@@ -20,7 +20,7 @@
                 </form>
             </div>
             <div class="col-md-6 text-right">
-                <a href="{{ route('usuarios.create') }}" class="btn btn-primary">
+                <a href="{{ route('usuarios.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus mr-1"></i> Nuevo Usuario
                 </a>
             </div>

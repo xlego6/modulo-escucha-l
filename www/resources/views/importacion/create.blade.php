@@ -257,7 +257,7 @@ document.getElementById('btn-add-mapping').addEventListener('click', function ()
                 name="path_mappings[${mappingIdx}][linux]" placeholder="/mnt/punto">
         </div>
         <div class="col-1">
-            <button type="button" class="btn btn-xs btn-outline-danger mt-1 btn-remove-mapping">
+            <button type="button" class="btn btn-sm btn-outline-danger mt-1 btn-remove-mapping">
                 <i class="fas fa-times"></i>
             </button>
         </div>`;

@@ -23,7 +23,9 @@ class PersonaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Persona::query();
+        $query = Persona::whereIn('id_persona', function($q) {
+            $q->select('id_persona')->from('fichas.persona_entrevistada');
+        });
 
         // Filtros
         if ($request->filled('nombre')) {
@@ -34,8 +36,31 @@ class PersonaController extends Controller
             });
         }
 
-        if ($request->filled('documento')) {
-            $query->where('num_documento', 'ILIKE', '%' . $request->documento . '%');
+        if ($request->filled('cod_entrevista')) {
+            $query->whereIn('id_persona', function($q) use ($request) {
+                $q->select('id_persona')
+                  ->from('fichas.persona_entrevistada')
+                  ->join('esclarecimiento.e_ind_fvt', 'fichas.persona_entrevistada.id_e_ind_fvt', '=', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                  ->where('esclarecimiento.e_ind_fvt.entrevista_codigo', 'ILIKE', '%' . $request->cod_entrevista . '%');
+            });
+        }
+
+        if ($request->filled('fec_carga_desde')) {
+            $query->whereIn('id_persona', function($q) use ($request) {
+                $q->select('id_persona')
+                  ->from('fichas.persona_entrevistada')
+                  ->join('esclarecimiento.e_ind_fvt', 'fichas.persona_entrevistada.id_e_ind_fvt', '=', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                  ->whereDate('esclarecimiento.e_ind_fvt.created_at', '>=', $request->fec_carga_desde);
+            });
+        }
+
+        if ($request->filled('fec_carga_hasta')) {
+            $query->whereIn('id_persona', function($q) use ($request) {
+                $q->select('id_persona')
+                  ->from('fichas.persona_entrevistada')
+                  ->join('esclarecimiento.e_ind_fvt', 'fichas.persona_entrevistada.id_e_ind_fvt', '=', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                  ->whereDate('esclarecimiento.e_ind_fvt.created_at', '<=', $request->fec_carga_hasta);
+            });
         }
 
         if ($request->filled('id_sexo')) {

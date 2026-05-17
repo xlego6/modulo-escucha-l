@@ -152,7 +152,7 @@
                     </td>
                     <td class="text-center">
                         @if($permiso->rel_adjunto)
-                            <a href="{{ route('permisos.descargar_soporte', $permiso->id_permiso) }}" class="btn btn-xs btn-outline-primary" title="Descargar soporte">
+                            <a href="{{ route('permisos.descargar_soporte', $permiso->id_permiso) }}" class="btn btn-sm btn-outline-primary" title="Descargar soporte">
                                 <i class="fas fa-file-pdf"></i>
                             </a>
                         @else
@@ -169,14 +169,14 @@
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('permisos.show', $permiso->id_permiso) }}" class="btn btn-xs btn-info" title="Ver detalle">
+                        <a href="{{ route('permisos.show', $permiso->id_permiso) }}" class="btn btn-sm btn-info" title="Ver detalle">
                             <i class="fas fa-eye"></i>
                         </a>
                         @if($permiso->id_estado != 2)
                         <form action="{{ route('permisos.destroy', $permiso->id_permiso) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Esta seguro de revocar este permiso?');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-xs btn-danger" title="Revocar">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Revocar">
                                 <i class="fas fa-ban"></i>
                             </button>
                         </form>

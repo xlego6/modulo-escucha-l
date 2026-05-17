@@ -11,7 +11,7 @@
                 <p class="mb-0 text-muted">Administre los roles del sistema y sus permisos por modulo.</p>
             </div>
             <div class="col-md-4 text-right">
-                <a href="{{ route('roles.create') }}" class="btn btn-primary">
+                <a href="{{ route('roles.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus mr-1"></i> Nuevo Rol
                 </a>
             </div>

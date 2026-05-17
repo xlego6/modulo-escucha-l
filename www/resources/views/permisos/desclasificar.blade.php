@@ -131,7 +131,7 @@
                                 <form action="{{ route('permisos.destroy', $permiso->id_permiso) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Revocar este permiso?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-xs btn-danger" title="Revocar">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Revocar">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </form>

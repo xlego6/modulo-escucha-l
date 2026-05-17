@@ -124,12 +124,12 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('catalogos.items.edit', [$catalogo->id_cat, $item->id_item]) }}" class="btn btn-warning btn-xs" title="Editar">
+                                <a href="{{ route('catalogos.items.edit', [$catalogo->id_cat, $item->id_item]) }}" class="btn btn-warning btn-sm" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form action="{{ route('catalogos.items.toggle', [$catalogo->id_cat, $item->id_item]) }}" method="POST" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-{{ $item->habilitado ? 'danger' : 'success' }} btn-xs" title="{{ $item->habilitado ? 'Deshabilitar' : 'Habilitar' }}">
+                                    <button type="submit" class="btn btn-{{ $item->habilitado ? 'danger' : 'success' }} btn-sm" title="{{ $item->habilitado ? 'Deshabilitar' : 'Habilitar' }}">
                                         <i class="fas fa-{{ $item->habilitado ? 'ban' : 'check' }}"></i>
                                     </button>
                                 </form>

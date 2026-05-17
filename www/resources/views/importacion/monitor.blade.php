@@ -203,7 +203,7 @@ function actualizarMonitor() {
             var etiq    = { pendiente: 'Pendiente', procesando: 'Procesando', completado: 'Completado', error: 'Error' }[exp.estado] || exp.estado;
             var detalle = '';
             if (exp.error)        detalle = '<span class="text-danger small">' + $('<div>').text(exp.error).html() + '</span>';
-            if (exp.id_e_ind_fvt) detalle += ' <a href="/entrevistas/' + exp.id_e_ind_fvt + '" target="_blank" class="btn btn-xs btn-outline-primary ml-1"><i class="fas fa-external-link-alt"></i> Ver</a>';
+            if (exp.id_e_ind_fvt) detalle += ' <a href="/entrevistas/' + exp.id_e_ind_fvt + '" target="_blank" class="btn btn-sm btn-outline-primary ml-1"><i class="fas fa-external-link-alt"></i> Ver</a>';
 
             html += '<tr>'
                 + '<td><strong>' + exp.id_csv + '</strong></td>'

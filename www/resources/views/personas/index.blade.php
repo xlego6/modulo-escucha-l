@@ -7,11 +7,6 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Filtros de busqueda</h3>
-        <div class="card-tools">
-            <a href="{{ route('personas.create') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Nueva Persona
-            </a>
-        </div>
     </div>
     <div class="card-body">
         <form method="GET" action="{{ route('personas.index') }}" class="row">
@@ -23,8 +18,8 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Documento</label>
-                    <input type="text" name="documento" class="form-control form-control-sm" value="{{ request('documento') }}" placeholder="Numero de documento">
+                    <label>Código de entrevista</label>
+                    <input type="text" name="cod_entrevista" class="form-control form-control-sm" value="{{ request('cod_entrevista') }}" placeholder="Código de entrevista...">
                 </div>
             </div>
             <div class="col-md-2">
@@ -53,6 +48,18 @@
                     <button type="submit" class="btn btn-info btn-sm btn-block">
                         <i class="fas fa-search"></i>
                     </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Fecha de carga desde</label>
+                    <input type="date" name="fec_carga_desde" class="form-control form-control-sm" value="{{ request('fec_carga_desde') }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Fecha de carga hasta</label>
+                    <input type="date" name="fec_carga_hasta" class="form-control form-control-sm" value="{{ request('fec_carga_hasta') }}">
                 </div>
             </div>
         </form>
