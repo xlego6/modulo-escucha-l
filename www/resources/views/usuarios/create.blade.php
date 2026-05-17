@@ -20,7 +20,7 @@
 
             <div class="row">
                 <div class="col-md-6">
-                    <h5 class="mb-3">Datos de Cuenta</h5>
+                    <h5 class="text-primary mb-3"><i class="fas fa-user"></i> Datos de Cuenta</h5>
 
                     <div class="form-group">
                         <label for="name">Nombre Completo <span class="text-danger">*</span></label>
@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="col-md-6">
-                    <h5 class="mb-3">Perfil y Permisos</h5>
+                    <h5 class="text-primary mb-3"><i class="fas fa-shield-alt"></i> Perfil y Permisos</h5>
 
                     <div class="form-group">
                         <label for="id_nivel">Nivel de Acceso <span class="text-danger">*</span></label>

@@ -147,7 +147,7 @@
                         <small class="text-muted">{{ $traza->ip }}</small>
                     </td>
                     <td>
-                        <a href="{{ route('traza.show', $traza->id_traza_actividad) }}" class="btn btn-xs btn-info" title="Ver detalle">
+                        <a href="{{ route('traza.show', $traza->id_traza_actividad) }}" class="btn btn-sm btn-info" title="Ver detalle">
                             <i class="fas fa-eye"></i>
                         </a>
                     </td>

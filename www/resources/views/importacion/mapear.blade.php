@@ -103,7 +103,7 @@
                         <i class="fas fa-check-circle text-success"></i>
                         <strong>{{ count($exactos) }}</strong> coincidencia(s) exacta(s) — auto-mapeadas
                     </span>
-                    <a data-toggle="collapse" href="#exact-{{ $campo }}" class="btn btn-xs btn-outline-secondary">
+                    <a data-toggle="collapse" href="#exact-{{ $campo }}" class="btn btn-sm btn-outline-secondary">
                         <i class="fas fa-eye"></i> Revisar
                     </a>
                 </div>

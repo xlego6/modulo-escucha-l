@@ -267,7 +267,7 @@
                             <td>
                                 <span class="badge badge-info mr-1">{{ $totalAudios }}</span>
                                 @if($totalAudios > 0)
-                                <button class="btn btn-xs btn-outline-secondary btn-expandir"
+                                <button class="btn btn-sm btn-outline-secondary btn-expandir"
                                         data-id="{{ $entrevista->id_e_ind_fvt }}"
                                         title="Mostrar/ocultar audios">
                                     <i class="fas fa-chevron-up"></i>
@@ -324,7 +324,7 @@
                                             </td>
                                             <td style="width:80px;"></td>
                                             <td style="width:90px;">
-                                                <button class="btn btn-xs btn-primary btn-transcribir-audio"
+                                                <button class="btn btn-sm btn-primary btn-transcribir-audio"
                                                         data-id="{{ $audio->id_adjunto }}"
                                                         data-nombre="{{ $audio->nombre_original }}"
                                                         data-entrevista="{{ $entrevista->id_e_ind_fvt }}"

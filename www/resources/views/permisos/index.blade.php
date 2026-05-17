@@ -59,13 +59,13 @@
                     <td>
                         <form action="{{ route('permisos.aprobar', $sol->id_permiso) }}" method="POST" onsubmit="return confirm('¿Aprobar esta solicitud?')">
                             @csrf
-                            <div class="d-flex flex-column" style="gap:4px">
-                                <div class="d-flex" style="gap:4px">
-                                    <input type="date" name="fecha_desde" class="form-control form-control-sm" placeholder="Desde" title="Vigencia desde (opcional)">
+                            <div class="d-flex flex-column">
+                                <div class="d-flex mb-1">
+                                    <input type="date" name="fecha_desde" class="form-control form-control-sm mr-1" placeholder="Desde" title="Vigencia desde (opcional)">
                                     <input type="date" name="fecha_hasta" class="form-control form-control-sm" placeholder="Hasta" title="Vigencia hasta (opcional)">
                                 </div>
-                                <div class="d-flex" style="gap:4px">
-                                    <button type="submit" class="btn btn-sm btn-success flex-fill">
+                                <div class="d-flex">
+                                    <button type="submit" class="btn btn-sm btn-success flex-fill mr-1">
                                         <i class="fas fa-check"></i> Aprobar
                                     </button>
                                     <button type="button" class="btn btn-sm btn-danger"

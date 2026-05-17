@@ -327,7 +327,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                                 <label class="small mb-1">Comentario (opcional)</label>
                                 <textarea name="comentario" id="comentario-aprobacion" class="form-control form-control-sm" rows="2" placeholder="Comentario de aprobacion..."></textarea>
                                 <div class="d-flex justify-content-between align-items-center mt-1">
-                                    <button type="button" class="btn btn-xs btn-outline-secondary" onclick="guardarBorradorComentario('aprobacion')">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="guardarBorradorComentario('aprobacion')">
                                         <i class="fas fa-save mr-1"></i>Guardar borrador
                                     </button>
                                     <small id="borrador-aprobacion-estado" class="text-success" style="display:none">
@@ -482,7 +482,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                         <textarea name="comentario" id="comentario-rechazo" class="form-control" rows="4" required
                                   placeholder="Ej: Hay errores de ortografia en varios parrafos. Revisar la seccion donde habla del evento del 15 de marzo..."></textarea>
                         <div class="d-flex justify-content-between align-items-center mt-1">
-                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="guardarBorradorComentario('rechazo')">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="guardarBorradorComentario('rechazo')">
                                 <i class="fas fa-save mr-1"></i>Guardar borrador
                             </button>
                             <small id="borrador-rechazo-estado" class="text-success" style="display:none">

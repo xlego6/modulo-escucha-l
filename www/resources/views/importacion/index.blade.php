@@ -10,7 +10,7 @@
                 <h1>Importación masiva de expedientes</h1>
             </div>
             <div class="col-sm-6 text-right">
-                <a href="{{ route('importacion.create') }}" class="btn btn-primary">
+                <a href="{{ route('importacion.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Nueva importación
                 </a>
             </div>
@@ -77,15 +77,15 @@
                             <td>{{ $imp->created_at->format('d/m/Y H:i') }}</td>
                             <td class="text-right">
                                 @if(in_array($imp->estado, ['mapeando']))
-                                <a href="{{ route('importacion.mapear', $imp->id_importacion) }}" class="btn btn-xs btn-info">
+                                <a href="{{ route('importacion.mapear', $imp->id_importacion) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-map"></i> Mapear
                                 </a>
                                 @elseif(in_array($imp->estado, ['confirmado']))
-                                <a href="{{ route('importacion.confirmar', $imp->id_importacion) }}" class="btn btn-xs btn-warning">
+                                <a href="{{ route('importacion.confirmar', $imp->id_importacion) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-check"></i> Confirmar
                                 </a>
                                 @elseif(in_array($imp->estado, ['procesando', 'completado', 'con_errores']))
-                                <a href="{{ route('importacion.monitor', $imp->id_importacion) }}" class="btn btn-xs btn-secondary">
+                                <a href="{{ route('importacion.monitor', $imp->id_importacion) }}" class="btn btn-sm btn-secondary">
                                     <i class="fas fa-chart-line"></i> Monitor
                                 </a>
                                 @endif
@@ -96,7 +96,7 @@
                                       onsubmit="return confirm('¿Borrar importación #{{ $imp->id_importacion }}? Se eliminarán los datos de la sesión (no los expedientes ya creados).')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-xs btn-danger ml-1" title="Cancelar y borrar">
+                                    <button type="submit" class="btn btn-sm btn-danger ml-1" title="Cancelar y borrar">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
