@@ -485,9 +485,14 @@ class ImportacionMasivaController extends Controller
         );
 
         $borrados = 0;
+        $sinPermiso = 0;
         foreach ($archivos as $archivo) {
-            $archivo->isDir() ? rmdir($archivo->getPathname()) : unlink($archivo->getPathname());
-            $borrados++;
+            $ruta = $archivo->getPathname();
+            if ($archivo->isDir()) {
+                @rmdir($ruta) ? $borrados++ : $sinPermiso++;
+            } else {
+                @unlink($ruta) ? $borrados++ : $sinPermiso++;
+            }
         }
 
         TrazaActividad::create([
@@ -496,9 +501,13 @@ class ImportacionMasivaController extends Controller
             'accion'     => 'vaciar_carpeta_importacion',
             'objeto'     => 'importacion',
             'id_registro' => 0,
-            'referencia' => "Carpeta de transcripciones vaciada ({$borrados} elementos eliminados)",
+            'referencia' => "Carpeta de transcripciones vaciada ({$borrados} eliminados, {$sinPermiso} sin permiso)",
             'ip'         => $request->ip(),
         ]);
+
+        if ($sinPermiso > 0) {
+            return back()->with('warning', "{$borrados} archivo(s) eliminados. {$sinPermiso} no se pudieron borrar por permisos del sistema — ver instrucciones abajo.");
+        }
 
         return back()->with('success', "Carpeta vaciada correctamente ({$borrados} archivos/carpetas eliminados).");
     }
