@@ -235,10 +235,15 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 </span>
             </div>
 
-            @if($asignacion->historial_comentarios && count($asignacion->historial_comentarios) > 0)
+            @php
+                $historialComentarios = is_array($asignacion->historial_comentarios)
+                    ? $asignacion->historial_comentarios
+                    : (json_decode($asignacion->historial_comentarios, true) ?? []);
+            @endphp
+            @if(count($historialComentarios) > 0)
             <div class="card-body py-2 px-3 border-bottom">
                 <h6 class="mb-2"><i class="fas fa-history mr-1 text-secondary"></i>Historial de revision</h6>
-                @foreach(array_reverse($asignacion->historial_comentarios) as $entrada)
+                @foreach(array_reverse($historialComentarios) as $entrada)
                 @php
                     $esRechazo = $entrada['accion'] === 'rechazada';
                     $fechaFmt = \Carbon\Carbon::parse($entrada['fecha'])->format('d/m/Y H:i');
