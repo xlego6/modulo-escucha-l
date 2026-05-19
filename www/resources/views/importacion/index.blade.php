@@ -34,6 +34,16 @@
         </div>
         @endif
 
+        @if(session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show">
+            {{ session('warning') }}
+            <hr class="my-2">
+            <small>Para resolver el problema de permisos, corre en el servidor:
+            <code>sudo chown -R www-data:www-data /var/www/storage/app/importaciones/transcripciones/</code></small>
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+        @endif
+
         @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show">
             {{ $errors->first() }}
