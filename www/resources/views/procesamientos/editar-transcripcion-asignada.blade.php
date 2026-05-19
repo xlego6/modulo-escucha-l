@@ -299,8 +299,10 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
             <div class="card-body p-2">
                 <div class="alert alert-success py-2 mb-2">
                     <i class="fas fa-lock mr-1"></i>
-                    <strong>Transcripción aprobada</strong> — acceso de lectura disponible hasta
-                    {{ $asignacion->fecha_revision->addDays(7)->format('d/m/Y') }}.
+                    <strong>Transcripción aprobada</strong>
+                    @if($asignacion->fecha_revision)
+                     — acceso de lectura disponible hasta {{ $asignacion->fecha_revision->addDays(30)->format('d/m/Y') }}.
+                    @endif
                 </div>
                 <div class="border rounded p-3 bg-light" style="min-height: 200px; font-family: monospace; white-space: pre-wrap; font-size: 13px;">{{ $asignacion->transcripcion_editada }}</div>
             </div>

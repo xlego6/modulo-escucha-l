@@ -1653,11 +1653,10 @@ class ProcesamientoController extends Controller
         $esSupervisor = RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion');
         $esTranscriptorAsignado = $asignacion->id_transcriptor == $user->id_entrevistador;
 
-        // Ventana de acceso de lectura para transcriptores en asignaciones aprobadas (7 días)
-        $diasVentanaLectura = 7;
+        // Ventana de acceso de lectura para transcriptores en asignaciones aprobadas (30 días)
+        $diasVentanaLectura = 30;
         $dentroDeVentana = $asignacion->estado === AsignacionTranscripcion::ESTADO_APROBADA
-            && $asignacion->fecha_revision
-            && $asignacion->fecha_revision->diffInDays(now()) <= $diasVentanaLectura;
+            && (!$asignacion->fecha_revision || $asignacion->fecha_revision->diffInDays(now()) <= $diasVentanaLectura);
 
         $soloLectura = false;
 

@@ -167,7 +167,7 @@
                                 <i class="fas fa-hourglass-half"></i> En revisión
                             </span>
                         @elseif($asignacion->estado == 'aprobada')
-                            @if($asignacion->fecha_revision && $asignacion->fecha_revision->diffInDays(now()) <= 7)
+                            @if(!$asignacion->fecha_revision || $asignacion->fecha_revision->diffInDays(now()) <= 30)
                                 <a href="{{ route('procesamientos.editar-asignacion', $asignacion->id_asignacion) }}"
                                    class="btn btn-sm btn-outline-success">
                                     <i class="fas fa-eye"></i> Ver
