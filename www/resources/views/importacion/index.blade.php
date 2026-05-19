@@ -127,6 +127,75 @@
             @endif
         </div>
 
+        {{-- Gestión de carpeta de transcripciones --}}
+        <div class="card card-outline card-secondary mt-4">
+            <div class="card-header py-2">
+                <h3 class="card-title">
+                    <i class="fas fa-folder-open mr-2"></i>Carpeta de archivos en el servidor
+                    <small class="text-muted ml-2" style="font-size:0.78rem; font-weight:normal;">
+                        storage/app/importaciones/transcripciones/
+                    </small>
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+
+                    {{-- Subir archivos --}}
+                    <div class="col-md-8">
+                        <p class="text-muted text-sm mb-2">
+                            Sube audios, videos o transcripciones (.txt) desde tu computador directamente a la carpeta del servidor.
+                        </p>
+                        <form method="POST" action="{{ route('importacion.subir_archivos') }}"
+                              enctype="multipart/form-data">
+                            @csrf
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="archivos"
+                                           name="archivos[]" multiple required>
+                                    <label class="custom-file-label" for="archivos">
+                                        Seleccionar archivos...
+                                    </label>
+                                </div>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-upload mr-1"></i> Subir al servidor
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted">Puedes seleccionar múltiples archivos. Tamaño máximo: 2 GB por archivo.</small>
+                        </form>
+                    </div>
+
+                    {{-- Vaciar carpeta --}}
+                    <div class="col-md-4 border-left">
+                        <p class="text-muted text-sm mb-2">
+                            Elimina todo el contenido de la carpeta del servidor (los archivos ya importados están a salvo en la base de datos).
+                        </p>
+                        <form method="POST" action="{{ route('importacion.vaciar_carpeta') }}"
+                              onsubmit="return confirm('¿Vaciar la carpeta de transcripciones del servidor? Esta acción no se puede deshacer.')">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash mr-1"></i> Vaciar carpeta del servidor
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 </section>
+
+@section('js')
+<script>
+// Mostrar nombres de archivos seleccionados en el input
+document.getElementById('archivos').addEventListener('change', function () {
+    const label = this.nextElementSibling;
+    const count = this.files.length;
+    label.textContent = count === 1 ? this.files[0].name : count + ' archivos seleccionados';
+});
+</script>
+@endsection
+
 @endsection
