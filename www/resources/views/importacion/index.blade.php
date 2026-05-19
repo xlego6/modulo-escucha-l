@@ -10,6 +10,12 @@
                 <h1>Importación masiva de expedientes</h1>
             </div>
             <div class="col-sm-6 text-right">
+                <a href="{{ asset('plantillas/plantilla_crear.csv') }}" download class="btn btn-outline-success btn-sm mr-1">
+                    <i class="fas fa-file-csv mr-1"></i> Plantilla carga
+                </a>
+                <a href="{{ asset('plantillas/plantilla_actualizar.csv') }}" download class="btn btn-outline-secondary btn-sm mr-2">
+                    <i class="fas fa-file-csv mr-1"></i> Plantilla actualización
+                </a>
                 <a href="{{ route('importacion.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Nueva importación
                 </a>
