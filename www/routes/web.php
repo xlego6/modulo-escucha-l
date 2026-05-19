@@ -91,6 +91,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('importacion-masiva/{id}/monitor',                 [ImportacionMasivaController::class, 'monitor'])->name('importacion.monitor');
             Route::get('importacion-masiva/{id}/estado',                  [ImportacionMasivaController::class, 'estado'])->name('importacion.estado');
             Route::delete('importacion-masiva/{id}',                      [ImportacionMasivaController::class, 'destroy'])->name('importacion.destroy');
+            Route::post('importacion-masiva/carpeta/vaciar',              [ImportacionMasivaController::class, 'vaciarCarpeta'])->name('importacion.vaciar_carpeta');
+            Route::post('importacion-masiva/carpeta/subir-archivos',      [ImportacionMasivaController::class, 'subirArchivos'])->name('importacion.subir_archivos');
         });
 
         // Exportar Excel: Solo Admin(1)

@@ -466,4 +466,72 @@ class ImportacionMasivaController extends Controller
         }
         return $resultado;
     }
+
+    // -------------------------------------------------------------------------
+    // Gestión de carpeta de transcripciones
+    // -------------------------------------------------------------------------
+
+    public function vaciarCarpeta(Request $request)
+    {
+        $dir = storage_path('app/importaciones/transcripciones');
+
+        if (!is_dir($dir)) {
+            return back()->with('success', 'La carpeta ya estaba vacía.');
+        }
+
+        $archivos = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        $borrados = 0;
+        foreach ($archivos as $archivo) {
+            $archivo->isDir() ? rmdir($archivo->getPathname()) : unlink($archivo->getPathname());
+            $borrados++;
+        }
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => Auth::id(),
+            'accion'     => 'vaciar_carpeta_importacion',
+            'objeto'     => 'importacion',
+            'id_registro' => 0,
+            'referencia' => "Carpeta de transcripciones vaciada ({$borrados} elementos eliminados)",
+            'ip'         => $request->ip(),
+        ]);
+
+        return back()->with('success', "Carpeta vaciada correctamente ({$borrados} archivos/carpetas eliminados).");
+    }
+
+    public function subirArchivos(Request $request)
+    {
+        $request->validate([
+            'archivos'   => 'required|array|min:1',
+            'archivos.*' => 'required|file|max:2097152', // 2 GB
+        ]);
+
+        $dir = storage_path('app/importaciones/transcripciones');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        $subidos = 0;
+        foreach ($request->file('archivos') as $archivo) {
+            $nombre = $archivo->getClientOriginalName();
+            $archivo->move($dir, $nombre);
+            $subidos++;
+        }
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => Auth::id(),
+            'accion'     => 'subir_archivos_importacion',
+            'objeto'     => 'importacion',
+            'id_registro' => 0,
+            'referencia' => "{$subidos} archivo(s) subido(s) a carpeta de transcripciones",
+            'ip'         => $request->ip(),
+        ]);
+
+        return back()->with('success', "{$subidos} archivo(s) subido(s) correctamente a la carpeta del servidor.");
+    }
 }
