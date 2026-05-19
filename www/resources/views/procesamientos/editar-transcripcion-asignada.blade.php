@@ -227,7 +227,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="card-title mb-0"><i class="fas fa-keyboard mr-2"></i>Transcripcion</h3>
-                <span class="badge badge-{{ $asignacion->estado == 'rechazada' ? 'danger' : 'info' }}">
+                <span class="badge badge-{{ $asignacion->estado == 'aprobada' ? 'success' : ($asignacion->estado == 'rechazada' ? 'danger' : 'info') }}">
                     {{ $asignacion->fmt_estado }} &mdash; {{ $entrevista->entrevista_codigo }}
                     @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
                         &mdash; <i class="fas fa-file-audio"></i> {{ \Illuminate\Support\Str::limit($asignacion->rel_adjunto->nombre_original, 30) }}
@@ -266,6 +266,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
             </div>
             @endif
 
+            @if(!($soloLectura ?? false))
             <form action="{{ route('procesamientos.guardar-asignacion', $asignacion->id_asignacion) }}" method="POST" id="formTranscripcion">
                 @csrf
                 <div class="card-body p-2">
@@ -293,6 +294,22 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     </div>
                 </div>
             </form>
+            @else
+            {{-- Modo solo lectura: transcripción aprobada dentro de la ventana de 7 días --}}
+            <div class="card-body p-2">
+                <div class="alert alert-success py-2 mb-2">
+                    <i class="fas fa-lock mr-1"></i>
+                    <strong>Transcripción aprobada</strong> — acceso de lectura disponible hasta
+                    {{ $asignacion->fecha_revision->addDays(7)->format('d/m/Y') }}.
+                </div>
+                <div class="border rounded p-3 bg-light" style="min-height: 200px; font-family: monospace; white-space: pre-wrap; font-size: 13px;">{{ $asignacion->transcripcion_editada }}</div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('procesamientos.edicion') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Volver
+                </a>
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -705,6 +722,7 @@ $(document).ready(function() {
     $(document).on('mouseup', function() { dragging = false; });
 });
 
+@if(!($soloLectura ?? false))
 // Heartbeat de tiempo activo de edición
 (function () {
     const heartbeatUrl = '{{ route("procesamientos.heartbeat", $asignacion->id_asignacion) }}';
@@ -724,5 +742,6 @@ $(document).ready(function() {
         });
     }, 30000);
 })();
+@endif
 </script>
 @endsection

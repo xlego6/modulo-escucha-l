@@ -1650,15 +1650,34 @@ class ProcesamientoController extends Controller
             }
         ])->findOrFail($id);
 
-        // Puede editar si es supervisor (puedeEditar en el módulo) o es el transcriptor asignado
-        if (!RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion') &&
-            $asignacion->id_transcriptor != $user->id_entrevistador) {
+        $esSupervisor = RolModuloPermiso::puedeEditar($user->id_nivel, 'procesamientos.transcripcion');
+        $esTranscriptorAsignado = $asignacion->id_transcriptor == $user->id_entrevistador;
+
+        // Ventana de acceso de lectura para transcriptores en asignaciones aprobadas (7 días)
+        $diasVentanaLectura = 7;
+        $dentroDeVentana = $asignacion->estado === AsignacionTranscripcion::ESTADO_APROBADA
+            && $asignacion->fecha_revision
+            && $asignacion->fecha_revision->diffInDays(now()) <= $diasVentanaLectura;
+
+        $soloLectura = false;
+
+        if (!$esSupervisor && !$esTranscriptorAsignado) {
             flash('No tiene permisos para editar esta transcripción.')->error();
             return redirect()->route('procesamientos.edicion');
         }
 
+        if (!$esSupervisor && $esTranscriptorAsignado) {
+            if ($asignacion->estado === AsignacionTranscripcion::ESTADO_APROBADA) {
+                if (!$dentroDeVentana) {
+                    flash('El período de acceso a esta transcripción aprobada ha expirado.')->warning();
+                    return redirect()->route('procesamientos.edicion');
+                }
+                $soloLectura = true;
+            }
+        }
+
         // Marcar como en edicion si estaba asignada o rechazada
-        if (in_array($asignacion->estado, [
+        if (!$soloLectura && in_array($asignacion->estado, [
             AsignacionTranscripcion::ESTADO_ASIGNADA,
             AsignacionTranscripcion::ESTADO_RECHAZADA
         ])) {
@@ -1676,7 +1695,7 @@ class ProcesamientoController extends Controller
             $entrevista->setRelation('rel_adjuntos', collect([$asignacion->rel_adjunto]));
         }
 
-        return view('procesamientos.editar-transcripcion-asignada', compact('asignacion', 'entrevista'));
+        return view('procesamientos.editar-transcripcion-asignada', compact('asignacion', 'entrevista', 'soloLectura'));
     }
 
     /**

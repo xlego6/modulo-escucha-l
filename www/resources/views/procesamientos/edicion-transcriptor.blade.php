@@ -167,9 +167,16 @@
                                 <i class="fas fa-hourglass-half"></i> En revisión
                             </span>
                         @elseif($asignacion->estado == 'aprobada')
-                            <span class="text-success">
-                                <i class="fas fa-check-circle"></i> Completada
-                            </span>
+                            @if($asignacion->fecha_revision && $asignacion->fecha_revision->diffInDays(now()) <= 7)
+                                <a href="{{ route('procesamientos.editar-asignacion', $asignacion->id_asignacion) }}"
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                            @else
+                                <span class="text-success">
+                                    <i class="fas fa-check-circle"></i> Completada
+                                </span>
+                            @endif
                         @endif
                     </td>
                 </tr>
