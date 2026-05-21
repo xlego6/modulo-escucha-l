@@ -156,12 +156,10 @@ class PermisoController extends Controller
      */
     public function create(Request $request)
     {
-        $tipos = [
-            '' => '-- Seleccione --',
-            1 => 'Lectura',
-            2 => 'Escritura',
-            3 => 'Completo',
-        ];
+        $user = Auth::user();
+        $tipos = $user->id_nivel == 5
+            ? ['' => '-- Seleccione --', 1 => 'Lectura']
+            : ['' => '-- Seleccione --', 1 => 'Lectura', 2 => 'Escritura', 3 => 'Completo'];
 
         // Pre-seleccionar entrevista si viene por parametro
         $entrevistaPreselect = null;
@@ -230,12 +228,20 @@ class PermisoController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+
+        $tiposPermitidos = $user->id_nivel == 5 ? '1' : '1,2,3';
         $request->validate([
             'id_entrevistador' => 'required|integer',
-            'id_tipo' => 'required|in:1,2,3',
+            'id_tipo' => "required|in:{$tiposPermitidos}",
             'justificacion' => 'required|string|max:500',
             'archivo_soporte' => 'nullable|file|mimes:pdf|max:10240',
         ]);
+
+        if ($user->id_nivel == 5 && (int) $request->id_tipo !== Permiso::TIPO_LECTURA) {
+            return redirect()->back()->withInput()
+                ->withErrors(['id_tipo' => 'El gestor de conocimiento solo puede otorgar permisos de lectura.']);
+        }
 
         // Puede venir id_e_ind_fvt o codigos_entrevista
         if (!$request->filled('id_e_ind_fvt') && !$request->filled('codigos_entrevista')) {
@@ -246,8 +252,6 @@ class PermisoController extends Controller
         if (!$entrevistador) {
             return redirect()->back()->withInput()->withErrors(['id_entrevistador' => 'El entrevistador seleccionado no existe.']);
         }
-
-        $user = Auth::user();
 
         // Procesar archivo de soporte si se adjuntó
         $idAdjunto = null;
@@ -823,6 +827,11 @@ class PermisoController extends Controller
             if (!$gestorEntrevistador || !$permiso->rel_entrevista ||
                 $permiso->rel_entrevista->id_dependencia_origen != $gestorEntrevistador->id_dependencia_origen) {
                 flash('No tiene permisos para aprobar esta solicitud.')->error();
+                return redirect()->route('permisos.index');
+            }
+            // Gestor de conocimiento (nivel 5): solo puede aprobar solicitudes de lectura
+            if ($user->id_nivel == 5 && $permiso->id_tipo != Permiso::TIPO_LECTURA) {
+                flash('El gestor de conocimiento solo puede aprobar solicitudes de permiso de lectura.')->error();
                 return redirect()->route('permisos.index');
             }
         } else {
