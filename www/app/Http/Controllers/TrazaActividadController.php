@@ -35,7 +35,6 @@ class TrazaActividadController extends Controller
             $entrevistadorGestor = Entrevistador::where('id_usuario', $user->id)->first();
             if ($entrevistadorGestor && $entrevistadorGestor->id_dependencia_origen) {
                 $codigosDependencia = Entrevista::where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
-                    ->where('id_activo', 1)
                     ->pluck('entrevista_codigo');
                 $query->where(function($q) use ($user, $codigosDependencia) {
                     $q->where('id_usuario', $user->id)

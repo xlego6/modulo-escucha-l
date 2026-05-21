@@ -356,8 +356,8 @@ class PermisoController extends Controller
                     'accion' => 'otorgar_permiso',
                     'objeto' => 'permiso',
                     'id_registro' => $permiso->id_permiso,
-                    'referencia' => $entrevista->entrevista_codigo,
-                    'codigo' => $entrevistador->rel_usuario->name ?? '',
+                    'codigo' => $entrevista->entrevista_codigo,
+                    'referencia' => $entrevistador->rel_usuario->name ?? '',
                     'ip' => $request->ip(),
                 ]);
             }
@@ -415,8 +415,8 @@ class PermisoController extends Controller
             'accion' => 'revocar_permiso',
             'objeto' => 'permiso',
             'id_registro' => $id,
-            'referencia' => $permiso->codigo_entrevista ?? $permiso->id_e_ind_fvt,
-            'codigo' => $permiso->rel_entrevistador->rel_usuario->name ?? '',
+            'codigo' => $permiso->codigo_entrevista ?? null,
+            'referencia' => $permiso->rel_entrevistador->rel_usuario->name ?? ($permiso->id_e_ind_fvt ?? ''),
             'ip' => $request->ip(),
         ]);
 
@@ -599,8 +599,8 @@ class PermisoController extends Controller
                     'accion' => 'desclasificar',
                     'objeto' => 'permiso',
                     'id_registro' => $permiso->id_permiso,
-                    'referencia' => $entrevista->entrevista_codigo,
-                    'codigo' => $entrevistador->rel_usuario->name ?? '',
+                    'codigo' => $entrevista->entrevista_codigo,
+                    'referencia' => $entrevistador->rel_usuario->name ?? '',
                     'ip' => $request->ip(),
                 ]);
 
@@ -785,6 +785,7 @@ class PermisoController extends Controller
             'accion' => 'solicitar_permiso',
             'objeto' => 'permiso',
             'id_registro' => $permiso->id_permiso,
+            'codigo' => $entrevista->entrevista_codigo,
             'referencia' => $entrevista->entrevista_codigo . ' (' . $request->tipo_solicitud . ')',
             'ip' => $request->ip(),
         ]);
@@ -851,6 +852,7 @@ class PermisoController extends Controller
                     'accion' => 'eliminar',
                     'objeto' => 'entrevista',
                     'id_registro' => $permiso->id_e_ind_fvt,
+                    'codigo' => $permiso->codigo_entrevista,
                     'referencia' => 'Eliminación aprobada: ' . $permiso->codigo_entrevista,
                     'ip' => $request->ip(),
                 ]);
@@ -862,6 +864,7 @@ class PermisoController extends Controller
                 'accion' => 'aprobar_solicitud',
                 'objeto' => 'permiso',
                 'id_registro' => $permiso->id_permiso,
+                'codigo' => $permiso->codigo_entrevista,
                 'referencia' => $permiso->codigo_entrevista . ' (' . $permiso->tipo_solicitud . ')',
                 'ip' => $request->ip(),
             ]);
@@ -928,6 +931,7 @@ class PermisoController extends Controller
             'accion' => 'rechazar_solicitud',
             'objeto' => 'permiso',
             'id_registro' => $permiso->id_permiso,
+            'codigo' => $permiso->codigo_entrevista,
             'referencia' => $permiso->codigo_entrevista . ' (' . $permiso->tipo_solicitud . ')',
             'ip' => $request->ip(),
         ]);

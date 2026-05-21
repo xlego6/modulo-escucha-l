@@ -1624,6 +1624,7 @@ class ProcesamientoController extends Controller
             'accion' => 'asignar_transcripcion',
             'objeto' => 'transcripcion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => Entrevista::find($request->id_e_ind_fvt)?->entrevista_codigo,
             'referencia' => 'Asignación de transcripción para entrevista #' . $request->id_e_ind_fvt,
             'ip' => $request->ip(),
         ]);
@@ -1724,6 +1725,7 @@ class ProcesamientoController extends Controller
             'accion' => 'editar_transcripcion',
             'objeto' => 'transcripcion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => 'Edición de transcripción asignada (entrevista #' . $asignacion->id_e_ind_fvt . ')',
             'ip' => $request->ip(),
         ]);
@@ -1773,6 +1775,7 @@ class ProcesamientoController extends Controller
             'accion' => 'enviar_revision',
             'objeto' => 'transcripcion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => 'Envío a revisión de transcripción (entrevista #' . $asignacion->id_e_ind_fvt . ')',
             'ip' => request()->ip(),
         ]);
@@ -1872,6 +1875,7 @@ class ProcesamientoController extends Controller
             'accion' => 'aprobar_transcripcion',
             'objeto' => 'transcripcion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => 'Aprobación de transcripción asignada (entrevista #' . $asignacion->id_e_ind_fvt . ')',
             'ip' => $request->ip(),
         ]);
@@ -1921,6 +1925,7 @@ class ProcesamientoController extends Controller
             'accion' => 'rechazar_transcripcion',
             'objeto' => 'transcripcion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => 'Rechazo de transcripción: ' . $request->comentario,
             'ip' => $request->ip(),
         ]);
@@ -1951,6 +1956,7 @@ class ProcesamientoController extends Controller
             'accion' => 'desasignar_transcripcion',
             'objeto' => 'transcripcion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => "Desasignación de transcripción (entrevista #{$asignacion->id_e_ind_fvt}, estado anterior: {$estadoAnterior}, transcriptor: {$nombreTranscriptor})",
             'ip' => request()->ip(),
         ]);
@@ -2077,6 +2083,7 @@ class ProcesamientoController extends Controller
             'accion' => 'asignar_anonimizacion',
             'objeto' => 'anonimizacion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => Entrevista::find($request->id_e_ind_fvt)?->entrevista_codigo,
             'referencia' => 'Asignación de anonimización para entrevista #' . $request->id_e_ind_fvt,
             'ip' => $request->ip(),
         ]);
@@ -2250,6 +2257,7 @@ class ProcesamientoController extends Controller
             'accion' => 'editar_anonimizacion',
             'objeto' => 'anonimizacion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => 'Edición de anonimización asignada (entrevista #' . $asignacion->id_e_ind_fvt . ')',
             'ip' => $request->ip(),
         ]);
@@ -2288,6 +2296,7 @@ class ProcesamientoController extends Controller
             'accion' => 'enviar_revision',
             'objeto' => 'anonimizacion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => 'Envío a revisión de anonimización (entrevista #' . $asignacion->id_e_ind_fvt . ')',
             'ip' => request()->ip(),
         ]);
@@ -2373,6 +2382,7 @@ class ProcesamientoController extends Controller
             'accion' => 'aprobar_anonimizacion',
             'objeto' => 'anonimizacion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $entrevista->entrevista_codigo,
             'referencia' => 'Aprobación de anonimización (entrevista #' . $asignacion->id_e_ind_fvt . ')',
             'ip' => $request->ip(),
         ]);
@@ -2420,6 +2430,7 @@ class ProcesamientoController extends Controller
             'accion' => 'rechazar_anonimizacion',
             'objeto' => 'anonimizacion',
             'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
             'referencia' => 'Rechazo de anonimización: ' . $request->comentario,
             'ip' => $request->ip(),
         ]);
