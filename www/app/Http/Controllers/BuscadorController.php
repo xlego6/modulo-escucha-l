@@ -27,7 +27,13 @@ class BuscadorController extends Controller
     public function index(Request $request)
     {
         $termino = $request->get('q', '');
-        $tiene_busqueda = strlen(trim($termino)) >= 2;
+        $tiene_texto   = strlen(trim($termino)) >= 2;
+        $tiene_filtros = $request->filled('id_departamento')
+                      || $request->filled('id_municipio')
+                      || $request->filled('id_hecho_victimizante')
+                      || $request->filled('id_resistencia')
+                      || $request->filled('id_dependencia');
+        $tiene_busqueda = $tiene_texto || $tiene_filtros;
 
         $perPage     = 25;
         $limiteTotal = 500;
@@ -50,8 +56,8 @@ class BuscadorController extends Controller
 
         if ($tiene_busqueda) {
             $todasEntrevistas = $this->buscarEntrevistas($termino, $request, $limiteTotal);
-            $todasPersonas    = $this->buscarPersonas($termino, $request, $limiteTotal);
-            $todosDocumentos  = $this->buscarDocumentos($termino, $request, $limiteTotal);
+            $todasPersonas    = $tiene_texto ? $this->buscarPersonas($termino, $request, $limiteTotal) : collect();
+            $todosDocumentos  = $tiene_texto ? $this->buscarDocumentos($termino, $request, $limiteTotal) : collect();
 
             $totalE = $todasEntrevistas->count();
             $totalP = $todasPersonas->count();
@@ -89,17 +95,19 @@ class BuscadorController extends Controller
                 ['path' => $request->url(), 'pageName' => 'page_d']
             ))->appends($request->except('page_d'));
 
-            // Registrar búsqueda en traza
-            $user = Auth::user();
-            TrazaActividad::create([
-                'fecha_hora'  => now(),
-                'id_usuario'  => $user->id,
-                'accion'      => 'buscar',
-                'objeto'      => 'buscador',
-                'codigo'      => mb_substr($termino, 0, 100),
-                'referencia'  => 'Búsqueda: "' . $termino . '" — ' . $resultados['total'] . ' resultado(s)',
-                'ip'          => $request->ip(),
-            ]);
+            // Registrar búsqueda en traza solo cuando hay término de texto
+            if ($tiene_texto) {
+                $user = Auth::user();
+                TrazaActividad::create([
+                    'fecha_hora'  => now(),
+                    'id_usuario'  => $user->id,
+                    'accion'      => 'buscar',
+                    'objeto'      => 'buscador',
+                    'codigo'      => mb_substr($termino, 0, 100),
+                    'referencia'  => 'Búsqueda: "' . $termino . '" — ' . $resultados['total'] . ' resultado(s)',
+                    'ip'          => $request->ip(),
+                ]);
+            }
         }
 
         // Catalogos para filtros
@@ -161,6 +169,8 @@ class BuscadorController extends Controller
             'resultados',
             'termino',
             'tiene_busqueda',
+            'tiene_texto',
+            'tiene_filtros',
             'territorios',
             'sexos',
             'etnias',
@@ -180,47 +190,49 @@ class BuscadorController extends Controller
      */
     private function buscarEntrevistas($termino, Request $request, $limite = 100)
     {
-        $terminos = $this->parsearTerminos($termino);
+        $tiene_texto = strlen(trim($termino)) >= 2;
+        $terminos    = $tiene_texto ? $this->parsearTerminos($termino) : [];
 
         $query = Entrevista::where('id_activo', 1);
 
-        // Apply boolean text search across all relevant text fields
-        $query->where(function($q) use ($terminos) {
-            // First apply main text fields
-            foreach ($terminos as $i => $t) {
-                $term = $t['termino'];
-                $op = $t['operador'];
+        // Búsqueda en texto solo cuando hay término
+        if ($tiene_texto) {
+            $query->where(function($q) use ($terminos) {
+                foreach ($terminos as $i => $t) {
+                    $term = $t['termino'];
+                    $op = $t['operador'];
 
-                $aplicar = function($q) use ($term) {
-                    $q->where('titulo', 'ILIKE', '%' . $term . '%')
-                      ->orWhere('entrevista_codigo', 'ILIKE', '%' . $term . '%')
-                      ->orWhere('anotaciones', 'ILIKE', '%' . $term . '%')
-                      ->orWhere('nombre_proyecto', 'ILIKE', '%' . $term . '%')
-                      ->orWhere('detalle_idiomas', 'ILIKE', '%' . $term . '%')
-                      ->orWhereHas('rel_contenido', function($qc) use ($term) {
-                          $qc->where('otras_poblaciones_mencionadas', 'ILIKE', '%' . $term . '%')
-                             ->orWhere('otras_ocupaciones_mencionadas', 'ILIKE', '%' . $term . '%')
-                             ->orWhere('detalle_grupos_etnicos', 'ILIKE', '%' . $term . '%')
-                             ->orWhere('otros_hechos_victimizantes', 'ILIKE', '%' . $term . '%')
-                             ->orWhere('detalle_resistencias', 'ILIKE', '%' . $term . '%')
-                             ->orWhere('responsables_individuales', 'ILIKE', '%' . $term . '%')
-                             ->orWhere('temas_abordados', 'ILIKE', '%' . $term . '%');
-                      })
-                      ->orWhereHas('rel_adjuntos', function($qa) use ($term) {
-                          $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
-                             ->where('texto_extraido', 'ILIKE', '%' . $term . '%');
-                      });
-                };
+                    $aplicar = function($q) use ($term) {
+                        $q->where('titulo', 'ILIKE', '%' . $term . '%')
+                          ->orWhere('entrevista_codigo', 'ILIKE', '%' . $term . '%')
+                          ->orWhere('anotaciones', 'ILIKE', '%' . $term . '%')
+                          ->orWhere('nombre_proyecto', 'ILIKE', '%' . $term . '%')
+                          ->orWhere('detalle_idiomas', 'ILIKE', '%' . $term . '%')
+                          ->orWhereHas('rel_contenido', function($qc) use ($term) {
+                              $qc->where('otras_poblaciones_mencionadas', 'ILIKE', '%' . $term . '%')
+                                 ->orWhere('otras_ocupaciones_mencionadas', 'ILIKE', '%' . $term . '%')
+                                 ->orWhere('detalle_grupos_etnicos', 'ILIKE', '%' . $term . '%')
+                                 ->orWhere('otros_hechos_victimizantes', 'ILIKE', '%' . $term . '%')
+                                 ->orWhere('detalle_resistencias', 'ILIKE', '%' . $term . '%')
+                                 ->orWhere('responsables_individuales', 'ILIKE', '%' . $term . '%')
+                                 ->orWhere('temas_abordados', 'ILIKE', '%' . $term . '%');
+                          })
+                          ->orWhereHas('rel_adjuntos', function($qa) use ($term) {
+                              $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
+                                 ->where('texto_extraido', 'ILIKE', '%' . $term . '%');
+                          });
+                    };
 
-                if ($i === 0 || $op === null || $op === 'AND') {
-                    $q->where(function($q2) use ($aplicar) { $aplicar($q2); });
-                } elseif ($op === 'OR') {
-                    $q->orWhere(function($q2) use ($aplicar) { $aplicar($q2); });
-                } elseif ($op === 'NOT') {
-                    $q->whereNot(function($q2) use ($aplicar) { $aplicar($q2); });
+                    if ($i === 0 || $op === null || $op === 'AND') {
+                        $q->where(function($q2) use ($aplicar) { $aplicar($q2); });
+                    } elseif ($op === 'OR') {
+                        $q->orWhere(function($q2) use ($aplicar) { $aplicar($q2); });
+                    } elseif ($op === 'NOT') {
+                        $q->whereNot(function($q2) use ($aplicar) { $aplicar($q2); });
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Geo filter: departamento (by ID - covers both id_territorio and entrevista_lugar.id_padre)
         if ($request->filled('id_departamento')) {
@@ -263,67 +275,76 @@ class BuscadorController extends Controller
             'rel_equipo_estrategia', 'rel_contenido'
         ])->limit($limite)->get();
 
-        // Add coincidencia attributes
+        // Atributos de coincidencia (solo con texto)
         foreach ($entrevistasDirectas as $e) {
             $e->setAttribute('fuente_coincidencia', 'entrevista');
             $coincidencias = [];
-            if (stripos($e->entrevista_codigo, $termino) !== false) $coincidencias[] = 'Codigo';
-            if (stripos($e->titulo, $termino) !== false) $coincidencias[] = 'Titulo';
-            $transcripcion = $e->getTextoParaProcesamiento();
-            if (stripos($transcripcion ?? '', $termino) !== false) $coincidencias[] = 'Transcripcion';
-            if (stripos($e->nombre_proyecto ?? '', $termino) !== false) $coincidencias[] = 'Proyecto';
-            if ($e->rel_contenido) {
-                $camposContenido = [
-                    'otras_poblaciones_mencionadas' => 'Otras Poblaciones',
-                    'otras_ocupaciones_mencionadas' => 'Otras Ocupaciones',
-                    'detalle_grupos_etnicos' => 'Detalle Etnicos',
-                    'otros_hechos_victimizantes' => 'Otros Hechos',
-                    'detalle_resistencias' => 'Detalle Resistencias',
-                    'responsables_individuales' => 'Responsables',
-                    'temas_abordados' => 'Temas',
-                ];
-                foreach ($camposContenido as $campo => $etiqueta) {
-                    if (stripos($e->rel_contenido->$campo ?? '', $termino) !== false) {
-                        $coincidencias[] = $etiqueta;
+            if ($tiene_texto) {
+                if (stripos($e->entrevista_codigo, $termino) !== false) $coincidencias[] = 'Codigo';
+                if (stripos($e->titulo, $termino) !== false) $coincidencias[] = 'Titulo';
+                $transcripcion = $e->getTextoParaProcesamiento();
+                if (stripos($transcripcion ?? '', $termino) !== false) $coincidencias[] = 'Transcripcion';
+                if (stripos($e->nombre_proyecto ?? '', $termino) !== false) $coincidencias[] = 'Proyecto';
+                if ($e->rel_contenido) {
+                    $camposContenido = [
+                        'otras_poblaciones_mencionadas' => 'Otras Poblaciones',
+                        'otras_ocupaciones_mencionadas' => 'Otras Ocupaciones',
+                        'detalle_grupos_etnicos' => 'Detalle Etnicos',
+                        'otros_hechos_victimizantes' => 'Otros Hechos',
+                        'detalle_resistencias' => 'Detalle Resistencias',
+                        'responsables_individuales' => 'Responsables',
+                        'temas_abordados' => 'Temas',
+                    ];
+                    foreach ($camposContenido as $campo => $etiqueta) {
+                        if (stripos($e->rel_contenido->$campo ?? '', $termino) !== false) {
+                            $coincidencias[] = $etiqueta;
+                        }
                     }
                 }
             }
             $e->setAttribute('coincidencias', $coincidencias);
         }
 
-        // Also search in document contents
-        $entrevistasConDocumentos = Entrevista::where('id_activo', 1)
-            ->whereHas('rel_adjuntos', function($q) use ($termino) {
-                $q->where('existe_archivo', 1)
-                  ->where(function($q2) use ($termino) {
-                      $q2->where('nombre_original', 'ILIKE', '%' . $termino . '%')
-                         ->orWhere('texto_extraido', 'ILIKE', '%' . $termino . '%');
-                  });
-            })
-            ->whereNotIn('id_e_ind_fvt', $entrevistasDirectas->pluck('id_e_ind_fvt'))
-            ->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario', 'rel_lugar_entrevista', 'rel_adjuntos'])
-            ->limit(max(0, $limite - $entrevistasDirectas->count()))
-            ->get();
+        // Búsqueda en documentos adjuntos solo con término de texto
+        $entrevistasConDocumentos = collect();
+        if ($tiene_texto) {
+            $entrevistasConDocumentos = Entrevista::where('id_activo', 1)
+                ->whereHas('rel_adjuntos', function($q) use ($termino) {
+                    $q->where('existe_archivo', 1)
+                      ->where(function($q2) use ($termino) {
+                          $q2->where('nombre_original', 'ILIKE', '%' . $termino . '%')
+                             ->orWhere('texto_extraido', 'ILIKE', '%' . $termino . '%');
+                      });
+                })
+                ->whereNotIn('id_e_ind_fvt', $entrevistasDirectas->pluck('id_e_ind_fvt'))
+                ->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario', 'rel_lugar_entrevista', 'rel_adjuntos'])
+                ->limit(max(0, $limite - $entrevistasDirectas->count()))
+                ->get();
 
-        foreach ($entrevistasConDocumentos as $e) {
-            $e->setAttribute('fuente_coincidencia', 'documento');
-            $coincidencias = [];
-            $documentosCoincidentes = $e->rel_adjuntos->filter(function($adj) use ($termino) {
-                return (stripos($adj->nombre_original, $termino) !== false) ||
-                       (stripos($adj->texto_extraido ?? '', $termino) !== false);
-            });
-            foreach ($documentosCoincidentes as $doc) {
-                $coincidencia = ['nombre' => $doc->nombre_original, 'extracto' => null];
-                if (stripos($doc->texto_extraido ?? '', $termino) !== false) {
-                    $coincidencia['extracto'] = $this->extraerContexto($doc->texto_extraido, $termino);
+            foreach ($entrevistasConDocumentos as $e) {
+                $e->setAttribute('fuente_coincidencia', 'documento');
+                $coincidencias = [];
+                $documentosCoincidentes = $e->rel_adjuntos->filter(function($adj) use ($termino) {
+                    return (stripos($adj->nombre_original, $termino) !== false) ||
+                           (stripos($adj->texto_extraido ?? '', $termino) !== false);
+                });
+                foreach ($documentosCoincidentes as $doc) {
+                    $coincidencia = ['nombre' => $doc->nombre_original, 'extracto' => null];
+                    if (stripos($doc->texto_extraido ?? '', $termino) !== false) {
+                        $coincidencia['extracto'] = $this->extraerContexto($doc->texto_extraido, $termino);
+                    }
+                    $coincidencias[] = $coincidencia;
                 }
-                $coincidencias[] = $coincidencia;
+                $e->setAttribute('coincidencias', $coincidencias);
             }
-            $e->setAttribute('coincidencias', $coincidencias);
         }
 
         $merged = $entrevistasDirectas->merge($entrevistasConDocumentos);
-        return $merged->sortByDesc(fn($e) => $this->calcularRelevanciaEntrevista($e))->values();
+
+        if ($tiene_texto) {
+            return $merged->sortByDesc(fn($e) => $this->calcularRelevanciaEntrevista($e))->values();
+        }
+        return $merged->sortByDesc('entrevista_fecha')->values();
     }
 
     /**

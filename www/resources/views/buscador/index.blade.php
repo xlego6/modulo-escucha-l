@@ -105,9 +105,8 @@
                                 </div>
                                 <small class="form-text text-muted mt-2">
                                     <i class="fas fa-info-circle"></i>
-                                    Busca en: codigos, titulos, personas, transcripciones y documentos.
+                                    Sin texto, los filtros muestran entrevistas directamente. Con texto busca también en personas, transcripciones y documentos.
                                     <strong>Operadores:</strong> <code>AND</code>, <code>OR</code>, <code>NOT</code>, frases entre <code>"comillas"</code>.
-                                    Ej: <em>desplazamiento AND Cauca</em>
                                 </small>
                             </div>
                         </div>
@@ -199,16 +198,25 @@
                 <div class="col-md-12">
                     <div class="alert alert-info mb-0">
                         <i class="fas fa-chart-bar"></i>
-                        <strong>{{ $resultados['total'] }}{{ ($resultados['cap_hit_e'] || $resultados['cap_hit_p'] || $resultados['cap_hit_d']) ? '+' : '' }}</strong> resultado(s) encontrados para "<strong>{{ $termino }}</strong>":
+                        <strong>{{ $resultados['total'] }}{{ ($resultados['cap_hit_e'] || $resultados['cap_hit_p'] || $resultados['cap_hit_d']) ? '+' : '' }}</strong> resultado(s)
+                        @if($tiene_texto)
+                            para "<strong>{{ $termino }}</strong>"
+                        @endif
+                        @if($tiene_filtros)
+                            con los filtros aplicados
+                        @endif
+                        :
                         <span class="badge badge-success ml-2">
                             <i class="fas fa-microphone"></i> {{ $resultados['total_e'] }}{{ $resultados['cap_hit_e'] ? '+' : '' }} Entrevistas
                         </span>
+                        @if($tiene_texto)
                         <span class="badge badge-info ml-1">
                             <i class="fas fa-users"></i> {{ $resultados['total_p'] }}{{ $resultados['cap_hit_p'] ? '+' : '' }} Personas
                         </span>
                         <span class="badge badge-warning ml-1">
                             <i class="fas fa-file-alt"></i> {{ $resultados['total_d'] }}{{ $resultados['cap_hit_d'] ? '+' : '' }} Documentos
                         </span>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -520,8 +528,13 @@
                     <div class="card-body sin-resultados">
                         <i class="fas fa-search fa-3x mb-3"></i>
                         <h5>No se encontraron resultados</h5>
-                        <p>No hay coincidencias para "<strong>{{ $termino }}</strong>" en entrevistas, personas o documentos.</p>
-                        <p class="small text-muted">Intente con otros terminos de busqueda.</p>
+                        @if($tiene_texto)
+                            <p>No hay coincidencias para "<strong>{{ $termino }}</strong>" en entrevistas, personas o documentos.</p>
+                            <p class="small text-muted">Intente con otros terminos de busqueda o ajuste los filtros.</p>
+                        @else
+                            <p>No hay entrevistas que coincidan con los filtros seleccionados.</p>
+                            <p class="small text-muted">Intente con otros filtros o agregue un termino de busqueda.</p>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -531,9 +544,9 @@
             <div class="card">
                 <div class="card-body sin-resultados">
                     <i class="fas fa-search fa-3x mb-3"></i>
-                    <h5>Realice una busqueda</h5>
+                    <h5>Busque o filtre entrevistas</h5>
                     <p class="text-muted">
-                        Ingrese al menos 2 caracteres para buscar en:
+                        Ingrese un termino de busqueda o aplique alguno de los filtros para ver resultados.
                     </p>
                     <div class="row justify-content-center mt-4">
                         <div class="col-md-3 text-center">
@@ -547,8 +560,8 @@
                             <div class="icono-fuente documento mx-auto mb-2" style="width:48px;height:48px;font-size:1.5rem;">
                                 <i class="fas fa-file-alt"></i>
                             </div>
-                            <strong>Documentos</strong>
-                            <p class="small text-muted">Nombres de archivos y texto extraido de PDFs y transcripciones</p>
+                            <strong>Documentos y personas</strong>
+                            <p class="small text-muted">Disponibles al buscar por texto. Los filtros aplican solo a entrevistas.</p>
                         </div>
                     </div>
                 </div>
