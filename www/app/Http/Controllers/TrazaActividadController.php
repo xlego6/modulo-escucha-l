@@ -31,13 +31,20 @@ class TrazaActividadController extends Controller
 
         // Filtrar según alcance del rol
         if ($user->id_nivel == 5) {
-            // Gestor: ve su propia actividad + actividad relacionada con entrevistas de su dependencia
-            $entrevistadorGestor = Entrevistador::where('id_usuario', $user->id)->first();
+            // Gestor: ve su propia actividad + toda la actividad de los perfiles de su dependencia
+            $entrevistadorGestor = Entrevistador::where('id_usuario', $user->id)
+                ->orderBy('id_nivel')
+                ->first();
             if ($entrevistadorGestor && $entrevistadorGestor->id_dependencia_origen) {
+                // IDs de usuario de todos los perfiles de la misma dependencia
+                $usuariosDependencia = Entrevistador::where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
+                    ->pluck('id_usuario');
+                // Códigos de entrevistas de la dependencia (para capturar actividad de perfiles externos que actúen sobre ellas)
                 $codigosDependencia = Entrevista::where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
                     ->pluck('entrevista_codigo');
-                $query->where(function($q) use ($user, $codigosDependencia) {
+                $query->where(function($q) use ($user, $usuariosDependencia, $codigosDependencia) {
                     $q->where('id_usuario', $user->id)
+                      ->orWhereIn('id_usuario', $usuariosDependencia)
                       ->orWhereIn('codigo', $codigosDependencia);
                 });
             } else {
