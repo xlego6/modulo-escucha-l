@@ -57,17 +57,26 @@
                         <small>{{ $sol->fecha_solicitud ? $sol->fecha_solicitud->format('d/m/Y H:i') : '-' }}</small>
                     </td>
                     <td>
+                        @php $soloLectura = Auth::user()->id_nivel == 5 && $sol->id_tipo != \App\Models\Permiso::TIPO_LECTURA; @endphp
                         <form action="{{ route('permisos.aprobar', $sol->id_permiso) }}" method="POST" onsubmit="return confirm('¿Aprobar esta solicitud?')">
                             @csrf
                             <div class="d-flex flex-column">
+                                @if(!$soloLectura)
                                 <div class="d-flex mb-1">
                                     <input type="date" name="fecha_desde" class="form-control form-control-sm mr-1" placeholder="Desde" title="Vigencia desde (opcional)">
                                     <input type="date" name="fecha_hasta" class="form-control form-control-sm" placeholder="Hasta" title="Vigencia hasta (opcional)">
                                 </div>
+                                @endif
                                 <div class="d-flex">
-                                    <button type="submit" class="btn btn-sm btn-success flex-fill mr-1">
-                                        <i class="fas fa-check"></i> Aprobar
-                                    </button>
+                                    @if($soloLectura)
+                                        <span class="btn btn-sm btn-secondary flex-fill mr-1 disabled" title="Solo un administrador puede aprobar permisos de escritura o completo">
+                                            <i class="fas fa-lock"></i> Solo Admin
+                                        </span>
+                                    @else
+                                        <button type="submit" class="btn btn-sm btn-success flex-fill mr-1">
+                                            <i class="fas fa-check"></i> Aprobar
+                                        </button>
+                                    @endif
                                     <button type="button" class="btn btn-sm btn-danger"
                                         onclick="abrirModalRechazar({{ $sol->id_permiso }})">
                                         <i class="fas fa-times"></i>
