@@ -126,7 +126,7 @@ class ImportacionMasivaController extends Controller
                     // Resolver rutas y verificar existencia de archivos
                     $archivosResueltos = [];
                     foreach ($exp['archivos_csv'] as $arch) {
-                        $dirLocal  = ($arch['id_tipo'] !== 310) ? $dirTranscripciones : '';
+                        $dirLocal  = $dirTranscripciones;
                         $rutaLinux = $this->svc->resolverRuta($arch['ruta'], $mappings, $dirLocal);
                         $info      = $this->svc->verificarArchivo($rutaLinux);
 
