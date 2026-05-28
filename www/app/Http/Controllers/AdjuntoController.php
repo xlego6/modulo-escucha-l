@@ -57,8 +57,9 @@ class AdjuntoController extends Controller
 
         // Has approved access permission
         $tienePermisoAcceso = false;
+        $tienePermisoCompleto = false;
         if ($entrevistadorActual) {
-            $tienePermisoAcceso = (bool) DB::table('esclarecimiento.permiso')
+            $baseQuery = DB::table('esclarecimiento.permiso')
                 ->where('id_entrevistador', (int) $entrevistadorActual->id_entrevistador)
                 ->where('id_e_ind_fvt', (int) $id_entrevista)
                 ->where('id_estado', \App\Models\Permiso::ESTADO_VIGENTE)
@@ -72,8 +73,17 @@ class AdjuntoController extends Controller
                 ->where(function($q) {
                     $q->whereNull('fecha_vencimiento')
                       ->orWhere('fecha_vencimiento', '>', now());
-                })
+                });
+
+            $tienePermisoAcceso = (clone $baseQuery)->exists();
+            $tienePermisoCompleto = (clone $baseQuery)
+                ->where('id_tipo', \App\Models\Permiso::TIPO_COMPLETO)
                 ->exists();
+        }
+
+        // Can delete/upload with explicit "completo" permission
+        if ($tienePermisoCompleto) {
+            $puedeGestionar = true;
         }
 
         // Can view/play: alcance total, propietario, dependencia, o permiso otorgado
@@ -94,8 +104,39 @@ class AdjuntoController extends Controller
             'id_tipo' => 'required|integer',
         ]);
 
-        $entrevista = Entrevista::findOrFail($id_entrevista);
+        $entrevista = Entrevista::with('rel_entrevistador')->findOrFail($id_entrevista);
         $user = Auth::user();
+
+        // Verificar permiso para subir: rol total, propietario o permiso completo
+        $puedeSubir = (RolModuloPermiso::puedeEditar($user->id_nivel, 'adjuntos') &&
+                       RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos')) ||
+                      ($entrevista->rel_entrevistador && $entrevista->rel_entrevistador->id_usuario == $user->id);
+
+        if (!$puedeSubir) {
+            $entrevistador = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
+            $puedeSubir = $entrevistador && (bool) DB::table('esclarecimiento.permiso')
+                ->where('id_entrevistador', (int) $entrevistador->id_entrevistador)
+                ->where('id_e_ind_fvt', (int) $id_entrevista)
+                ->where('id_tipo', \App\Models\Permiso::TIPO_COMPLETO)
+                ->where('id_estado', \App\Models\Permiso::ESTADO_VIGENTE)
+                ->where(function($q) {
+                    $q->where('es_solicitud', false)
+                      ->orWhere(function($q2) {
+                          $q2->where('es_solicitud', true)
+                             ->where('estado_solicitud', \App\Models\Permiso::SOLICITUD_APROBADA);
+                      });
+                })
+                ->where(function($q) {
+                    $q->whereNull('fecha_vencimiento')
+                      ->orWhere('fecha_vencimiento', '>', now());
+                })
+                ->exists();
+        }
+
+        if (!$puedeSubir) {
+            flash('No tiene permisos para subir archivos a esta entrevista.')->error();
+            return redirect()->route('adjuntos.gestionar', $id_entrevista);
+        }
 
         $archivo = $request->file('archivo');
         $nombre_original = $archivo->getClientOriginalName();
@@ -431,12 +472,34 @@ class AdjuntoController extends Controller
         $id_entrevista = $adjunto->id_e_ind_fvt;
         $user = Auth::user();
 
-        // Puede eliminar si tiene alcance total, o si es propietario de la entrevista
+        // Puede eliminar si tiene alcance total, o si es propietario, o si tiene permiso completo
         $puedeEliminarTodo = RolModuloPermiso::puedeEliminar($user->id_nivel, 'adjuntos') &&
                              RolModuloPermiso::alcanceTodas($user->id_nivel, 'adjuntos');
         if (!$puedeEliminarTodo) {
-            $entrevista = Entrevista::find($id_entrevista);
-            if ($entrevista && $entrevista->rel_entrevistador->id_usuario != $user->id) {
+            $entrevista = Entrevista::with('rel_entrevistador')->find($id_entrevista);
+            $esPropietario = $entrevista && $entrevista->rel_entrevistador &&
+                             $entrevista->rel_entrevistador->id_usuario == $user->id;
+
+            $entrevistador = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
+            $tienePermisoCompleto = $entrevistador && (bool) DB::table('esclarecimiento.permiso')
+                ->where('id_entrevistador', (int) $entrevistador->id_entrevistador)
+                ->where('id_e_ind_fvt', (int) $id_entrevista)
+                ->where('id_tipo', \App\Models\Permiso::TIPO_COMPLETO)
+                ->where('id_estado', \App\Models\Permiso::ESTADO_VIGENTE)
+                ->where(function($q) {
+                    $q->where('es_solicitud', false)
+                      ->orWhere(function($q2) {
+                          $q2->where('es_solicitud', true)
+                             ->where('estado_solicitud', \App\Models\Permiso::SOLICITUD_APROBADA);
+                      });
+                })
+                ->where(function($q) {
+                    $q->whereNull('fecha_vencimiento')
+                      ->orWhere('fecha_vencimiento', '>', now());
+                })
+                ->exists();
+
+            if (!$esPropietario && !$tienePermisoCompleto) {
                 flash('No tiene permisos para eliminar este archivo.')->error();
                 return redirect()->route('adjuntos.gestionar', $id_entrevista);
             }
