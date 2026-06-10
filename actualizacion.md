@@ -16,11 +16,16 @@ El flujo de trabajo habitual es:
 ## Requisitos previos
 
 - Docker Desktop corriendo (Windows) o Docker Engine activo (Linux)
-- Todos los contenedores levantados:
-  ```
-  docker ps
-  ```
-  Deben aparecer: `mel-web`, `mel-app`, `mel-db`, `mel-redis`, `mel-transcription`, `mel-ner`
+- Todos los contenedores levantados (verificar con `docker ps`): web, php, db, redis, transcription y ner.
+
+  El **nombre real de los contenedores varía según el entorno**; confirmarlo siempre con `docker ps`:
+
+  | Entorno | Contenedor PHP (ejemplo) |
+  |---------|--------------------------|
+  | Desarrollo local | `modulo-escucha-l-php-1` |
+  | Servidores (pruebas/producción) | `escucha-php-1` |
+
+  En los comandos de esta guía, reemplazar `<php>` por el nombre que muestre `docker ps`.
 
   Si no están corriendo, levantarlos con:
   ```bash
@@ -36,10 +41,19 @@ El flujo de trabajo habitual es:
 
 ```bash
 cd /ruta/al/proyecto
-git pull origin master
+git pull origin moduloii
 ```
 
+> La rama de despliegue es **`moduloii`** (la principal del repo es `alejodev`).
+
 Revisar la salida para identificar qué archivos cambiaron. Esto determina los pasos siguientes.
+
+> **Importante (bind mount):** en algunos servidores el bind mount de `./www` no refleja
+> los cambios dentro del contenedor tras el pull. Verificar (por ejemplo, comparando un
+> archivo recién cambiado) y, si no sincronizó, nivelar a mano:
+> ```bash
+> docker cp www/ruta/al/Archivo.php <php>:/var/www/ruta/al/Archivo.php
+> ```
 
 ---
 
@@ -48,7 +62,13 @@ Revisar la salida para identificar qué archivos cambiaron. Esto determina los p
 Siempre que `git pull` muestre archivos nuevos con el patrón `www/database/migrations/*.php`:
 
 ```bash
-docker exec mel-app php artisan migrate --force
+docker exec <php> php artisan migrate --force
+```
+
+Si la migración tocó la estructura de la BD, regenerar el diccionario de datos del servidor:
+
+```bash
+docker exec <php> php artisan dic:generar
 ```
 
 ---
@@ -56,7 +76,7 @@ docker exec mel-app php artisan migrate --force
 ### 3. Actualizar dependencias PHP (si cambió `composer.json` o `composer.lock`)
 
 ```bash
-docker exec mel-app composer install --no-dev --optimize-autoloader
+docker exec <php> composer install --no-dev --optimize-autoloader
 ```
 
 ---
@@ -66,9 +86,9 @@ docker exec mel-app composer install --no-dev --optimize-autoloader
 Ejecutar siempre después de un pull con cambios de código PHP o Blade:
 
 ```bash
-docker exec mel-app php artisan config:cache
-docker exec mel-app php artisan route:cache
-docker exec mel-app php artisan view:cache
+docker exec <php> php artisan config:cache
+docker exec <php> php artisan route:cache
+docker exec <php> php artisan view:cache
 ```
 
 ---
@@ -107,13 +127,17 @@ docker compose up -d
 ## Resumen: árbol de decisión
 
 ```
-git pull origin master
+git pull origin moduloii
+│
+├── ¿El bind mount de ./www sincronizó dentro del contenedor?
+│   └── No → docker cp de los archivos cambiados
 │
 ├── ¿Hay archivos nuevos en www/database/migrations/?
-│   └── Sí → docker exec mel-app php artisan migrate --force
+│   └── Sí → docker exec <php> php artisan migrate --force
+│            (y si cambió la estructura: docker exec <php> php artisan dic:generar)
 │
 ├── ¿Cambió composer.json o composer.lock?
-│   └── Sí → docker exec mel-app composer install --no-dev --optimize-autoloader
+│   └── Sí → docker exec <php> composer install --no-dev --optimize-autoloader
 │
 ├── ¿Cambiaron archivos PHP o Blade?
 │   └── Sí → reconstruir caché (config:cache, route:cache, view:cache)
@@ -134,13 +158,13 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 Ver logs de un contenedor:
 ```bash
-docker logs mel-app --tail=50
-docker logs mel-web --tail=50
+docker logs <php> --tail=50
+docker logs <web> --tail=50
 ```
 
 Verificar estado de migraciones:
 ```bash
-docker exec mel-app php artisan migrate:status
+docker exec <php> php artisan migrate:status
 ```
 
 ---
