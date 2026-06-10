@@ -122,6 +122,12 @@ docker-compose.override.yml
 redis-data/
 
 # ----------------
+# Snapshots del diccionario traidos de otros servidores (JUNO_*, PROD_*...)
+# para diff puntual; no se versionan: cada servidor genera el suyo
+# ----------------
+*_diccionario_datos_generado.md
+
+# ----------------
 # Archivos de configuracion local y otros
 # ----------------
 www/.config/

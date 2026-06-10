@@ -2,6 +2,19 @@
 
 Sistema ligero de gestion de testimonios basado en modulo-escucha.
 
+## Documentacion
+
+| Documento | Contenido |
+|-----------|-----------|
+| [instalacion.md](instalacion.md) | Manual de instalacion paso a paso (desarrollo y servidor) |
+| [actualizacion.md](actualizacion.md) | Proceso de actualizacion tras un `git pull` (migraciones, cache, contenedores) |
+| [diccionario_datos.md](diccionario_datos.md) | Guia semantica de la BD: enumeraciones, maquinas de estado, deuda tecnica |
+| [modelo_er.md](modelo_er.md) | Modelo entidad-relacion (Mermaid), cardinalidades y flujos de datos |
+| `www/diccionario_datos_generado.md` | Estructura real de la BD por introspeccion; cada servidor genera el suyo con `php artisan dic:generar` |
+| [docs/](docs/) | Documentacion tecnica formal del proyecto |
+
+Tooling de BD (artisan): `dic:comentar` / `dic:generar` (diccionario), `fk:verificar` / `fk:aplicar` (integridad referencial, ver `config/fks_pendientes.php`).
+
 ## Requisitos
 
 - Docker Engine 20.10+
@@ -68,31 +81,8 @@ Acceder a: http://localhost:8001
 
 ## Instalacion en Produccion
 
-Usar los scripts automatizados que configuran seguridad, passwords y optimizaciones:
-
-**Linux/Mac:**
-```bash
-chmod +x setup-produccion.sh
-./setup-produccion.sh
-```
-
-**Windows (PowerShell como Administrador):**
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-.\setup-produccion.ps1
-```
-
-Los scripts realizan automaticamente:
-- Generar password segura para PostgreSQL
-- Configurar APP_ENV=production y APP_DEBUG=false
-- Generar APP_KEY
-- Comentar puertos internos expuestos (seguridad)
-- Instalar dependencias optimizadas
-- Cachear configuracion, rutas y vistas
-- Configurar permisos de storage
-- Crear backup de configuracion anterior
-
-Para instalacion manual detallada, ver [instalacion.md](instalacion.md)
+Ver el manual paso a paso en [instalacion.md](instalacion.md) (seccion "Instalacion en Servidor").
+Para actualizar una instalacion existente despues de un `git pull`, seguir [actualizacion.md](actualizacion.md).
 
 ## Estructura
 
