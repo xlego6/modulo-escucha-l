@@ -23,6 +23,11 @@ return [
     'on_delete' => 'SET NULL',
 
     'fks' => [
+        // Preexistente en pruebas, ausente en producción (drift detectado el 2026-06-10).
+        // La constraint se llamaría entrevistador_id_usuario_fkey: el nombre ya existe en
+        // pruebas, así que la migración la OMITE allí y la crea solo donde falta (prod).
+        ['esquema' => 'esclarecimiento', 'tabla' => 'entrevistador',            'columna' => 'id_usuario'],
+
         ['esquema' => 'esclarecimiento', 'tabla' => 'importaciones_masivas',     'columna' => 'id_usuario'],
         ['esquema' => 'esclarecimiento', 'tabla' => 'trabajo_procesamiento',     'columna' => 'id_usuario'],
         ['esquema' => 'esclarecimiento', 'tabla' => 'asignacion_transcripcion',  'columna' => 'id_asignado_por'],
