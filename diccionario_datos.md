@@ -37,6 +37,11 @@ esquema actual (ver "Deuda técnica conocida" al final):
 
 ## Catálogo de valores y enumeraciones
 
+> Desde 2026-06-10, `dic:generar` incluye al final una sección **«Valores de catálogo»**
+> (contenido vivo de `cat_cat`/`cat_item`/`criterio_fijo`) y, por tabla, las restricciones
+> **CHECK** y **UNIQUE** reales. Aquí solo se mantienen las enumeraciones que viven en el
+> código (estados, módulos, códigos mágicos), no en catálogos.
+
 ### `esclarecimiento.rol` — roles del sistema (`id_nivel`)
 
 | id_nivel | nombre |
@@ -153,8 +158,8 @@ de catálogo (`cat_item`) o, en `contenido_lugar`, con `geo`.
 | `persona_ocupacion` | Ocupaciones adicionales (de la persona) |
 
 > **Inconsistencia:** la mayoría de los pivots tienen PK surrogada `id`, FKs declaradas y
-> `created_at`; `contenido_practica_resistencia` y `entrevista_idioma` **no** tienen PK ni
-> FK ni `created_at`.
+> `created_at`; `contenido_practica_resistencia` **no** tiene PK, FK ni `created_at`, y
+> `entrevista_idioma` no tiene PK ni FK (aunque sí `created_at`).
 
 ---
 
@@ -166,10 +171,14 @@ modelo de datos actual):
 1. Prefijo `id_` en banderas booleanas (`id_activo`, `id_cerrado`, `id_transcrita`, …).
 2. Booleanos como `INTEGER` en el núcleo legado en vez de `BOOLEAN`.
 3. Doble/triple auditoría (`insert_*`/`update_*` + `created_at`/`updated_at` + `traza_actividad`).
-4. Integridad referencial débil: FKs nullable y varios `id_*` lógicos sin constraint
-   (`importaciones_masivas.id_usuario`, `trabajo_procesamiento.id_usuario`,
-   `asignacion_*.id_asignado_por/id_revisor`, `permiso.id_respondido_por`); `permiso.id_tipo`
-   e `id_estado` con valores mágicos sin catálogo.
+4. **✅ RESUELTO (2026-06-10).** Integridad referencial débil:
+   - FKs faltantes hacia `users` agregadas (`importaciones_masivas.id_usuario`,
+     `trabajo_procesamiento.id_usuario`, `asignacion_*.id_asignado_por/id_revisor`,
+     `permiso.id_respondido_por` y `entrevistador.id_usuario`), vía `config/fks_pendientes.php`
+     + `fk:verificar`/`fk:aplicar`. Aplicado en pruebas y producción.
+   - `permiso.id_tipo` e `id_estado`: blindados con `CHECK (IN (1,2,3))` / `CHECK (IN (1,2))`.
+     No se usó FK a `criterio_fijo` (apuntaría a "niveles de usuario", catálogo equivocado:
+     el `belongsTo` del modelo es un bug latente).
 5. Triplicación de fechas de hechos (`e_ind_fvt.hechos_del/hechos_al` +
    `e_ind_fvt.fecha_toma_inicial/final` + `contenido_testimonio.fecha_hechos_inicial/final`).
 6. Residencia de persona con tres columnas ambiguas (`id_lugar_residencia`,

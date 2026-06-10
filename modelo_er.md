@@ -3,6 +3,11 @@
 **Motor:** PostgreSQL | **Base de datos:** `testimonios`  
 **Esquemas:** `public`, `esclarecimiento`, `fichas`, `catalogos`
 
+> Diagrama **semántico simplificado**: los tipos mostrados son los conceptuales (p. ej.
+> `boolean` para banderas que en la BD son `INTEGER` 0/1) y se omiten columnas de auditoría
+> legada y tablas de infraestructura (`jobs`, `failed_jobs`, `migrations`). La estructura
+> real columna a columna está en [`www/diccionario_datos_generado.md`](www/diccionario_datos_generado.md).
+
 ---
 
 ## Diagrama ER (Mermaid)
@@ -227,7 +232,8 @@ erDiagram
         text sintesis_relato
     }
 
-    entrevista_consentimiento {
+    %% Tabla real: fichas.entrevista (consentimiento e información de la entrevista)
+    entrevista {
         int id_entrevista PK
         int id_e_ind_fvt FK
         int id_idioma FK
@@ -398,8 +404,8 @@ erDiagram
     %% Contenido analítico (1:1)
     e_ind_fvt ||--|| contenido_testimonio : "tiene contenido"
 
-    %% Consentimiento (1:1)
-    e_ind_fvt ||--|| entrevista_consentimiento : "tiene consentimiento"
+    %% Consentimiento (1:1 por convención)
+    e_ind_fvt ||--|| entrevista : "tiene consentimiento"
 
     %% Personas
     e_ind_fvt ||--o{ persona_entrevistada : "involucra"
@@ -438,11 +444,11 @@ erDiagram
 
 | Relación | Cardinalidad | Descripción |
 |----------|-------------|-------------|
-| `users` → `entrevistador` | 1:1 | Cada usuario tiene un perfil operativo de entrevistador |
+| `users` → `entrevistador` | 1:1 | Cada usuario tiene un perfil operativo de entrevistador (por convención de la aplicación; la BD no lo fuerza con UNIQUE) |
 | `entrevistador` → `e_ind_fvt` | 1:N | Un entrevistador crea múltiples expedientes |
 | `e_ind_fvt` → `adjunto` | 1:N | Un expediente puede tener múltiples archivos (audio, documentos, transcripciones) |
-| `e_ind_fvt` → `contenido_testimonio` | 1:1 | Cada expediente tiene un único registro de contenido analítico |
-| `e_ind_fvt` → `entrevista_consentimiento` | 1:1 | Cada expediente tiene un único formulario de consentimiento |
+| `e_ind_fvt` → `contenido_testimonio` | 1:1 | Cada expediente tiene un único registro de contenido analítico (UNIQUE en BD) |
+| `e_ind_fvt` → `fichas.entrevista` | 1:1 | Cada expediente tiene un único formulario de consentimiento (por convención; sin UNIQUE en BD) |
 
 ### Personas
 
@@ -483,7 +489,7 @@ users ──→ entrevistador ──→ e_ind_fvt
                                ├──→ adjunto (audios)
                                ├──→ persona_entrevistada ──→ persona
                                │                         └──→ consentimiento_informado
-                               ├──→ entrevista_consentimiento
+                               ├──→ entrevista (consentimiento)
                                └──→ contenido_testimonio
 ```
 
