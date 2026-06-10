@@ -63,6 +63,8 @@ class GenerarDiccionario extends Command
             $md .= $this->seccionTabla($i + 1, $t);
         }
 
+        $md .= $this->seccionCatalogos($esquemas);
+
         $ruta = base_path($this->option('salida'));
         file_put_contents($ruta, $md);
 
@@ -134,6 +136,101 @@ class GenerarDiccionario extends Command
                 . ' | ' . implode(', ', $pkfk)
                 . ' | ' . $this->limpiar($c->comentario)
                 . " |\n";
+        }
+
+        $s .= $this->restricciones($t);
+
+        return $s . "\n---\n\n";
+    }
+
+    /**
+     * Restricciones CHECK y UNIQUE de la tabla (las PK y FK ya van columna a columna).
+     * Los UNIQUE permiten verificar cardinalidades 1:1 sin consultar la BD.
+     */
+    private function restricciones(object $t): string
+    {
+        $regclass = "{$t->esquema}.{$t->tabla}";
+
+        $checks = DB::select("
+            SELECT conname, pg_get_constraintdef(oid) AS def
+            FROM pg_constraint
+            WHERE conrelid = ?::regclass AND contype = 'c'
+            ORDER BY conname
+        ", [$regclass]);
+
+        $unicos = DB::select("
+            SELECT ic.relname AS nombre, pg_get_indexdef(i.indexrelid) AS def
+            FROM pg_index i
+            JOIN pg_class ic ON ic.oid = i.indexrelid
+            WHERE i.indrelid = ?::regclass AND i.indisunique AND NOT i.indisprimary
+            ORDER BY ic.relname
+        ", [$regclass]);
+
+        if (empty($checks) && empty($unicos)) {
+            return '';
+        }
+
+        $s = "\n**Restricciones:**\n\n";
+        foreach ($checks as $c) {
+            $s .= "- CHECK `{$c->conname}`: `" . $this->limpiar($c->def) . "`\n";
+        }
+        foreach ($unicos as $u) {
+            $cols = preg_match('/\((.+)\)$/', $u->def, $m) ? $m[1] : $u->def;
+            $s .= "- UNIQUE `{$u->nombre}`: (`" . $this->limpiar($cols) . "`)\n";
+        }
+        return $s;
+    }
+
+    /**
+     * Contenido vivo de los catálogos (cat_cat → cat_item habilitados y criterio_fijo).
+     * Son datos, no estructura: pueden variar entre servidores si un administrador
+     * edita los catálogos desde la aplicación.
+     */
+    private function seccionCatalogos(array $esquemas): string
+    {
+        if (!in_array('catalogos', $esquemas)) {
+            return '';
+        }
+
+        $s  = "## Valores de catálogo\n\n";
+        $s .= "> Solo ítems con `habilitado = 1`. Los catálogos marcados como editables se\n";
+        $s .= "> administran desde la aplicación, por lo que su contenido puede diferir entre servidores.\n\n";
+
+        $cats = DB::select('SELECT id_cat, nombre, descripcion, editable FROM catalogos.cat_cat ORDER BY id_cat');
+        foreach ($cats as $cat) {
+            $items = DB::select('
+                SELECT id_item, descripcion, abreviado
+                FROM catalogos.cat_item
+                WHERE id_cat = ? AND habilitado = 1
+                ORDER BY orden NULLS LAST, id_item
+            ', [$cat->id_cat]);
+
+            $edit = $cat->editable ? 'editable' : 'no editable';
+            $s .= "### `cat_cat` {$cat->id_cat}: {$cat->nombre} ({$edit}, " . count($items) . " ítems)\n\n";
+            if ($cat->descripcion) {
+                $s .= $this->limpiar($cat->descripcion) . "\n\n";
+            }
+            if (empty($items)) {
+                $s .= "_Sin ítems habilitados._\n\n";
+                continue;
+            }
+            $s .= "| id_item | Descripción | Abreviado |\n|---------|-------------|-----------|\n";
+            foreach ($items as $it) {
+                $s .= "| {$it->id_item} | " . $this->limpiar($it->descripcion) . ' | ' . $this->limpiar($it->abreviado) . " |\n";
+            }
+            $s .= "\n";
+        }
+
+        $s .= "### `criterio_fijo` — opciones fijas por grupo\n\n";
+        $s .= "| id_grupo | id_opcion | Descripción | Abreviado |\n|----------|-----------|-------------|-----------|\n";
+        $fijos = DB::select('
+            SELECT id_grupo, id_opcion, descripcion, abreviado
+            FROM catalogos.criterio_fijo
+            WHERE habilitado = 1
+            ORDER BY id_grupo, orden NULLS LAST, id_opcion
+        ');
+        foreach ($fijos as $cf) {
+            $s .= "| {$cf->id_grupo} | {$cf->id_opcion} | " . $this->limpiar($cf->descripcion) . ' | ' . $this->limpiar($cf->abreviado) . " |\n";
         }
 
         return $s . "\n---\n\n";

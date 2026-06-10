@@ -37,6 +37,11 @@ esquema actual (ver "Deuda técnica conocida" al final):
 
 ## Catálogo de valores y enumeraciones
 
+> Desde 2026-06-10, `dic:generar` incluye al final una sección **«Valores de catálogo»**
+> (contenido vivo de `cat_cat`/`cat_item`/`criterio_fijo`) y, por tabla, las restricciones
+> **CHECK** y **UNIQUE** reales. Aquí solo se mantienen las enumeraciones que viven en el
+> código (estados, módulos, códigos mágicos), no en catálogos.
+
 ### `esclarecimiento.rol` — roles del sistema (`id_nivel`)
 
 | id_nivel | nombre |
@@ -153,8 +158,8 @@ de catálogo (`cat_item`) o, en `contenido_lugar`, con `geo`.
 | `persona_ocupacion` | Ocupaciones adicionales (de la persona) |
 
 > **Inconsistencia:** la mayoría de los pivots tienen PK surrogada `id`, FKs declaradas y
-> `created_at`; `contenido_practica_resistencia` y `entrevista_idioma` **no** tienen PK ni
-> FK ni `created_at`.
+> `created_at`; `contenido_practica_resistencia` **no** tiene PK, FK ni `created_at`, y
+> `entrevista_idioma` no tiene PK ni FK (aunque sí `created_at`).
 
 ---
 
