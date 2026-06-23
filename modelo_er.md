@@ -10,6 +10,41 @@
 
 ---
 
+## Vista simplificada — núcleo de negocio
+
+Mapa de bolsillo para orientarse antes de entrar al diagrama completo. Omite a propósito:
+los **catálogos** (`cat_item`, `geo` — toda flecha hacia ellos significa "lista desplegable"
+o "lugar"), las **19 tablas pivot**, los roles/seguridad, la auditoría y la infraestructura.
+
+```mermaid
+erDiagram
+    users ||--o| entrevistador : "perfil operativo"
+    entrevistador ||--o{ e_ind_fvt : "crea expedientes"
+
+    e_ind_fvt ||--o{ adjunto : "audios y documentos"
+    e_ind_fvt ||--o{ asignacion_transcripcion : "transcripción humana"
+    adjunto ||--o{ asignacion_transcripcion : "audio asignado"
+    e_ind_fvt ||--o{ asignacion_anonimizacion : "anonimización humana"
+    e_ind_fvt ||--o{ entidad_detectada : "entidades NER"
+
+    e_ind_fvt ||--o{ persona_entrevistada : "involucra"
+    persona ||--o{ persona_entrevistada : "participa como"
+    persona_entrevistada ||--o| consentimiento_informado : "firma"
+
+    entrevistador ||--o{ permiso : "solicita / recibe"
+    e_ind_fvt ||--o{ permiso : "protegido por"
+
+    users ||--o{ importaciones_masivas : "carga CSV"
+    importaciones_masivas ||--o{ e_ind_fvt : "genera (vía importacion_expedientes)"
+```
+
+Lectura en una frase: un **usuario** con perfil de **entrevistador** crea **expedientes**
+(`e_ind_fvt`); cada expediente tiene **adjuntos** que pasan por **transcripción** y
+**anonimización** (humana y automática), involucra **personas** que firman
+**consentimiento**, y su acceso se controla con **permisos**.
+
+---
+
 ## Diagrama ER (Mermaid)
 
 ```mermaid

@@ -1,6 +1,6 @@
 # Diccionario de Datos — Módulo Escucha Lite
 
-> Generado automáticamente con `php artisan dic:generar` el 2026-06-02 16:10.
+> Generado automáticamente con `php artisan dic:generar` el 2026-06-10 15:10.
 > No editar a mano: las descripciones se mantienen como `COMMENT ON` en la BD.
 
 **Motor:** PostgreSQL 11.22 on x86_64-pc-linux-musl, compiled by gcc (Alpine 13.2.1_git20231014) 13.2.1 20231014, 64-bit  
@@ -161,13 +161,13 @@
 | id_asignacion | INTEGER | No | PK | Identificador |
 | id_e_ind_fvt | INTEGER | Sí | FK → esclarecimiento.e_ind_fvt | Expediente asociado |
 | id_anonimizador | INTEGER | Sí | FK → esclarecimiento.entrevistador | Anonimizador asignado |
-| id_asignado_por | INTEGER | Sí |  | Usuario que realizó la asignación |
+| id_asignado_por | INTEGER | Sí | FK → public.users | Usuario que realizó la asignación |
 | estado | CHARACTER VARYING(50) | Sí |  | Estado actual |
 | fecha_asignacion | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de asignación |
 | fecha_inicio_edicion | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de inicio de edición |
 | fecha_envio_revision | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de envío a revisión |
 | fecha_revision | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de revisión final |
-| id_revisor | INTEGER | Sí |  | Revisor designado |
+| id_revisor | INTEGER | Sí | FK → public.users | Revisor designado |
 | comentario_revision | TEXT | Sí |  | Comentario del revisor |
 | tipos_anonimizar | CHARACTER VARYING(100) | Sí |  | Tipos de entidades a anonimizar |
 | formato_reemplazo | CHARACTER VARYING(50) | Sí |  | Formato de sustitución de texto |
@@ -185,13 +185,13 @@
 | id_asignacion | INTEGER | No | PK | Identificador |
 | id_e_ind_fvt | INTEGER | Sí | FK → esclarecimiento.e_ind_fvt | Expediente asociado |
 | id_transcriptor | INTEGER | Sí | FK → esclarecimiento.entrevistador | Transcriptor asignado |
-| id_asignado_por | INTEGER | Sí |  | Usuario que realizó la asignación |
+| id_asignado_por | INTEGER | Sí | FK → public.users | Usuario que realizó la asignación |
 | estado | CHARACTER VARYING(50) | Sí |  | Estado actual (ver valores abajo) |
 | fecha_asignacion | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de asignación |
 | fecha_inicio_edicion | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de inicio de edición |
 | fecha_envio_revision | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de envío a revisión |
 | fecha_revision | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de revisión final |
-| id_revisor | INTEGER | Sí |  | Usuario revisor designado |
+| id_revisor | INTEGER | Sí | FK → public.users | Usuario revisor designado |
 | comentario_revision | TEXT | Sí |  | Comentario del revisor |
 | transcripcion_editada | TEXT | Sí |  | Texto de transcripción editado |
 | created_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Auditoría |
@@ -202,6 +202,10 @@
 | transcripcion_anotada | TEXT | Sí |  | Texto con anotaciones del revisor |
 | segundos_edicion_activa | INTEGER | No |  | Tiempo activo de edición en segundos |
 | historial_comentarios | JSONB | No |  | Array histórico de comentarios |
+
+**Restricciones:**
+
+- CHECK `asignacion_transcripcion_calificacion_audio_check`: `CHECK (((calificacion_audio >= 1) AND (calificacion_audio <= 5)))`
 
 ---
 
@@ -217,6 +221,10 @@
 | texto_firmado | TEXT | No |  | Texto completo del compromiso firmado |
 | created_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Auditoría |
 | updated_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Auditoría |
+
+**Restricciones:**
+
+- CHECK `compromiso_firma_tipo_check`: `CHECK (((tipo)::text = ANY ((ARRAY['acceso'::character varying, 'reserva'::character varying])::text[])))`
 
 ---
 
@@ -363,6 +371,10 @@
 | fecha_hechos_final_dia_conocido | BOOLEAN | Sí |  | Día final exacto conocido |
 | fecha_hechos_final_mes_conocido | BOOLEAN | Sí |  | Mes final exacto conocido |
 
+**Restricciones:**
+
+- UNIQUE `contenido_testimonio_id_e_ind_fvt_key`: (`id_e_ind_fvt`)
+
 ---
 
 ## 22. `esclarecimiento.e_ind_fvt` — Entrevistas / Expedientes
@@ -416,10 +428,10 @@
 | id_cerrado | INTEGER | Sí |  | Expediente cerrado |
 | fichas_alarmas | JSONB | Sí |  | Alarmas del sistema de fichas |
 | fichas_estado | INTEGER | Sí |  |  |
-| es_virtual | INTEGER | Sí |  | `true` = entrevista realizada virtualmente |
+| es_virtual | INTEGER | Sí |  | `1` = entrevista realizada virtualmente (campo INTEGER usado como bandera) |
 | id_transcrita | INTEGER | Sí |  | Transcripción completada |
 | id_etiquetada | INTEGER | Sí |  | Etiquetado completado |
-| id_activo | INTEGER | Sí |  | `true` = expediente activo |
+| id_activo | INTEGER | Sí |  | `1` = expediente activo (campo INTEGER usado como bandera, no es FK pese al prefijo id_) |
 | id_remitido | INTEGER | Sí |  | Remitido al archivo central |
 | id_prioritario | INTEGER | Sí |  | Marcado como prioritario |
 | prioritario_tema | TEXT | Sí |  | Tema de prioridad |
@@ -480,6 +492,10 @@
 | id_e_ind_fvt | INTEGER | Sí | FK → esclarecimiento.e_ind_fvt | Expediente asociado |
 | id_area | INTEGER | Sí | FK → catalogos.cat_item | Área compatible (cat_item) |
 | created_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de creación |
+
+**Restricciones:**
+
+- UNIQUE `entrevista_area_compatible_id_e_ind_fvt_id_area_key`: (`id_e_ind_fvt, id_area`)
 
 ---
 
@@ -559,6 +575,10 @@
 | exception | TEXT | No |  | Traza de la excepción |
 | failed_at | TIMESTAMP WITHOUT TIME ZONE | No |  | Fecha del fallo |
 
+**Restricciones:**
+
+- UNIQUE `failed_jobs_uuid_key`: (`uuid`)
+
 ---
 
 ## 31. `esclarecimiento.importacion_expedientes` — Expedientes de importación
@@ -585,7 +605,7 @@
 | Columna | Tipo | Nulo | PK/FK | Descripción |
 |---------|------|------|-------|-------------|
 | id_importacion | INTEGER | No | PK | Identificador del lote |
-| id_usuario | INTEGER | No |  | Usuario que inició la importación |
+| id_usuario | INTEGER | No | FK → public.users | Usuario que inició la importación |
 | nombre_archivo | CHARACTER VARYING(500) | Sí |  | Nombre del archivo CSV original |
 | ruta_csv | CHARACTER VARYING(1000) | Sí |  | Ruta en disco del CSV |
 | estado | CHARACTER VARYING(50) | Sí |  | Estado del lote (ver valores) |
@@ -638,7 +658,13 @@
 | estado_solicitud | CHARACTER VARYING(20) | Sí |  |  |
 | fecha_solicitud | TIMESTAMP WITHOUT TIME ZONE | Sí |  |  |
 | fecha_respuesta | TIMESTAMP WITHOUT TIME ZONE | Sí |  |  |
-| id_respondido_por | INTEGER | Sí |  |  |
+| id_respondido_por | INTEGER | Sí | FK → public.users |  |
+| motivo_rechazo | TEXT | Sí |  |  |
+
+**Restricciones:**
+
+- CHECK `permiso_id_estado_check`: `CHECK ((id_estado = ANY (ARRAY[1, 2])))`
+- CHECK `permiso_id_tipo_check`: `CHECK ((id_tipo = ANY (ARRAY[1, 2, 3])))`
 
 ---
 
@@ -670,6 +696,10 @@
 | alcance_dependencia | BOOLEAN | Sí |  |  |
 | alcance_todas | BOOLEAN | Sí |  |  |
 
+**Restricciones:**
+
+- UNIQUE `rol_modulo_permiso_id_nivel_modulo_key`: (`id_nivel, modulo`)
+
 ---
 
 ## 37. `esclarecimiento.trabajo_procesamiento` — Trabajos automáticos
@@ -682,7 +712,7 @@
 | estado | CHARACTER VARYING(50) | Sí |  | Estado del trabajo |
 | progreso | INTEGER | Sí |  | Porcentaje de avance (0–100) |
 | parametros | JSONB | Sí |  | Parámetros del trabajo |
-| id_usuario | INTEGER | Sí |  | Usuario que inició el trabajo |
+| id_usuario | INTEGER | Sí | FK → public.users | Usuario que inició el trabajo |
 | mensaje | TEXT | Sí |  | Mensaje de estado o error |
 | resultado | JSONB | Sí |  | Resultado del procesamiento |
 | iniciado_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de inicio del procesamiento |
@@ -710,10 +740,10 @@
 | observaciones | TEXT | Sí |  | Observaciones |
 | created_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Auditoría |
 | updated_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Auditoría |
-| prueba_dano_derechos_privados | SMALLINT | Sí |  | Prueba de daño a derechos privados |
-| prueba_dano_intereses_publicos | SMALLINT | Sí |  | Prueba de daño a intereses públicos |
-| prueba_dano_inteligencia | SMALLINT | Sí |  | Prueba de daño a información de inteligencia |
-| prueba_dano_nna | SMALLINT | Sí |  | Prueba de daño a NNA |
+| prueba_dano_derechos_privados | SMALLINT | Sí |  | Indicador codificado (SMALLINT) de prueba de daño a derechos privados; no almacena el texto de la prueba |
+| prueba_dano_intereses_publicos | SMALLINT | Sí |  | Indicador codificado (SMALLINT) de prueba de daño a intereses públicos; no almacena el texto de la prueba |
+| prueba_dano_inteligencia | SMALLINT | Sí |  | Indicador codificado (SMALLINT) de prueba de daño a información de inteligencia; no almacena el texto de la prueba |
+| prueba_dano_nna | SMALLINT | Sí |  | Indicador codificado (SMALLINT) de prueba de daño a NNA; no almacena el texto de la prueba |
 
 ---
 
@@ -757,7 +787,7 @@
 | id_pueblo_representado | INTEGER | Sí | FK → catalogos.cat_item |  |
 | asistencia | INTEGER | Sí |  | Requiere asistencia |
 | restrictiva | INTEGER | Sí |  | Entrevista con acceso restringido |
-| borrable | INTEGER | Sí |  | Puede ser borrada (defecto: false) |
+| borrable | INTEGER | Sí |  | Puede ser borrada (campo INTEGER usado como bandera; defecto: 0) |
 | consentimiento_nombres | CHARACTER VARYING(200) | Sí |  |  |
 | consentimiento_apellidos | CHARACTER VARYING(200) | Sí |  |  |
 | consentimiento_sexo | INTEGER | Sí |  |  |
@@ -781,9 +811,9 @@
 | apellido | CHARACTER VARYING(200) | Sí |  | Apellido(s) |
 | nombre_identitario | CHARACTER VARYING(200) | Sí |  | Nombre identitario |
 | alias | CHARACTER VARYING(100) | Sí |  | Alias o nombre conocido |
-| fec_nac_a | INTEGER | Sí |  | Año, mes y día de nacimiento |
-| fec_nac_m | INTEGER | Sí |  | Año, mes y día de nacimiento |
-| fec_nac_d | INTEGER | Sí |  | Año, mes y día de nacimiento |
+| fec_nac_a | INTEGER | Sí |  | Año de nacimiento (la fecha se almacena descompuesta en a/m/d para permitir valores parcialmente conocidos) |
+| fec_nac_m | INTEGER | Sí |  | Mes de nacimiento (1–12; nulo si no se conoce) |
+| fec_nac_d | INTEGER | Sí |  | Día de nacimiento (1–31; nulo si no se conoce) |
 | id_lugar_nacimiento | INTEGER | Sí | FK → catalogos.geo | Municipio de nacimiento |
 | id_lugar_nacimiento_depto | INTEGER | Sí | FK → catalogos.geo | Departamento de nacimiento |
 | id_sexo | INTEGER | Sí | FK → catalogos.cat_item | Sexo biológico |
@@ -861,6 +891,10 @@
 | id_ocupacion | INTEGER | Sí | FK → catalogos.cat_item | Ocupación (cat_item) |
 | created_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de creación |
 
+**Restricciones:**
+
+- UNIQUE `persona_ocupacion_id_persona_id_ocupacion_key`: (`id_persona, id_ocupacion`)
+
 ---
 
 ## 43. `fichas.persona_poblacion` — Pivot: poblaciones de especial protección de una persona
@@ -871,6 +905,10 @@
 | id_persona | INTEGER | Sí | FK → fichas.persona | Persona asociada |
 | id_poblacion | INTEGER | Sí | FK → catalogos.cat_item | Población de especial protección (cat_item) |
 | created_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de creación |
+
+**Restricciones:**
+
+- UNIQUE `persona_poblacion_id_persona_id_poblacion_key`: (`id_persona, id_poblacion`)
 
 ---
 
@@ -910,10 +948,369 @@
 | email | CHARACTER VARYING(255) | No |  | Correo electrónico (login) |
 | email_verified_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de verificación de correo |
 | password | CHARACTER VARYING(255) | No |  | Hash de contraseña |
-| is_login_directory_active | BOOLEAN | Sí |  | Indica si usa autenticación por directorio (LDAP) |
+| is_login_directory_active | BOOLEAN | No |  | Indica si usa autenticación por directorio (LDAP) |
 | remember_token | CHARACTER VARYING(100) | Sí |  | Token de sesión persistente |
 | created_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de creación |
 | updated_at | TIMESTAMP WITHOUT TIME ZONE | Sí |  | Fecha de última modificación |
+
+**Restricciones:**
+
+- UNIQUE `users_email_key`: (`email`)
+
+---
+
+## Valores de catálogo
+
+> Solo ítems con `habilitado = 1`. Los catálogos marcados como editables se
+> administran desde la aplicación, por lo que su contenido puede diferir entre servidores.
+
+### `cat_cat` 1: Sexo (no editable, 3 ítems)
+
+Sexo biológico
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 1 | Hombre | H |
+| 2 | Mujer | M |
+| 3 | Intersexual | I |
+
+### `cat_cat` 2: Tipo de Documento (no editable, 6 ítems)
+
+Tipos de documento de identidad
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 10 | Cédula de Ciudadanía | CC |
+| 11 | Tarjeta de Identidad | TI |
+| 12 | Cédula de Extranjería | CE |
+| 13 | Pasaporte | PA |
+| 14 | Registro Civil | RC |
+| 15 | Sin Documento | SD |
+
+### `cat_cat` 3: Grupo Étnico (no editable, 6 ítems)
+
+Grupos étnicos
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 20 | Comunidades negras | CN |
+| 21 | Pueblos indígenas | PI |
+| 22 | Palenqueras | PA |
+| 23 | Raizales | RA |
+| 24 | Pueblo Rrom | RR |
+| 25 | Ningún grupo étnico | NG |
+
+### `cat_cat` 4: Dependencia de Origen (no editable, 12 ítems)
+
+Áreas que realizaron la toma del testimonio
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 30 | Dirección Museo de Memoria y Conflicto | DMMC |
+| 31 | Dirección de Construcción de Memoria Histórica | DCMH |
+| 32 | Dirección de Acuerdos de la Verdad | DAV |
+| 33 | Dirección de Archivo de los Derechos Humanos | DADH |
+| 34 | Estrategia de Comunicaciones | EC |
+| 35 | Dirección General | DG |
+| 36 | Estrategia de Pedagogía | EP |
+| 37 | Estrategia de Enfoques Diferenciales | EED |
+| 38 | Estrategia Psicosocial | EPS |
+| 39 | Estrategia de Territorialización | ET |
+| 40 | Testimonio allegado al CNMH | TA |
+| 330 | Observatorio de Memoria y Conflicto | OMC |
+
+### `cat_cat` 5: Tipo de Testimonio (no editable, 5 ítems)
+
+Clasificación según enfoque del testimonio
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 50 | Entrevista Individual | EI |
+| 51 | Entrevista grupal/colectiva | EG |
+| 52 | Entrevista a Profundidad | EP |
+| 53 | Entrevista Estructurada | EE |
+| 54 | Entrevista de Ampliación | EA |
+
+### `cat_cat` 6: Formato del Testimonio (no editable, 4 ítems)
+
+Formato en que fueron producidos los documentos
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 60 | Audio | AUD |
+| 61 | Audiovisual | AV |
+| 62 | Escrito | ESC |
+| 63 | Otra índole | OTR |
+
+### `cat_cat` 7: Modalidad (no editable, 3 ítems)
+
+Forma en que se llevó a cabo la entrevista
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 70 | Virtual | VIR |
+| 71 | Presencial | PRE |
+| 72 | Sin Información | SI |
+
+### `cat_cat` 8: Idioma (editable, 4 ítems)
+
+Idiomas del testimonio
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 80 | Español | ES |
+| 81 | Inglés | EN |
+| 82 | Lengua nativa | LN |
+| 325 | Otro(s) |  |
+
+### `cat_cat` 9: Población (editable, 12 ítems)
+
+Grupos sociales o comunitarios
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 90 | Líderes y/o lideresas | LID |
+| 91 | Personas refugiadas | REF |
+| 92 | Personas inmigrantes | INM |
+| 93 | Personas exiliadas | EXI |
+| 94 | Habitantes de calle | HAB |
+| 95 | Personas desmovilizadas | DES |
+| 96 | Menores desvinculados | MEN |
+| 97 | Personas privadas de la libertad | PPL |
+| 98 | Sindicalistas | SIN |
+| 99 | Víctimas del conflicto armado | VIC |
+| 100 | Ex miembro de Fuerza Pública | EFP |
+| 331 | Experto(a) |  |
+
+### `cat_cat` 10: Hecho Victimizante (no editable, 12 ítems)
+
+Tipos de hechos victimizantes
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 110 | Acciones Bélicas | AB |
+| 111 | Asesinatos Selectivos | AS |
+| 112 | Atentado Terrorista | AT |
+| 113 | Daño a Bienes Civiles | DB |
+| 114 | Desaparición Forzada | DF |
+| 115 | Masacres | MA |
+| 116 | Reclutamiento de Menores | RU |
+| 117 | Secuestro | SE |
+| 118 | Violencia Sexual | VS |
+| 119 | Ataque a Poblado | AP |
+| 120 | Minas | MI |
+| 121 | Desplazamiento forzado | DF |
+
+### `cat_cat` 11: Ocupación (editable, 41 ítems)
+
+Ocupaciones u oficios
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 361 | Administrador de Finca |  |
+| 362 | Ama de Casa |  |
+| 363 | Abogados |  |
+| 364 | Artesanos |  |
+| 365 | Campesinos |  |
+| 131 | Comerciante | COM |
+| 366 | Delincuente |  |
+| 367 | Docentes |  |
+| 368 | Economía Informal |  |
+| 133 | Empleado | EMP |
+| 369 | Empresario - Industrial |  |
+| 370 | Estudiantes |  |
+| 371 | Fuerza Pública |  |
+| 372 | Funcionarios |  |
+| 373 | Gestores de archivos |  |
+| 374 | Ganadero/Hacendado |  |
+| 375 | Guerrilleros |  |
+| 376 | Miembro de Grupo Post-desmovilización |  |
+| 377 | Mineros |  |
+| 378 | Músicos |  |
+| 379 | Obrero |  |
+| 380 | Paramilitares |  |
+| 381 | Periodistas |  |
+| 382 | Pescadores |  |
+| 137 | Profesional | PRO |
+| 383 | Religioso |  |
+| 384 | Sacerdotes |  |
+| 385 | Seguridad Privada |  |
+| 386 | Terrateniente |  |
+| 387 | Trabajador de Finca |  |
+| 388 | Trabajadores sexuales |  |
+| 389 | Trabajadores de la salud |  |
+| 390 | Transportadores |  |
+| 391 | Turistas |  |
+| 392 | Pensionado |  |
+| 393 | Erradicador |  |
+| 394 | Raspachines |  |
+| 395 | Bandolero |  |
+| 138 | Desempleado | DES |
+| 396 | Trabajo Sin Especificar |  |
+| 397 | Artista |  |
+
+### `cat_cat` 12: Identidad de Género (no editable, 6 ítems)
+
+Identidades de género
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 140 | Masculino | MAS |
+| 141 | Femenino | FEM |
+| 142 | Transgénero | TRA |
+| 143 | No binario | NBI |
+| 144 | Otro | OTR |
+| 145 | Sin información | SI |
+
+### `cat_cat` 13: Orientación Sexual (no editable, 5 ítems)
+
+Orientaciones sexuales
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 150 | Heterosexual | HET |
+| 151 | Homosexual | HOM |
+| 152 | Bisexual | BIS |
+| 153 | Otra | OTR |
+| 154 | Sin información | SI |
+
+### `cat_cat` 14: Rango Etario (no editable, 5 ítems)
+
+Rangos de edad
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 332 | Niñas y Niños (0 a 13 años) |  |
+| 333 | Adolescentes (14 a 17 años) |  |
+| 334 | Jóvenes (18 a 27 años) |  |
+| 335 | Personas adultas (27- 59 años) |  |
+| 336 | Personas mayores (60 años o mas) |  |
+
+### `cat_cat` 15: Discapacidad (no editable, 8 ítems)
+
+Tipos de discapacidad
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 337 | Discapacidad física |  |
+| 338 | Discapacidad funcional |  |
+| 339 | Discapacidad intelectual |  |
+| 340 | Discapacidad múltiple |  |
+| 341 | Discapacidad psicosocial |  |
+| 342 | Discapacidad sensorial |  |
+| 170 | Ninguna | NIN |
+| 343 | No especificada |  |
+
+### `cat_cat` 16: Necesidad de Ruta de Reparación (no editable, 4 ítems)
+
+Necesidades de ruta de reparación
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 180 | Administrativa | ADM |
+| 181 | Simbólica | SIM |
+| 182 | No | NO |
+| 183 | No Aplica | NA |
+
+### `cat_cat` 17: Responsable Colectivo (no editable, 18 ítems)
+
+Grupos armados y otros responsables
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 344 | Agente del Estado |  |
+| 345 | Organismos de inteligencia |  |
+| 346 | Armada Nacional de Colombia |  |
+| 347 | Fuerza Aérea Nacional de Colombia |  |
+| 348 | Ejército Nacional de Colombia |  |
+| 349 | Policía Nacional de Colombia |  |
+| 350 | Autodefensas |  |
+| 351 | Grupos armados disidentes |  |
+| 352 | Grupos armados posdesmovilización |  |
+| 353 | Grupos guerrilleros |  |
+| 354 | Grupos paramilitares |  |
+| 355 | Convivir |  |
+| 356 | Juntas de autodefensa |  |
+| 357 | Intervención militar extranjera |  |
+| 358 | Bandolerismo |  |
+| 359 | Bacrim |  |
+| 360 | Grupo Armado No Identificado |  |
+| 195 | Desconocido | DES |
+
+### `cat_cat` 18: Equipo/Estrategia (editable, 17 ítems)
+
+Equipos o estrategias por dependencia
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 200 | Dimensión Física | DF |
+| 201 | Dimensión Territorial | DT |
+| 202 | Dimensión Virtual | DV |
+| 210 | Investigación para el Esclarecimiento | IPE |
+| 211 | Iniciativas de Memoria Histórica | IMH |
+| 212 | Reparaciones | REP |
+| 220 | Esclarecimiento del fenómeno paramilitar | EFP |
+| 221 | Contribuciones Voluntarias | CV |
+| 230 | Testimonios | TEST |
+| 231 | Fondos documentales | FD |
+| 240 | Estrategia de Comunicaciones | EC |
+| 250 | Dirección General | DG |
+| 260 | Estrategia de Pedagogía | EP |
+| 270 | Estrategia de Enfoques Diferenciales, Pueblos Étnicos y Campesinado | EEDPEC |
+| 280 | Estrategia Psicosocial | EPS |
+| 290 | Estrategia de Territorialización | ET |
+| 300 | Testimonio allegado al CNMH | TACNMH |
+
+### `cat_cat` 19: Tipo de Archivo Adjunto (no editable, 6 ítems)
+
+Tipos de archivo adjunto a la entrevista
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 310 | Audio/Video de la entrevista | AV |
+| 311 | Consentimiento informado | CI |
+| 312 | Transcripcion Automatizada | TA |
+| 313 | Transcripcion final | TF |
+| 314 | Version publica | VP |
+| 315 | Otros Documentos | OD |
+
+### `cat_cat` 20: practicas_resistencia (editable, 9 ítems)
+
+Prácticas de resistencia
+
+| id_item | Descripción | Abreviado |
+|---------|-------------|-----------|
+| 316 | Prácticas de resistencia colectivas |  |
+| 317 | Prácticas de resistencia cultural |  |
+| 318 | Prácticas de resistencia de grupos específicos de personas |  |
+| 319 | Prácticas de resistencia económica |  |
+| 320 | Prácticas de resistencia espiritual |  |
+| 321 | Prácticas de resistencia individuales |  |
+| 322 | Prácticas de resistencia jurídica |  |
+| 323 | Prácticas de resistencia política |  |
+| 324 | Prácticas de resistencia social |  |
+
+### `criterio_fijo` — opciones fijas por grupo
+
+| id_grupo | id_opcion | Descripción | Abreviado |
+|----------|-----------|-------------|-----------|
+| 1 | 1 | Administrador | Admin |
+| 1 | 2 | Líder | Líder |
+| 1 | 3 | Entrevistador | Ent |
+| 1 | 4 | Transcriptor | Trans |
+| 1 | 5 | Gestor de Conocimiento |  |
+| 1 | 99 | Deshabilitado | Des |
+| 21 | 21 | Crear | C |
+| 21 | 22 | Leer | R |
+| 21 | 23 | Actualizar | U |
+| 21 | 24 | Eliminar | D |
+| 21 | 25 | Login | L |
+| 21 | 26 | Logout | O |
+| 22 | 31 | Entrevista | Ent |
+| 22 | 32 | Persona | Per |
+| 22 | 33 | Adjunto | Adj |
+| 22 | 34 | Usuario | Usr |
+| 22 | 35 | Permiso | Prm |
 
 ---
 

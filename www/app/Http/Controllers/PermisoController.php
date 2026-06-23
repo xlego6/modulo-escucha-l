@@ -13,12 +13,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PermisoController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth');
+    }
+
+    private function finDeDia(?string $fecha): ?Carbon
+    {
+        return $fecha ? Carbon::parse($fecha)->endOfDay() : null;
     }
 
     /**
@@ -130,7 +136,7 @@ class PermisoController extends Controller
             }
         }
 
-        $permisos = $query->orderBy('created_at', 'desc')->paginate(20);
+        $permisos = $query->orderBy('fecha_otorgado', 'desc')->paginate(20);
 
         $entrevistadores = collect();
         $tipos = [
@@ -316,18 +322,12 @@ class PermisoController extends Controller
                     ->first();
 
                 if ($existente) {
-                    if ($existente->id_tipo == $request->id_tipo) {
-                        // Mismo tipo: no hay nada que cambiar
-                        $permisosExistentes++;
-                        continue;
-                    }
-                    // Tipo diferente: actualizar el permiso existente
                     $existente->update([
                         'id_tipo'          => $request->id_tipo,
                         'fecha_otorgado'   => now(),
                         'fecha_vencimiento'=> $request->fecha_vencimiento ?: null,
                         'fecha_desde'      => $request->fecha_desde ?: null,
-                        'fecha_hasta'      => $request->fecha_hasta ?: null,
+                        'fecha_hasta'      => $this->finDeDia($request->fecha_hasta ?: null),
                         'justificacion'    => $request->justificacion,
                         'id_otorgado_por'  => $user->id_entrevistador,
                         'es_solicitud'     => false,
@@ -344,7 +344,7 @@ class PermisoController extends Controller
                     'fecha_otorgado' => now(),
                     'fecha_vencimiento' => $request->fecha_vencimiento ?: null,
                     'fecha_desde' => $request->fecha_desde ?: null,
-                    'fecha_hasta' => $request->fecha_hasta ?: null,
+                    'fecha_hasta' => $this->finDeDia($request->fecha_hasta ?: null),
                     'justificacion' => $request->justificacion,
                     'id_otorgado_por' => $user->id_entrevistador,
                     'id_adjunto' => $idAdjunto,
@@ -590,7 +590,7 @@ class PermisoController extends Controller
                     'id_tipo' => Permiso::TIPO_LECTURA,
                     'fecha_otorgado' => now(),
                     'fecha_desde' => $request->fecha_desde,
-                    'fecha_hasta' => $request->fecha_hasta,
+                    'fecha_hasta' => $this->finDeDia($request->fecha_hasta),
                     'justificacion' => $request->justificacion,
                     'id_otorgado_por' => $user->id_entrevistador,
                     'id_adjunto' => $adjunto->id_adjunto,
@@ -848,7 +848,7 @@ class PermisoController extends Controller
             $permiso->id_otorgado_por = $user->id_entrevistador ?: null;
             $permiso->id_estado = Permiso::ESTADO_VIGENTE;
             $permiso->fecha_desde = $request->fecha_desde ?: null;
-            $permiso->fecha_hasta = $request->fecha_hasta ?: null;
+            $permiso->fecha_hasta = $this->finDeDia($request->fecha_hasta ?: null);
             $permiso->save();
 
             // Si es solicitud de eliminación, hacer soft delete de la entrevista
