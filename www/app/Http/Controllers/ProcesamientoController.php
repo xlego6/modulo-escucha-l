@@ -318,31 +318,74 @@ class ProcesamientoController extends Controller
     /**
      * Transcripcion automatizada
      */
-    public function transcripcion()
+    public function transcripcion(Request $request)
     {
-        // Entrevistas con audio o video (excluir adjuntos anonimizados)
-        $entrevistas = Entrevista::where('id_activo', 1)
-            ->whereHas('rel_adjuntos', function($q) {
-                $q->where(function($inner) {
-                    $inner->where('tipo_mime', 'like', '%audio%')
-                          ->orWhere('tipo_mime', 'like', '%video%');
-                })->where('nombre_original', 'not like', '%[Anonimizado]%');
-            })
-            ->with(['rel_adjuntos' => function($q) {
-                $q->where(function($inner) {
-                    $inner->where('tipo_mime', 'like', '%audio%')
-                          ->orWhere('tipo_mime', 'like', '%video%');
-                })->where('nombre_original', 'not like', '%[Anonimizado]%');
-            }])
+        $codigo = trim((string) $request->input('codigo', ''));
+        $audioNombre = trim((string) $request->input('audio', ''));
+        $estado = (string) $request->input('estado', '');
+
+        // Filtro base: solo adjuntos de audio/video, excluyendo anonimizados
+        $audioFilter = function($q) {
+            $q->where(function($inner) {
+                $inner->where('tipo_mime', 'like', '%audio%')
+                      ->orWhere('tipo_mime', 'like', '%video%');
+            })->where('nombre_original', 'not like', '%[Anonimizado]%');
+        };
+        $conTexto = function($q) {
+            $q->whereNotNull('texto_extraido')->where('texto_extraido', '!=', '');
+        };
+        $sinTexto = function($q) {
+            $q->where(function($q2) {
+                $q2->whereNull('texto_extraido')->orWhere('texto_extraido', '');
+            });
+        };
+
+        $query = Entrevista::where('id_activo', 1)
+            ->whereHas('rel_adjuntos', $audioFilter);
+
+        if ($codigo !== '') {
+            $query->where('entrevista_codigo', 'like', '%' . $codigo . '%');
+        }
+
+        if ($audioNombre !== '') {
+            $query->whereHas('rel_adjuntos', function($q) use ($audioFilter, $audioNombre) {
+                $audioFilter($q);
+                $q->where('nombre_original', 'like', '%' . $audioNombre . '%');
+            });
+        }
+
+        if ($estado === 'transcrita') {
+            $query->whereDoesntHave('rel_adjuntos', function($q) use ($audioFilter, $sinTexto) {
+                $audioFilter($q);
+                $sinTexto($q);
+            });
+        } elseif ($estado === 'pendiente') {
+            $query->whereDoesntHave('rel_adjuntos', function($q) use ($audioFilter, $conTexto) {
+                $audioFilter($q);
+                $conTexto($q);
+            });
+        } elseif ($estado === 'parcial') {
+            $query->whereHas('rel_adjuntos', function($q) use ($audioFilter, $conTexto) {
+                $audioFilter($q);
+                $conTexto($q);
+            })->whereHas('rel_adjuntos', function($q) use ($audioFilter, $sinTexto) {
+                $audioFilter($q);
+                $sinTexto($q);
+            });
+        }
+
+        $entrevistas = $query
+            ->with(['rel_adjuntos' => $audioFilter])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->appends($request->query());
 
         $enProceso = collect();
 
         // Estado del servicio
         $servicioStatus = $this->procesamientoService->transcriptionStatus();
 
-        return view('procesamientos.transcripcion', compact('entrevistas', 'enProceso', 'servicioStatus'));
+        return view('procesamientos.transcripcion', compact('entrevistas', 'enProceso', 'servicioStatus', 'codigo', 'audioNombre', 'estado'));
     }
 
     /**
