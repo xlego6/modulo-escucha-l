@@ -55,6 +55,11 @@ class User extends Authenticatable
         return $cual ? $cual->solo_lectura : 1;
     }
 
+    public function getFmtDependenciaOrigenAttribute() {
+        $cual = Entrevistador::where('id_usuario', $this->id)->orderby('id_nivel')->first();
+        return $cual ? $cual->fmt_dependencia_origen : 'Sin asignar';
+    }
+
     public function getImagenAttribute() {
         return empty($this->avatar) ? url("logo_vertical.jpg") : $this->avatar;
     }
