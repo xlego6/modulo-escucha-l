@@ -210,6 +210,39 @@
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas</h3>
             </div>
+            <div class="card-body border-bottom">
+                <form method="GET" action="{{ route('procesamientos.transcripcion') }}" class="row align-items-end">
+                    <div class="col-md-4 form-group mb-2 mb-md-0">
+                        <label for="f-codigo" class="mb-1">Codigo</label>
+                        <input type="text" class="form-control form-control-sm" id="f-codigo" name="codigo"
+                               value="{{ $codigo }}" placeholder="Ej: EI-2026-001">
+                    </div>
+                    <div class="col-md-4 form-group mb-2 mb-md-0">
+                        <label for="f-audio" class="mb-1">Nombre de audio</label>
+                        <input type="text" class="form-control form-control-sm" id="f-audio" name="audio"
+                               value="{{ $audioNombre }}" placeholder="Ej: entrevista1.mp3">
+                    </div>
+                    <div class="col-md-3 form-group mb-2 mb-md-0">
+                        <label for="f-estado" class="mb-1">Estado</label>
+                        <select class="form-control form-control-sm" id="f-estado" name="estado">
+                            <option value="" {{ $estado === '' ? 'selected' : '' }}>Todos</option>
+                            <option value="transcrita" {{ $estado === 'transcrita' ? 'selected' : '' }}>Transcrita</option>
+                            <option value="parcial" {{ $estado === 'parcial' ? 'selected' : '' }}>Con texto (parcial)</option>
+                            <option value="pendiente" {{ $estado === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 form-group mb-0 d-flex">
+                        <button type="submit" class="btn btn-sm btn-primary mr-1" title="Buscar">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        @if($codigo !== '' || $audioNombre !== '' || $estado !== '')
+                        <a href="{{ route('procesamientos.transcripcion') }}" class="btn btn-sm btn-outline-secondary" title="Limpiar filtros">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
             <div class="card-body p-0">
                 <table class="table table-hover mb-0">
                     <thead>
