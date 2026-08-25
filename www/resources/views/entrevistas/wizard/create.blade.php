@@ -138,9 +138,38 @@ $(document).ready(function() {
             if (!$('#temas_tesauro').data('select2')) {
                 inicializarTesauro();
             }
+
+            aplicarAutoNNA();
         }
 
         currentStep = step;
+    }
+
+    // Pregunta 4 del Test de Daño: pre-marcar "Si" si algun testimoniante
+    // quedo registrado como menor de edad en el Paso 2. No se sobrescribe
+    // si el usuario ya edito manualmente esta pregunta.
+    let nnaManualOverride = false;
+    $('#prueba_dano_nna_si, #prueba_dano_nna_no, #prueba_dano_nna_ns').on('change', function() {
+        nnaManualOverride = true;
+        $('#prueba_dano_nna_auto_hint').hide();
+    });
+
+    function aplicarAutoNNA() {
+        if (nnaManualOverride) return;
+
+        let hayMenorEdad = false;
+        $('.testimoniante-card').each(function() {
+            if ($(this).find('[name^="es_menor_edad_"]:checked').val() === '1') {
+                hayMenorEdad = true;
+            }
+        });
+
+        if (hayMenorEdad) {
+            $('#prueba_dano_nna_si').prop('checked', true);
+            $('#prueba_dano_nna_auto_hint').show();
+        } else {
+            $('#prueba_dano_nna_auto_hint').hide();
+        }
     }
 
     // Boton Siguiente
@@ -369,11 +398,7 @@ $(document).ready(function() {
                     otro_riesgo: card.find('[name="otro_riesgo_' + index + '"]:checked').val() || 2,
                     otro_riesgo_obs: card.find('[name="otro_riesgo_obs_' + index + '"]').val() || '',
                     otro_anonimizar: card.find('[name="otro_anonimizar_' + index + '"]:checked').val() || 0,
-                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || '',
-                    prueba_dano_derechos_privados: card.find('[name="prueba_dano_derechos_privados_' + index + '"]:checked').val(),
-                    prueba_dano_intereses_publicos: card.find('[name="prueba_dano_intereses_publicos_' + index + '"]:checked').val(),
-                    prueba_dano_inteligencia: card.find('[name="prueba_dano_inteligencia_' + index + '"]:checked').val(),
-                    prueba_dano_nna: card.find('[name="prueba_dano_nna_' + index + '"]:checked').val()
+                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || ''
                 }
             });
         });
@@ -421,7 +446,11 @@ $(document).ready(function() {
             detalle_grupos_etnicos: $('#detalle_grupos_etnicos').val(),
             otros_hechos_victimizantes: $('#otros_hechos_victimizantes').val(),
             contenido_practicas_resistencia: $('#contenido_practicas_resistencia').val() || [],
-            detalle_resistencias: $('#detalle_resistencias').val()
+            detalle_resistencias: $('#detalle_resistencias').val(),
+            prueba_dano_derechos_privados: $('input[name="prueba_dano_derechos_privados"]:checked').val(),
+            prueba_dano_intereses_publicos: $('input[name="prueba_dano_intereses_publicos"]:checked').val(),
+            prueba_dano_inteligencia: $('input[name="prueba_dano_inteligencia"]:checked').val(),
+            prueba_dano_nna: $('input[name="prueba_dano_nna"]:checked').val()
         };
     }
 

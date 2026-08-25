@@ -127,10 +127,6 @@ $(document).ready(function() {
                     'autoriza_datos_personales' => $pe->rel_consentimiento->autoriza_datos_personales_sin_anonimizar ? 1 : 0,
                     'autoriza_datos_sensibles' => $pe->rel_consentimiento->autoriza_datos_sensibles_sin_anonimizar ? 1 : 0,
                     'observaciones' => $pe->rel_consentimiento->observaciones ?? '',
-                    'prueba_dano_derechos_privados' => $pe->rel_consentimiento->prueba_dano_derechos_privados,
-                    'prueba_dano_intereses_publicos' => $pe->rel_consentimiento->prueba_dano_intereses_publicos,
-                    'prueba_dano_inteligencia' => $pe->rel_consentimiento->prueba_dano_inteligencia,
-                    'prueba_dano_nna' => $pe->rel_consentimiento->prueba_dano_nna,
                 ] : null
             ];
         })->toArray()) !!},
@@ -166,7 +162,15 @@ $(document).ready(function() {
                 ->select('id_departamento', 'id_municipio')
                 ->get()
                 ->toArray()
-        ) !!}
+        ) !!},
+        // El test de daño aplica a toda la entrevista: se guarda igual en el
+        // consentimiento de cada testimoniante, asi que basta leerlo del primero.
+        prueba_dano: {!! json_encode(($primerConsentimiento = optional($entrevista->rel_personas_entrevistadas->first())->rel_consentimiento) ? [
+            'prueba_dano_derechos_privados' => $primerConsentimiento->prueba_dano_derechos_privados,
+            'prueba_dano_intereses_publicos' => $primerConsentimiento->prueba_dano_intereses_publicos,
+            'prueba_dano_inteligencia' => $primerConsentimiento->prueba_dano_inteligencia,
+            'prueba_dano_nna' => $primerConsentimiento->prueba_dano_nna,
+        ] : null) !!}
     };
 
     // Inicializar Select2
@@ -310,9 +314,55 @@ $(document).ready(function() {
                     agregarLugarMencionado(lugar.id_departamento, lugar.id_municipio);
                 });
             }
+
+            // Pre-cargar Test de Daño (una sola vez; luego manda lo que el usuario edite)
+            if (!pruebaDanoPrecargado) {
+                pruebaDanoPrecargado = true;
+                let pd = entrevistaData.prueba_dano;
+                if (pd) {
+                    ['prueba_dano_derechos_privados', 'prueba_dano_intereses_publicos', 'prueba_dano_inteligencia', 'prueba_dano_nna'].forEach(function(campo) {
+                        if (pd[campo] !== null && pd[campo] !== undefined) {
+                            $('input[name="' + campo + '"][value="' + pd[campo] + '"]').prop('checked', true);
+                        }
+                    });
+                    if (pd.prueba_dano_nna !== null && pd.prueba_dano_nna !== undefined) {
+                        // Ya hay una respuesta guardada explicitamente: no dejar que el auto-marcado la pise.
+                        nnaManualOverride = true;
+                    }
+                }
+            }
+            aplicarAutoNNA();
         }
 
         currentStep = step;
+    }
+
+    // Pregunta 4 del Test de Daño: pre-marcar "Si" si algun testimoniante
+    // quedo registrado como menor de edad en el Paso 2. No se sobrescribe
+    // si ya hay una respuesta guardada o si el usuario la edito manualmente.
+    let nnaManualOverride = false;
+    let pruebaDanoPrecargado = false;
+    $('#prueba_dano_nna_si, #prueba_dano_nna_no, #prueba_dano_nna_ns').on('change', function() {
+        nnaManualOverride = true;
+        $('#prueba_dano_nna_auto_hint').hide();
+    });
+
+    function aplicarAutoNNA() {
+        if (nnaManualOverride) return;
+
+        let hayMenorEdad = false;
+        $('.testimoniante-card').each(function() {
+            if ($(this).find('[name^="es_menor_edad_"]:checked').val() === '1') {
+                hayMenorEdad = true;
+            }
+        });
+
+        if (hayMenorEdad) {
+            $('#prueba_dano_nna_si').prop('checked', true);
+            $('#prueba_dano_nna_auto_hint').show();
+        } else {
+            $('#prueba_dano_nna_auto_hint').hide();
+        }
     }
 
     // Boton Siguiente
@@ -541,11 +591,7 @@ $(document).ready(function() {
                     otro_riesgo: card.find('[name="otro_riesgo_' + index + '"]:checked').val() || 2,
                     otro_riesgo_obs: card.find('[name="otro_riesgo_obs_' + index + '"]').val() || '',
                     otro_anonimizar: card.find('[name="otro_anonimizar_' + index + '"]:checked').val() || 0,
-                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || '',
-                    prueba_dano_derechos_privados: card.find('[name="prueba_dano_derechos_privados_' + index + '"]:checked').val(),
-                    prueba_dano_intereses_publicos: card.find('[name="prueba_dano_intereses_publicos_' + index + '"]:checked').val(),
-                    prueba_dano_inteligencia: card.find('[name="prueba_dano_inteligencia_' + index + '"]:checked').val(),
-                    prueba_dano_nna: card.find('[name="prueba_dano_nna_' + index + '"]:checked').val()
+                    otro_anonimizar_obs: card.find('[name="otro_anonimizar_obs_' + index + '"]').val() || ''
                 }
             });
         });
@@ -593,7 +639,11 @@ $(document).ready(function() {
             detalle_grupos_etnicos: $('#detalle_grupos_etnicos').val(),
             otros_hechos_victimizantes: $('#otros_hechos_victimizantes').val(),
             contenido_practicas_resistencia: $('#contenido_practicas_resistencia').val() || [],
-            detalle_resistencias: $('#detalle_resistencias').val()
+            detalle_resistencias: $('#detalle_resistencias').val(),
+            prueba_dano_derechos_privados: $('input[name="prueba_dano_derechos_privados"]:checked').val(),
+            prueba_dano_intereses_publicos: $('input[name="prueba_dano_intereses_publicos"]:checked').val(),
+            prueba_dano_inteligencia: $('input[name="prueba_dano_inteligencia"]:checked').val(),
+            prueba_dano_nna: $('input[name="prueba_dano_nna"]:checked').val()
         };
     }
 
@@ -731,20 +781,6 @@ $(document).ready(function() {
                 card.find('[name="autoriza_datos_personales_' + index + '"][value="' + cons.autoriza_datos_personales + '"]').prop('checked', true);
                 card.find('[name="autoriza_datos_sensibles_' + index + '"][value="' + cons.autoriza_datos_sensibles + '"]').prop('checked', true);
                 card.find('[name="observaciones_consentimiento_' + index + '"]').val(cons.observaciones);
-            }
-
-            // Prueba de daño (siempre se carga, independiente del tipo de consentimiento)
-            if (cons.prueba_dano_derechos_privados !== null && cons.prueba_dano_derechos_privados !== undefined) {
-                card.find('[name="prueba_dano_derechos_privados_' + index + '"][value="' + cons.prueba_dano_derechos_privados + '"]').prop('checked', true);
-            }
-            if (cons.prueba_dano_intereses_publicos !== null && cons.prueba_dano_intereses_publicos !== undefined) {
-                card.find('[name="prueba_dano_intereses_publicos_' + index + '"][value="' + cons.prueba_dano_intereses_publicos + '"]').prop('checked', true);
-            }
-            if (cons.prueba_dano_inteligencia !== null && cons.prueba_dano_inteligencia !== undefined) {
-                card.find('[name="prueba_dano_inteligencia_' + index + '"][value="' + cons.prueba_dano_inteligencia + '"]').prop('checked', true);
-            }
-            if (cons.prueba_dano_nna !== null && cons.prueba_dano_nna !== undefined) {
-                card.find('[name="prueba_dano_nna_' + index + '"][value="' + cons.prueba_dano_nna + '"]').prop('checked', true);
             }
         }
     }
