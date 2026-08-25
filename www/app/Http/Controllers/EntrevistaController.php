@@ -105,9 +105,25 @@ class EntrevistaController extends Controller
             $query->where('id_dependencia_origen', $request->id_dependencia);
         }
 
+        // Ordenamiento
+        $sortableColumns = [
+            'entrevista_codigo',
+            'titulo',
+            'entrevista_fecha',
+            'nombre_entrevistador',
+            'tiempo_entrevista',
+            'created_at',
+        ];
+        $sortColumn = $request->input('sort', 'created_at');
+        if (!in_array($sortColumn, $sortableColumns, true)) {
+            $sortColumn = 'created_at';
+        }
+        $sortDir = strtolower($request->input('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
         $entrevistas = $query->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->orderBy($sortColumn, $sortDir)
+            ->paginate(15)
+            ->appends($request->query());
 
         // Filtro de entrevistadores: solo nivel 1-2
         $entrevistadores = collect();
@@ -128,7 +144,7 @@ class EntrevistaController extends Controller
                 ->prepend('-- Todas --', '');
         }
 
-        return view('entrevistas.index', compact('entrevistas', 'entrevistadores', 'dependencias'));
+        return view('entrevistas.index', compact('entrevistas', 'entrevistadores', 'dependencias', 'sortColumn', 'sortDir'));
     }
 
     /**

@@ -30,15 +30,15 @@ class PersonasExport implements FromQuery, WithHeadings, WithMapping, WithStyles
         ]);
 
         if (!empty($this->filtros['id_sexo'])) {
-            $query->where('id_sexo', $this->filtros['id_sexo']);
+            $query->whereIn('id_sexo', (array) $this->filtros['id_sexo']);
         }
 
         if (!empty($this->filtros['id_etnia'])) {
-            $query->where('id_etnia', $this->filtros['id_etnia']);
+            $query->whereIn('id_etnia', (array) $this->filtros['id_etnia']);
         }
 
         if (!empty($this->filtros['id_lugar_residencia_depto'])) {
-            $query->where('id_lugar_residencia_depto', $this->filtros['id_lugar_residencia_depto']);
+            $query->whereIn('id_lugar_residencia_depto', (array) $this->filtros['id_lugar_residencia_depto']);
         }
 
         return $query->orderBy('apellido')->orderBy('nombre');

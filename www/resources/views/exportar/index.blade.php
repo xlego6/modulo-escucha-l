@@ -18,6 +18,10 @@
                 @csrf
                 <div class="card-body pb-1">
 
+                    <small class="filter-hint d-block">
+                        <i class="fas fa-info-circle mr-1"></i>En los filtros de lista puede seleccionar varias opciones: haga clic en cada una para agregarla.
+                    </small>
+
                     {{-- Códigos --}}
                     <p class="filter-section-label">
                         <i class="fas fa-hashtag mr-1"></i>Códigos de entrevista
@@ -78,7 +82,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="filter-label">Departamento de toma</label>
-                                <select class="form-control form-control-sm" name="id_territorio">
+                                <select class="form-control form-control-sm select2-exportar" name="id_territorio[]" multiple data-placeholder="-- Todos --">
                                     @foreach($territorios as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
@@ -88,7 +92,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="filter-label">Entrevistador</label>
-                                <select class="form-control form-control-sm" name="id_entrevistador">
+                                <select class="form-control form-control-sm select2-exportar" name="id_entrevistador[]" multiple data-placeholder="-- Todos --">
                                     @foreach($entrevistadores as $id => $nombre)
                                         <option value="{{ $id }}">{{ $nombre }}</option>
                                     @endforeach
@@ -105,7 +109,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="filter-label">Dependencia de origen</label>
-                                <select class="form-control form-control-sm" name="id_dependencia_origen">
+                                <select class="form-control form-control-sm select2-exportar" name="id_dependencia_origen[]" multiple data-placeholder="-- Todas --">
                                     @foreach($dependencias as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
@@ -115,7 +119,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="filter-label">Tipo de testimonio</label>
-                                <select class="form-control form-control-sm" name="id_tipo_testimonio">
+                                <select class="form-control form-control-sm select2-exportar" name="id_tipo_testimonio[]" multiple data-placeholder="-- Todos --">
                                     @foreach($tipos_testimonio as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
@@ -142,7 +146,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="filter-label">Tipo de adjunto</label>
-                                <select class="form-control form-control-sm" name="id_tipo_adjunto">
+                                <select class="form-control form-control-sm select2-exportar" name="id_tipo_adjunto[]" multiple data-placeholder="-- Todos --">
                                     @foreach($tipos_adjunto as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
                                     @endforeach
@@ -174,9 +178,12 @@
             <form action="{{ route('exportar.personas') }}" method="POST">
                 @csrf
                 <div class="card-body pb-1">
+                    <small class="filter-hint d-block">
+                        <i class="fas fa-info-circle mr-1"></i>Puede seleccionar varias opciones: haga clic en cada una para agregarla.
+                    </small>
                     <div class="form-group">
                         <label class="filter-label">Sexo</label>
-                        <select class="form-control form-control-sm" name="id_sexo">
+                        <select class="form-control form-control-sm select2-exportar" name="id_sexo[]" multiple data-placeholder="-- Todos --">
                             @foreach($sexos as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
                             @endforeach
@@ -184,7 +191,7 @@
                     </div>
                     <div class="form-group">
                         <label class="filter-label">Grupo étnico</label>
-                        <select class="form-control form-control-sm" name="id_etnia">
+                        <select class="form-control form-control-sm select2-exportar" name="id_etnia[]" multiple data-placeholder="-- Todos --">
                             @foreach($etnias as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
                             @endforeach
@@ -192,7 +199,7 @@
                     </div>
                     <div class="form-group">
                         <label class="filter-label">Departamento de residencia</label>
-                        <select class="form-control form-control-sm" name="id_lugar_residencia_depto">
+                        <select class="form-control form-control-sm select2-exportar" name="id_lugar_residencia_depto[]" multiple data-placeholder="-- Todos --">
                             @foreach($territorios as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
                             @endforeach
@@ -271,6 +278,8 @@
 @endsection
 
 @section('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet">
 <style>
 .filter-section-label {
     font-size: .7rem;
@@ -286,5 +295,52 @@
     color: #495057;
     margin-bottom: .2rem;
 }
+.filter-hint {
+    color: #6c757d;
+    margin-top: -.35rem;
+    margin-bottom: .5rem;
+}
+.select2-exportar + .select2-container--bootstrap4 .select2-selection {
+    font-size: .875rem;
+}
+.select2-exportar + .select2-container--bootstrap4 .select2-selection__rendered {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem;
+}
+.select2-exportar + .select2-container--bootstrap4 .select2-selection__choice {
+    font-size: .8125rem;
+    float: none;
+    margin: 0;
+}
+.select2-exportar + .select2-container--bootstrap4 .select2-search--inline {
+    flex: 1 1 auto;
+    width: auto !important;
+}
+.select2-exportar + .select2-container--bootstrap4 .select2-search__field {
+    width: 100% !important;
+    text-align: center;
+}
+.select2-exportar + .select2-container--bootstrap4 .select2-search__field::placeholder {
+    color: #6c757d;
+    text-align: center;
+}
 </style>
+@endsection
+
+@section('js')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(function() {
+    $('.select2-exportar').select2({
+        theme: 'bootstrap4',
+        width: '100%',
+        allowClear: true,
+        placeholder: function() {
+            return $(this).data('placeholder');
+        }
+    });
+});
+</script>
 @endsection
