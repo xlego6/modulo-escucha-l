@@ -35,9 +35,21 @@ class UsuarioController extends Controller
             });
         }
 
-        $usuarios = $query->orderBy('name')->paginate(15);
+        if ($request->filled('dependencia')) {
+            $dependencia = $request->dependencia;
+            $query->whereHas('rel_entrevistador', function($q) use ($dependencia) {
+                $q->where('id_dependencia_origen', $dependencia);
+            });
+        }
 
-        return view('usuarios.index', compact('usuarios'));
+        $usuarios = $query->orderBy('name')->paginate(15)->appends($request->query());
+
+        $dependencias = CatItem::where('id_cat', 4)  // Catálogo Dependencia de Origen
+            ->where('habilitado', 1)
+            ->orderBy('orden')
+            ->pluck('descripcion', 'id_item');
+
+        return view('usuarios.index', compact('usuarios', 'dependencias'));
     }
 
     /**

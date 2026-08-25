@@ -7,19 +7,32 @@
 <div class="card">
     <div class="card-header">
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <form action="{{ route('usuarios.index') }}" method="GET" class="form-inline">
-                    <div class="input-group">
+                    <div class="input-group mr-2 mb-1">
                         <input type="text" name="buscar" class="form-control" placeholder="Buscar usuario..." value="{{ request('buscar') }}">
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-default">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
+                    </div>
+                    <div class="input-group mr-2 mb-1">
+                        <select name="dependencia" class="form-control">
+                            <option value="">Todas las dependencias</option>
+                            @foreach($dependencias as $id => $descripcion)
+                            <option value="{{ $id }}" {{ (string) request('dependencia') === (string) $id ? 'selected' : '' }}>{{ $descripcion }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="input-group mb-1">
+                        <button type="submit" class="btn btn-default">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        @if(request('buscar') || request('dependencia'))
+                        <a href="{{ route('usuarios.index') }}" class="btn btn-outline-secondary ml-1" title="Limpiar filtros">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        @endif
                     </div>
                 </form>
             </div>
-            <div class="col-md-6 text-right">
+            <div class="col-md-4 text-right">
                 <a href="{{ route('usuarios.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus mr-1"></i> Nuevo Usuario
                 </a>
@@ -34,7 +47,7 @@
                     <th>Nombre</th>
                     <th>Correo</th>
                     <th>Nivel</th>
-                    <th>Solo Lectura</th>
+                    <th>Dependencia</th>
                     <th width="150">Acciones</th>
                 </tr>
             </thead>
@@ -49,13 +62,7 @@
                             {{ $usuario->fmt_privilegios }}
                         </span>
                     </td>
-                    <td>
-                        @if($usuario->solo_lectura)
-                            <span class="badge badge-secondary">Si</span>
-                        @else
-                            <span class="badge badge-success">No</span>
-                        @endif
-                    </td>
+                    <td>{{ $usuario->fmt_dependencia_origen }}</td>
                     <td>
                         <a href="{{ route('usuarios.show', $usuario->id) }}" class="btn btn-sm btn-info" title="Ver">
                             <i class="fas fa-eye"></i>
