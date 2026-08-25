@@ -78,16 +78,16 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
                 $query->whereDate('created_at', '<=', $this->filtros['carga_hasta']);
             }
             if (!empty($this->filtros['id_territorio'])) {
-                $query->where('id_territorio', $this->filtros['id_territorio']);
+                $query->whereIn('id_territorio', (array) $this->filtros['id_territorio']);
             }
             if (!empty($this->filtros['id_entrevistador'])) {
-                $query->where('id_entrevistador', $this->filtros['id_entrevistador']);
+                $query->whereIn('id_entrevistador', (array) $this->filtros['id_entrevistador']);
             }
             if (!empty($this->filtros['id_dependencia_origen'])) {
-                $query->where('id_dependencia_origen', $this->filtros['id_dependencia_origen']);
+                $query->whereIn('id_dependencia_origen', (array) $this->filtros['id_dependencia_origen']);
             }
             if (!empty($this->filtros['id_tipo_testimonio'])) {
-                $query->where('id_tipo_testimonio', $this->filtros['id_tipo_testimonio']);
+                $query->whereIn('id_tipo_testimonio', (array) $this->filtros['id_tipo_testimonio']);
             }
             if (isset($this->filtros['tiene_adjuntos']) && $this->filtros['tiene_adjuntos'] !== '') {
                 if ($this->filtros['tiene_adjuntos'] == '1') {
@@ -98,7 +98,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             }
             if (!empty($this->filtros['id_tipo_adjunto'])) {
                 $query->whereHas('rel_adjuntos', function ($q) {
-                    $q->where('id_tipo', $this->filtros['id_tipo_adjunto']);
+                    $q->whereIn('id_tipo', (array) $this->filtros['id_tipo_adjunto']);
                 });
             }
         }

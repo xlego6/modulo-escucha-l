@@ -27,40 +27,33 @@ class ExportController extends Controller
     {
         $territorios = Geo::where('nivel', 2)
             ->orderBy('descripcion')
-            ->pluck('descripcion', 'id_geo')
-            ->prepend('-- Todos --', '');
+            ->pluck('descripcion', 'id_geo');
 
         $entrevistadores = Entrevistador::with('rel_usuario')
             ->orderBy('numero_entrevistador')
             ->get()
-            ->pluck('rel_usuario.name', 'id_entrevistador')
-            ->prepend('-- Todos --', '');
+            ->pluck('rel_usuario.name', 'id_entrevistador');
 
         $sexos = CatItem::where('id_cat', 1)
             ->orderBy('orden')
-            ->pluck('descripcion', 'id_item')
-            ->prepend('-- Todos --', '');
+            ->pluck('descripcion', 'id_item');
 
         $etnias = CatItem::where('id_cat', 3)
             ->orderBy('orden')
-            ->pluck('descripcion', 'id_item')
-            ->prepend('-- Todos --', '');
+            ->pluck('descripcion', 'id_item');
 
         // Catálogos adicionales para filtros
         $dependencias = CatItem::where('id_cat', 4)
             ->orderBy('orden')
-            ->pluck('descripcion', 'id_item')
-            ->prepend('-- Todas --', '');
+            ->pluck('descripcion', 'id_item');
 
         $tipos_testimonio = CatItem::where('id_cat', 5)
             ->orderBy('orden')
-            ->pluck('descripcion', 'id_item')
-            ->prepend('-- Todos --', '');
+            ->pluck('descripcion', 'id_item');
 
         $tipos_adjunto = CatItem::where('id_cat', 6)
             ->orderBy('orden')
-            ->pluck('descripcion', 'id_item')
-            ->prepend('-- Todos --', '');
+            ->pluck('descripcion', 'id_item');
 
         return view('exportar.index', compact(
             'territorios',
