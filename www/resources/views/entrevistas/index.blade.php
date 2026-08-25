@@ -80,14 +80,26 @@
         <h3 class="card-title">Entrevistas ({{ $entrevistas->total() }} registros)</h3>
     </div>
     <div class="card-body table-responsive p-0">
+        @php
+            $sortLink = function($column, $label) use ($sortColumn, $sortDir) {
+                $newDir = ($sortColumn === $column && $sortDir === 'asc') ? 'desc' : 'asc';
+                $icon = 'fa-sort text-muted';
+                if ($sortColumn === $column) {
+                    $icon = $sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+                }
+                $params = array_merge(request()->except(['sort', 'dir', 'page']), ['sort' => $column, 'dir' => $newDir]);
+                $url = route('entrevistas.index', $params);
+                return '<a href="' . e($url) . '" class="text-dark">' . e($label) . ' <i class="fas ' . $icon . ' fa-xs ml-1"></i></a>';
+            };
+        @endphp
         <table class="table table-hover table-striped">
             <thead>
                 <tr>
-                    <th style="width: 120px">Codigo</th>
-                    <th>Titulo</th>
-                    <th style="width: 100px">Fecha</th>
-                    <th style="width: 180px">Entrevistador / Carga</th>
-                    <th style="width: 80px">Duracion</th>
+                    <th style="width: 120px">{!! $sortLink('entrevista_codigo', 'Codigo') !!}</th>
+                    <th>{!! $sortLink('titulo', 'Titulo') !!}</th>
+                    <th style="width: 100px">{!! $sortLink('entrevista_fecha', 'Fecha') !!}</th>
+                    <th style="width: 180px">{!! $sortLink('nombre_entrevistador', 'Entrevistador / Carga') !!}</th>
+                    <th style="width: 80px">{!! $sortLink('tiempo_entrevista', 'Duracion') !!}</th>
                     <th style="width: 120px">Acciones</th>
                 </tr>
             </thead>
