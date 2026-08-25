@@ -300,10 +300,6 @@ class EntrevistaWizardController extends Controller
                         'autoriza_datos_personales_sin_anonimizar' => $autorizaDatosPersonales,
                         'autoriza_datos_sensibles_sin_anonimizar' => $autorizaDatosSensibles,
                         'observaciones' => implode("\n", $obsPartes),
-                        'prueba_dano_derechos_privados' => isset($datos['consentimiento']['prueba_dano_derechos_privados']) ? (int)$datos['consentimiento']['prueba_dano_derechos_privados'] : null,
-                        'prueba_dano_intereses_publicos' => isset($datos['consentimiento']['prueba_dano_intereses_publicos']) ? (int)$datos['consentimiento']['prueba_dano_intereses_publicos'] : null,
-                        'prueba_dano_inteligencia' => isset($datos['consentimiento']['prueba_dano_inteligencia']) ? (int)$datos['consentimiento']['prueba_dano_inteligencia'] : null,
-                        'prueba_dano_nna' => isset($datos['consentimiento']['prueba_dano_nna']) ? (int)$datos['consentimiento']['prueba_dano_nna'] : null,
                     ];
                 } else {
                     $consentimientoData = [
@@ -318,10 +314,6 @@ class EntrevistaWizardController extends Controller
                         'autoriza_datos_personales_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_personales'] ?? 0,
                         'autoriza_datos_sensibles_sin_anonimizar' => $datos['consentimiento']['autoriza_datos_sensibles'] ?? 0,
                         'observaciones' => $datos['consentimiento']['observaciones'] ?? null,
-                        'prueba_dano_derechos_privados' => isset($datos['consentimiento']['prueba_dano_derechos_privados']) ? (int)$datos['consentimiento']['prueba_dano_derechos_privados'] : null,
-                        'prueba_dano_intereses_publicos' => isset($datos['consentimiento']['prueba_dano_intereses_publicos']) ? (int)$datos['consentimiento']['prueba_dano_intereses_publicos'] : null,
-                        'prueba_dano_inteligencia' => isset($datos['consentimiento']['prueba_dano_inteligencia']) ? (int)$datos['consentimiento']['prueba_dano_inteligencia'] : null,
-                        'prueba_dano_nna' => isset($datos['consentimiento']['prueba_dano_nna']) ? (int)$datos['consentimiento']['prueba_dano_nna'] : null,
                     ];
                 }
 
@@ -415,6 +407,26 @@ class EntrevistaWizardController extends Controller
 
             // Sync relaciones múltiples de contenido
             $this->syncContenidoRelaciones($entrevista->id_e_ind_fvt, $request);
+
+            // Prueba de daño: aplica a la entrevista completa, se guarda igual
+            // en el consentimiento informado de cada testimoniante (no requiere
+            // cambios de esquema, sigue viviendo en consentimiento_informado).
+            $pruebaDanoData = [
+                'prueba_dano_derechos_privados' => isset($request->prueba_dano_derechos_privados) ? (int) $request->prueba_dano_derechos_privados : null,
+                'prueba_dano_intereses_publicos' => isset($request->prueba_dano_intereses_publicos) ? (int) $request->prueba_dano_intereses_publicos : null,
+                'prueba_dano_inteligencia' => isset($request->prueba_dano_inteligencia) ? (int) $request->prueba_dano_inteligencia : null,
+                'prueba_dano_nna' => isset($request->prueba_dano_nna) ? (int) $request->prueba_dano_nna : null,
+            ];
+
+            $idsPersonasEntrevistadas = PersonaEntrevistada::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+                ->pluck('id_persona_entrevistada');
+
+            foreach ($idsPersonasEntrevistadas as $idPersonaEntrevistada) {
+                ConsentimientoInformado::updateOrCreate(
+                    ['id_persona_entrevistada' => $idPersonaEntrevistada],
+                    $pruebaDanoData
+                );
+            }
 
             // Registrar traza
             TrazaActividad::create([
