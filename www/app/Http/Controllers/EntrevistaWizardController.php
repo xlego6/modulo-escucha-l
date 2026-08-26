@@ -97,7 +97,7 @@ class EntrevistaWizardController extends Controller
             'entrevista_lugar' => 'required|integer',
             'modalidades' => 'required|array|min:1',
             'fecha_toma_inicial' => 'required|date',
-            'fecha_toma_final' => 'required|date|after_or_equal:fecha_toma_inicial',
+            'fecha_toma_final' => 'nullable|date|after_or_equal:fecha_toma_inicial',
             'idiomas' => 'nullable|array',
             'tiene_anexos' => 'required|in:0,1',
         ]);
@@ -484,7 +484,7 @@ class EntrevistaWizardController extends Controller
             'id_territorio' => $request->id_territorio,
             'entrevista_lugar' => $request->entrevista_lugar,
             'fecha_toma_inicial' => $request->fecha_toma_inicial,
-            'fecha_toma_final' => $request->fecha_toma_final,
+            'fecha_toma_final' => $request->fecha_toma_final ?: null,
             'entrevista_fecha' => $request->fecha_toma_inicial,
             'id_idioma' => $request->idiomas[0] ?? null,
             'detalle_idiomas' => $request->detalle_idiomas,

@@ -160,8 +160,8 @@
 
             <div class="col-md-6">
                 <div class="form-group">
-                    <label for="fecha_toma_final" class="required-field">Fecha Final de Toma</label>
-                    <input type="date" class="form-control" id="fecha_toma_final" name="fecha_toma_final" required>
+                    <label for="fecha_toma_final">Fecha Final de Toma</label>
+                    <input type="date" class="form-control" id="fecha_toma_final" name="fecha_toma_final">
                     <div class="mt-1">
                         <div class="custom-control custom-checkbox custom-control-inline">
                             <input type="checkbox" class="custom-control-input fecha-sin-info-check" id="fecha_toma_final_dia_si" name="fecha_toma_final_dia_conocido" value="0">
