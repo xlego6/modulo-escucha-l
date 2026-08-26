@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Geo;
 use App\Models\CatItem;
+use App\Models\TrazaActividad;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 
@@ -83,6 +85,18 @@ class ApiController extends Controller
                 'text' => $p->fmt_nombre_completo . ($p->num_documento ? ' - ' . $p->num_documento : ''),
             ];
         });
+
+        if ($personas->isNotEmpty()) {
+            TrazaActividad::create([
+                'fecha_hora' => now(),
+                'id_usuario' => Auth::id(),
+                'accion'     => 'buscar',
+                'objeto'     => 'persona',
+                'codigo'     => mb_substr($query, 0, 100),
+                'referencia' => 'Búsqueda de persona (autocompletado): "' . $query . '" — ' . $personas->count() . ' resultado(s)',
+                'ip'         => $request->ip(),
+            ]);
+        }
 
         return response()->json($personas);
     }

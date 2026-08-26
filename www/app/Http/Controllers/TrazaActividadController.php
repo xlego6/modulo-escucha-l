@@ -29,31 +29,7 @@ class TrazaActividadController extends Controller
         $query = TrazaActividad::with(['rel_usuario'])
             ->orderBy('fecha_hora', 'desc');
 
-        // Filtrar según alcance del rol
-        if ($user->id_nivel == 5) {
-            // Gestor: ve su propia actividad + toda la actividad de los perfiles de su dependencia
-            $entrevistadorGestor = Entrevistador::where('id_usuario', $user->id)
-                ->orderBy('id_nivel')
-                ->first();
-            if ($entrevistadorGestor && $entrevistadorGestor->id_dependencia_origen) {
-                // IDs de usuario de todos los perfiles de la misma dependencia
-                $usuariosDependencia = Entrevistador::where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
-                    ->pluck('id_usuario');
-                // Códigos de entrevistas de la dependencia (para capturar actividad de perfiles externos que actúen sobre ellas)
-                $codigosDependencia = Entrevista::where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
-                    ->pluck('entrevista_codigo');
-                $query->where(function($q) use ($user, $usuariosDependencia, $codigosDependencia) {
-                    $q->where('id_usuario', $user->id)
-                      ->orWhereIn('id_usuario', $usuariosDependencia)
-                      ->orWhereIn('codigo', $codigosDependencia);
-                });
-            } else {
-                $query->where('id_usuario', $user->id);
-            }
-        } elseif (!$esAdmin) {
-            // Otros roles (Entrevistador, Transcriptor): solo su propia actividad
-            $query->where('id_usuario', $user->id);
-        }
+        $this->aplicarAlcance($query, $user);
 
         // Filtro por usuario (solo admins)
         if ($esAdmin && $request->filled('id_usuario')) {
@@ -123,10 +99,53 @@ class TrazaActividadController extends Controller
      */
     public function show($id)
     {
-        $traza = TrazaActividad::with(['rel_usuario'])
-            ->findOrFail($id);
+        $user = Auth::user();
+
+        $query = TrazaActividad::with(['rel_usuario']);
+        $this->aplicarAlcance($query, $user);
+
+        $traza = $query->findOrFail($id);
 
         return view('traza.show', compact('traza'));
+    }
+
+    /**
+     * Restringe la consulta al alcance del rol del usuario:
+     * Admin/Líder ven todo; Gestor ve su dependencia; el resto solo lo propio.
+     */
+    private function aplicarAlcance($query, $user)
+    {
+        $esAdmin = in_array($user->id_nivel, [1, 2]);
+        if ($esAdmin) {
+            return $query;
+        }
+
+        if ($user->id_nivel == 5) {
+            // Gestor: ve su propia actividad + toda la actividad de los perfiles de su dependencia
+            $entrevistadorGestor = Entrevistador::where('id_usuario', $user->id)
+                ->orderBy('id_nivel')
+                ->first();
+            if ($entrevistadorGestor && $entrevistadorGestor->id_dependencia_origen) {
+                // IDs de usuario de todos los perfiles de la misma dependencia
+                $usuariosDependencia = Entrevistador::where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
+                    ->pluck('id_usuario');
+                // Códigos de entrevistas de la dependencia (para capturar actividad de perfiles externos que actúen sobre ellas)
+                $codigosDependencia = Entrevista::where('id_dependencia_origen', $entrevistadorGestor->id_dependencia_origen)
+                    ->pluck('entrevista_codigo');
+                $query->where(function($q) use ($user, $usuariosDependencia, $codigosDependencia) {
+                    $q->where('id_usuario', $user->id)
+                      ->orWhereIn('id_usuario', $usuariosDependencia)
+                      ->orWhereIn('codigo', $codigosDependencia);
+                });
+            } else {
+                $query->where('id_usuario', $user->id);
+            }
+        } else {
+            // Otros roles (Entrevistador, Transcriptor): solo su propia actividad
+            $query->where('id_usuario', $user->id);
+        }
+
+        return $query;
     }
 
     /**
@@ -181,13 +200,17 @@ class TrazaActividadController extends Controller
      */
     public function estadisticas(Request $request)
     {
+        $user = Auth::user();
         $fechaDesde = $request->fecha_desde ?? now()->subDays(30)->format('Y-m-d');
         $fechaHasta = $request->fecha_hasta ?? now()->format('Y-m-d');
 
         // Actividad por usuario
-        $actividadPorUsuario = TrazaActividad::selectRaw('id_usuario, COUNT(*) as total')
-            ->whereDate('fecha_hora', '>=', $fechaDesde)
-            ->whereDate('fecha_hora', '<=', $fechaHasta)
+        $actividadPorUsuario = $this->aplicarAlcance(
+            TrazaActividad::selectRaw('id_usuario, COUNT(*) as total')
+                ->whereDate('fecha_hora', '>=', $fechaDesde)
+                ->whereDate('fecha_hora', '<=', $fechaHasta),
+            $user
+        )
             ->groupBy('id_usuario')
             ->with('rel_usuario')
             ->orderByDesc('total')
@@ -195,18 +218,24 @@ class TrazaActividadController extends Controller
             ->get();
 
         // Actividad por accion
-        $actividadPorAccion = TrazaActividad::selectRaw('accion, COUNT(*) as total')
-            ->whereDate('fecha_hora', '>=', $fechaDesde)
-            ->whereDate('fecha_hora', '<=', $fechaHasta)
-            ->whereNotNull('accion')
+        $actividadPorAccion = $this->aplicarAlcance(
+            TrazaActividad::selectRaw('accion, COUNT(*) as total')
+                ->whereDate('fecha_hora', '>=', $fechaDesde)
+                ->whereDate('fecha_hora', '<=', $fechaHasta)
+                ->whereNotNull('accion'),
+            $user
+        )
             ->groupBy('accion')
             ->orderByDesc('total')
             ->get();
 
         // Actividad por dia
-        $actividadPorDia = TrazaActividad::selectRaw("DATE(fecha_hora) as fecha, COUNT(*) as total")
-            ->whereDate('fecha_hora', '>=', $fechaDesde)
-            ->whereDate('fecha_hora', '<=', $fechaHasta)
+        $actividadPorDia = $this->aplicarAlcance(
+            TrazaActividad::selectRaw("DATE(fecha_hora) as fecha, COUNT(*) as total")
+                ->whereDate('fecha_hora', '>=', $fechaDesde)
+                ->whereDate('fecha_hora', '<=', $fechaHasta),
+            $user
+        )
             ->groupBy('fecha')
             ->orderBy('fecha')
             ->get();
