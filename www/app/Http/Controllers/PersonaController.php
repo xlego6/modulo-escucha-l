@@ -194,6 +194,18 @@ class PersonaController extends Controller
             $departamento_origen = Geo::find($persona->id_lugar_nacimiento_depto);
         }
 
+        // Registrar consulta de metadatos en traza
+        TrazaActividad::create([
+            'fecha_hora'  => now(),
+            'id_usuario'  => Auth::id(),
+            'accion'      => 'consultar_metadata',
+            'objeto'      => 'persona',
+            'id_registro' => $persona->id_persona,
+            'codigo'      => $persona->num_documento,
+            'referencia'  => 'Consulta de metadatos: ' . trim($persona->nombre . ' ' . $persona->apellido),
+            'ip'          => request()->ip(),
+        ]);
+
         return view('personas.show', compact('persona', 'entrevistas', 'departamento_origen'));
     }
 

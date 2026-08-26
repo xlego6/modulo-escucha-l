@@ -706,6 +706,16 @@ class PermisoController extends Controller
             abort(404, 'El archivo no existe.');
         }
 
+        TrazaActividad::create([
+            'fecha_hora'  => now(),
+            'id_usuario'  => Auth::id(),
+            'accion'      => 'descargar_soporte',
+            'objeto'      => 'permiso',
+            'id_registro' => $permiso->id_permiso,
+            'referencia'  => 'Descarga de soporte de permiso: ' . $permiso->rel_adjunto->nombre_original,
+            'ip'          => request()->ip(),
+        ]);
+
         return response()->download($ruta, $permiso->rel_adjunto->nombre_original);
     }
 

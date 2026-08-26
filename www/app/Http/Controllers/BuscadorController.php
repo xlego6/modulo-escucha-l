@@ -95,19 +95,25 @@ class BuscadorController extends Controller
                 ['path' => $request->url(), 'pageName' => 'page_d']
             ))->appends($request->except('page_d'));
 
-            // Registrar búsqueda en traza solo cuando hay término de texto
+            // Registrar búsqueda en traza (con texto y/o solo con filtros)
             if ($tiene_texto) {
-                $user = Auth::user();
-                TrazaActividad::create([
-                    'fecha_hora'  => now(),
-                    'id_usuario'  => $user->id,
-                    'accion'      => 'buscar',
-                    'objeto'      => 'buscador',
-                    'codigo'      => mb_substr($termino, 0, 100),
-                    'referencia'  => 'Búsqueda: "' . $termino . '" — ' . $resultados['total'] . ' resultado(s)',
-                    'ip'          => $request->ip(),
-                ]);
+                $referencia = 'Búsqueda: "' . $termino . '" — ' . $resultados['total'] . ' resultado(s)';
+            } else {
+                $filtros = http_build_query($request->only([
+                    'id_departamento', 'id_municipio', 'id_hecho_victimizante', 'id_resistencia', 'id_dependencia',
+                ]));
+                $referencia = 'Búsqueda por filtros (' . $filtros . ') — ' . $resultados['total'] . ' resultado(s)';
             }
+
+            TrazaActividad::create([
+                'fecha_hora'  => now(),
+                'id_usuario'  => Auth::id(),
+                'accion'      => 'buscar',
+                'objeto'      => 'buscador',
+                'codigo'      => $tiene_texto ? mb_substr($termino, 0, 100) : null,
+                'referencia'  => $referencia,
+                'ip'          => $request->ip(),
+            ]);
         }
 
         // Catalogos para filtros
@@ -617,6 +623,18 @@ class BuscadorController extends Controller
                 'titulo' => $d->nombre_original . ($d->rel_entrevista ? ' (' . $d->rel_entrevista->entrevista_codigo . ')' : ''),
                 'url' => $d->rel_entrevista ? route('adjuntos.gestionar', $d->rel_entrevista->id_e_ind_fvt) : '#',
             ];
+        }
+
+        if (!empty($resultados)) {
+            TrazaActividad::create([
+                'fecha_hora' => now(),
+                'id_usuario' => Auth::id(),
+                'accion'     => 'buscar_rapido',
+                'objeto'     => 'buscador',
+                'codigo'     => mb_substr($termino, 0, 100),
+                'referencia' => 'Búsqueda rápida: "' . $termino . '" — ' . count($resultados) . ' resultado(s)',
+                'ip'         => $request->ip(),
+            ]);
         }
 
         return response()->json($resultados);

@@ -1857,6 +1857,17 @@ class ProcesamientoController extends Controller
             $entrevista->setRelation('rel_adjuntos', collect([$asignacion->rel_adjunto]));
         }
 
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'ver_revision_transcripcion',
+            'objeto' => 'transcripcion',
+            'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $entrevista?->entrevista_codigo,
+            'referencia' => 'Consulta de transcripción para revisión (entrevista #' . $asignacion->id_e_ind_fvt . ')',
+            'ip' => request()->ip(),
+        ]);
+
         return view('procesamientos.revisar-transcripcion', compact('asignacion', 'entrevista'));
     }
 
