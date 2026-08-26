@@ -21,9 +21,13 @@ class PersonasExport implements FromQuery, WithHeadings, WithMapping, WithStyles
 
     public function query()
     {
-        // Solo personas vinculadas a al menos una entrevista (excluye huérfanas/duplicadas)
+        // Solo personas vinculadas a al menos una entrevista activa (excluye huérfanas/duplicadas
+        // y las que solo quedan ligadas a entrevistas eliminadas, id_activo = 0)
         $query = Persona::whereIn('id_persona', function($q) {
-                $q->select('id_persona')->from('fichas.persona_entrevistada');
+                $q->select('fichas.persona_entrevistada.id_persona')
+                  ->from('fichas.persona_entrevistada')
+                  ->join('esclarecimiento.e_ind_fvt', 'fichas.persona_entrevistada.id_e_ind_fvt', '=', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                  ->where('esclarecimiento.e_ind_fvt.id_activo', 1);
             })
             ->with([
                 'rel_sexo',
@@ -31,6 +35,11 @@ class PersonasExport implements FromQuery, WithHeadings, WithMapping, WithStyles
                 'rel_tipo_documento',
                 'rel_lugar_nacimiento',
                 'rel_lugar_residencia',
+                'rel_persona_entrevistada' => function($q) {
+                    $q->whereHas('rel_entrevista', function($q2) {
+                        $q2->where('id_activo', 1);
+                    });
+                },
                 'rel_persona_entrevistada.rel_entrevista'
             ]);
 
