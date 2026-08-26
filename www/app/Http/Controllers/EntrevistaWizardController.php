@@ -326,8 +326,23 @@ class EntrevistaWizardController extends Controller
             // Eliminar los que no fueron procesados
             $eliminar = array_diff($existentes, $procesados);
             if (!empty($eliminar)) {
+                $idsPersonaAfectados = PersonaEntrevistada::whereIn('id_persona_entrevistada', $eliminar)
+                    ->pluck('id_persona')
+                    ->unique();
+
                 ConsentimientoInformado::whereIn('id_persona_entrevistada', $eliminar)->delete();
                 PersonaEntrevistada::whereIn('id_persona_entrevistada', $eliminar)->delete();
+
+                // Si la persona queda sin ningun otro vinculo a entrevistas, eliminarla tambien
+                // (evita dejar registros huerfanos en fichas.persona)
+                foreach ($idsPersonaAfectados as $idPersona) {
+                    $tieneOtrosVinculos = PersonaEntrevistada::where('id_persona', $idPersona)->exists();
+                    if (!$tieneOtrosVinculos) {
+                        DB::table('fichas.persona_poblacion')->where('id_persona', $idPersona)->delete();
+                        DB::table('fichas.persona_ocupacion')->where('id_persona', $idPersona)->delete();
+                        Persona::where('id_persona', $idPersona)->delete();
+                    }
+                }
             }
 
             // Registrar traza
