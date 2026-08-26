@@ -329,11 +329,7 @@ class BuscadorController extends Controller
                            (stripos($adj->texto_extraido ?? '', $termino) !== false);
                 });
                 foreach ($documentosCoincidentes as $doc) {
-                    $coincidencia = ['nombre' => $doc->nombre_original, 'extracto' => null];
-                    if (stripos($doc->texto_extraido ?? '', $termino) !== false) {
-                        $coincidencia['extracto'] = $this->extraerContexto($doc->texto_extraido, $termino);
-                    }
-                    $coincidencias[] = $coincidencia;
+                    $coincidencias[] = ['nombre' => $doc->nombre_original];
                 }
                 $e->setAttribute('coincidencias', $coincidencias);
             }
@@ -413,11 +409,10 @@ class BuscadorController extends Controller
             ->limit($limite)
             ->get();
 
-        // Agregar extracto con el texto encontrado
+        // Agregar coincidencias (sin exponer el texto encontrado)
         foreach ($documentos as $doc) {
             $coincidencias = [];
             $coincidencia_texto = false;
-            $extracto = null;
 
             if (stripos($doc->nombre_original, $termino) !== false) {
                 $coincidencias[] = 'Nombre del archivo';
@@ -426,11 +421,9 @@ class BuscadorController extends Controller
             if ($doc->texto_extraido && stripos($doc->texto_extraido, $termino) !== false) {
                 $coincidencia_texto = true;
                 $coincidencias[] = 'Contenido';
-                $extracto = $this->extraerContexto($doc->texto_extraido, $termino);
             }
 
             $doc->setAttribute('coincidencia_texto', $coincidencia_texto);
-            $doc->setAttribute('extracto', $extracto);
             $doc->setAttribute('coincidencias', $coincidencias);
         }
 
@@ -472,40 +465,6 @@ class BuscadorController extends Controller
             });
         }
         return $score ?: 20;
-    }
-
-    /**
-     * Extraer contexto alrededor del termino encontrado
-     */
-    private function extraerContexto($texto, $termino, $caracteres = 150)
-    {
-        $posicion = stripos($texto, $termino);
-
-        if ($posicion === false) {
-            return Str::limit($texto, $caracteres * 2);
-        }
-
-        $inicio = max(0, $posicion - $caracteres);
-        $fin = min(strlen($texto), $posicion + strlen($termino) + $caracteres);
-
-        $extracto = substr($texto, $inicio, $fin - $inicio);
-
-        // Limpiar inicio y fin
-        if ($inicio > 0) {
-            $extracto = '...' . ltrim(substr($extracto, strpos($extracto, ' ') + 1));
-        }
-        if ($fin < strlen($texto)) {
-            $extracto = substr($extracto, 0, strrpos($extracto, ' ')) . '...';
-        }
-
-        // Resaltar el termino
-        $extracto = preg_replace(
-            '/(' . preg_quote($termino, '/') . ')/i',
-            '<mark class="bg-warning">$1</mark>',
-            $extracto
-        );
-
-        return $extracto;
     }
 
     /**
