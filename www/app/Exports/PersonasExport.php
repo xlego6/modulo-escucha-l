@@ -30,7 +30,8 @@ class PersonasExport implements FromQuery, WithHeadings, WithMapping, WithStyles
                 'rel_etnia',
                 'rel_tipo_documento',
                 'rel_lugar_nacimiento',
-                'rel_lugar_residencia'
+                'rel_lugar_residencia',
+                'rel_persona_entrevistada.rel_entrevista'
             ]);
 
         if (!empty($this->filtros['id_sexo'])) {
@@ -52,6 +53,7 @@ class PersonasExport implements FromQuery, WithHeadings, WithMapping, WithStyles
     {
         return [
             'ID',
+            'Codigo(s) Entrevista',
             'Nombres',
             'Apellidos',
             'Alias',
@@ -79,8 +81,15 @@ class PersonasExport implements FromQuery, WithHeadings, WithMapping, WithStyles
             $fecha_nac = "{$d}/{$m}/{$persona->fec_nac_a}";
         }
 
+        $codigosEntrevista = $persona->rel_persona_entrevistada
+            ->pluck('rel_entrevista.entrevista_codigo')
+            ->filter()
+            ->unique()
+            ->implode(', ');
+
         return [
             $persona->id_persona,
+            $codigosEntrevista,
             $persona->nombre,
             $persona->apellido,
             $persona->alias,

@@ -88,6 +88,10 @@ class Persona extends Model
         return $this->belongsToMany(CatItem::class, 'fichas.persona_ocupacion', 'id_persona', 'id_ocupacion', 'id_persona', 'id_item');
     }
 
+    public function rel_persona_entrevistada() {
+        return $this->hasMany(PersonaEntrevistada::class, 'id_persona', 'id_persona');
+    }
+
     public function getFmtNombreCompletoAttribute() {
         return trim($this->nombre . ' ' . $this->apellido);
     }
