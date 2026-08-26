@@ -38,17 +38,6 @@
         border-bottom: none;
     }
 
-    .extracto-texto {
-        font-size: 0.85em;
-        color: #666;
-        background-color: #f9f9f9;
-        padding: 0.5rem;
-        border-radius: 4px;
-        margin-top: 0.5rem;
-        max-height: 80px;
-        overflow: hidden;
-    }
-
     .icono-fuente {
         width: 24px;
         height: 24px;
@@ -292,9 +281,6 @@
                                                     <div class="mt-1 ml-3 small">
                                                         <i class="fas fa-paperclip text-muted"></i>
                                                         <strong>{{ $doc['nombre'] }}</strong>
-                                                        @if($doc['extracto'])
-                                                            <div class="extracto-texto">{!! $doc['extracto'] !!}</div>
-                                                        @endif
                                                     </div>
                                                 @endforeach
                                             @endif
@@ -485,13 +471,6 @@
                                                 </span>
                                             @endforeach
                                         </div>
-
-                                        <!-- Extracto de texto encontrado -->
-                                        @if($documento->extracto)
-                                        <div class="extracto-texto mt-2">
-                                            {!! $documento->extracto !!}
-                                        </div>
-                                        @endif
                                     </div>
                                     <div class="ml-3">
                                         @if($documento->rel_entrevista)
