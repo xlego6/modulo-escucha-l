@@ -21,13 +21,17 @@ class PersonasExport implements FromQuery, WithHeadings, WithMapping, WithStyles
 
     public function query()
     {
-        $query = Persona::with([
-            'rel_sexo',
-            'rel_etnia',
-            'rel_tipo_documento',
-            'rel_lugar_nacimiento',
-            'rel_lugar_residencia'
-        ]);
+        // Solo personas vinculadas a al menos una entrevista (excluye huérfanas/duplicadas)
+        $query = Persona::whereIn('id_persona', function($q) {
+                $q->select('id_persona')->from('fichas.persona_entrevistada');
+            })
+            ->with([
+                'rel_sexo',
+                'rel_etnia',
+                'rel_tipo_documento',
+                'rel_lugar_nacimiento',
+                'rel_lugar_residencia'
+            ]);
 
         if (!empty($this->filtros['id_sexo'])) {
             $query->whereIn('id_sexo', (array) $this->filtros['id_sexo']);
