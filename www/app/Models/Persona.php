@@ -59,6 +59,10 @@ class Persona extends Model
         return $this->belongsTo(Geo::class, 'id_lugar_nacimiento', 'id_geo');
     }
 
+    public function rel_lugar_nacimiento_depto() {
+        return $this->belongsTo(Geo::class, 'id_lugar_nacimiento_depto', 'id_geo');
+    }
+
     public function rel_lugar_residencia() {
         return $this->belongsTo(Geo::class, 'id_lugar_residencia', 'id_geo');
     }
