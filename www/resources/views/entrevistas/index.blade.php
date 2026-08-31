@@ -29,14 +29,26 @@
             </div>
             <div class="col-md-2">
                 <div class="form-group">
-                    <label>Fecha desde</label>
+                    <label>Fecha de toma desde</label>
                     <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ request('fecha_desde') }}">
                 </div>
             </div>
             <div class="col-md-2">
                 <div class="form-group">
-                    <label>Fecha hasta</label>
+                    <label>Fecha de toma hasta</label>
                     <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ request('fecha_hasta') }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label>Fecha de carga desde</label>
+                    <input type="date" name="carga_desde" class="form-control form-control-sm" value="{{ request('carga_desde') }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label>Fecha de carga hasta</label>
+                    <input type="date" name="carga_hasta" class="form-control form-control-sm" value="{{ request('carga_hasta') }}">
                 </div>
             </div>
             @if($entrevistadores->isNotEmpty())
@@ -97,7 +109,8 @@
                 <tr>
                     <th style="width: 120px">{!! $sortLink('entrevista_codigo', 'Codigo') !!}</th>
                     <th>{!! $sortLink('titulo', 'Titulo') !!}</th>
-                    <th style="width: 100px">{!! $sortLink('entrevista_fecha', 'Fecha') !!}</th>
+                    <th style="width: 100px">{!! $sortLink('entrevista_fecha', 'Fecha de toma') !!}</th>
+                    <th style="width: 130px">{!! $sortLink('created_at', 'Fecha de carga') !!}</th>
                     <th style="width: 180px">{!! $sortLink('nombre_entrevistador', 'Entrevistador / Carga') !!}</th>
                     <th style="width: 80px">{!! $sortLink('tiempo_entrevista', 'Duracion') !!}</th>
                     <th style="width: 120px">Acciones</th>
@@ -113,6 +126,7 @@
                     </td>
                     <td>{{ \Illuminate\Support\Str::limit($entrevista->titulo, 60) }}</td>
                     <td>{{ $entrevista->fmt_fecha }}</td>
+                    <td>{{ $entrevista->created_at?->format('d/m/Y') }}</td>
                     <td>
                         @if($entrevista->nombre_entrevistador)
                             {{ $entrevista->nombre_entrevistador }}
@@ -150,7 +164,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
+                    <td colspan="7" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-3x mb-3"></i>
                         <p>No se encontraron entrevistas</p>
                         <a href="{{ route('entrevistas.wizard.create') }}" class="btn btn-primary">

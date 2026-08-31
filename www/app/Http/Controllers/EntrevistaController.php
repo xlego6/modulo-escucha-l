@@ -97,6 +97,14 @@ class EntrevistaController extends Controller
             $query->where('entrevista_fecha', '<=', $request->fecha_hasta);
         }
 
+        if ($request->filled('carga_desde')) {
+            $query->whereDate('created_at', '>=', $request->carga_desde);
+        }
+
+        if ($request->filled('carga_hasta')) {
+            $query->whereDate('created_at', '<=', $request->carga_hasta);
+        }
+
         if ($request->filled('id_entrevistador')) {
             $query->where('id_entrevistador', $request->id_entrevistador);
         }
