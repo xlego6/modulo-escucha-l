@@ -40,7 +40,19 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
                 'rel_adjuntos.rel_tipo',
                 'rel_personas_entrevistadas',
                 'rel_personas_entrevistadas.rel_persona',
+                'rel_personas_entrevistadas.rel_persona.rel_lugar_nacimiento_depto',
+                'rel_personas_entrevistadas.rel_persona.rel_lugar_nacimiento',
+                'rel_personas_entrevistadas.rel_persona.rel_sexo',
+                'rel_personas_entrevistadas.rel_persona.rel_identidad',
+                'rel_personas_entrevistadas.rel_persona.rel_orientacion',
+                'rel_personas_entrevistadas.rel_persona.rel_etnia',
+                'rel_personas_entrevistadas.rel_persona.rel_rango_etario',
+                'rel_personas_entrevistadas.rel_persona.rel_discapacidad',
+                'rel_personas_entrevistadas.rel_persona.rel_poblaciones',
+                'rel_personas_entrevistadas.rel_persona.rel_ocupaciones',
                 'rel_personas_entrevistadas.rel_consentimiento',
+                'rel_lugares_mencionados.rel_departamento',
+                'rel_lugares_mencionados.rel_municipio',
                 'rel_contenido',
                 'rel_contenido.rel_poblaciones',
                 'rel_contenido.rel_ocupaciones',
@@ -139,6 +151,18 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
 
             // PASO 2: TESTIMONIANTES
             'Testimoniante(s)',
+            'Testimoniante(s): Nombre Identitario',
+            'Testimoniante(s): Departamento de Origen',
+            'Testimoniante(s): Municipio de Origen',
+            'Testimoniante(s): Edad',
+            'Testimoniante(s): Sexo',
+            'Testimoniante(s): Identidad de Genero',
+            'Testimoniante(s): Orientacion Sexual',
+            'Testimoniante(s): Grupo Etnico',
+            'Testimoniante(s): Rango Etario',
+            'Testimoniante(s): Discapacidad',
+            'Testimoniante(s): Poblacion(es)',
+            'Testimoniante(s): Ocupacion(es)',
 
             // CONSENTIMIENTO
             'Cons: Tipo Documento',
@@ -178,6 +202,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             'Practicas de Resistencia',
             'Detalle Resistencias',
             'Responsables Colectivos',
+            'Lugares Geograficos Mencionados',
             'Responsables Individuales',
             'Temas Abordados',
 
@@ -212,7 +237,19 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
         $departamentoToma = $entrevista->rel_territorio ? $entrevista->rel_territorio->descripcion : '';
 
         // Testimoniantes y consentimientos
-        $testimoniantes = [];
+        $testimoniantes    = [];
+        $testNombreIdent   = [];
+        $testDeptoOrigen   = [];
+        $testMuniOrigen    = [];
+        $testEdad          = [];
+        $testSexo          = [];
+        $testIdentidad     = [];
+        $testOrientacion   = [];
+        $testEtnia         = [];
+        $testRangoEtario   = [];
+        $testDiscapacidad  = [];
+        $testPoblaciones   = [];
+        $testOcupaciones   = [];
         $consTipoDoc    = [];
         $consMenorEdad  = [];
         $consAutoriza   = [];
@@ -231,13 +268,46 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
         foreach ($entrevista->rel_personas_entrevistadas as $i => $pe) {
             $num = 'P' . ($i + 1);
 
-            if ($pe->rel_persona) {
-                $testimoniantes[] = trim(
-                    $pe->rel_persona->primer_nombre . ' ' .
-                    $pe->rel_persona->segundo_nombre . ' ' .
-                    $pe->rel_persona->primer_apellido . ' ' .
-                    $pe->rel_persona->segundo_apellido
-                );
+            $persona = $pe->rel_persona;
+            if ($persona) {
+                $testimoniantes[] = trim($persona->nombre . ' ' . $persona->apellido);
+
+                if ($persona->nombre_identitario) {
+                    $testNombreIdent[] = "{$num}: {$persona->nombre_identitario}";
+                }
+                if ($persona->rel_lugar_nacimiento_depto) {
+                    $testDeptoOrigen[] = "{$num}: {$persona->rel_lugar_nacimiento_depto->descripcion}";
+                }
+                if ($persona->rel_lugar_nacimiento) {
+                    $testMuniOrigen[] = "{$num}: {$persona->rel_lugar_nacimiento->descripcion}";
+                }
+                if ($persona->rel_sexo) {
+                    $testSexo[] = "{$num}: {$persona->rel_sexo->descripcion}";
+                }
+                if ($persona->rel_identidad) {
+                    $testIdentidad[] = "{$num}: {$persona->rel_identidad->descripcion}";
+                }
+                if ($persona->rel_orientacion) {
+                    $testOrientacion[] = "{$num}: {$persona->rel_orientacion->descripcion}";
+                }
+                if ($persona->rel_etnia) {
+                    $testEtnia[] = "{$num}: {$persona->rel_etnia->descripcion}";
+                }
+                if ($persona->rel_rango_etario) {
+                    $testRangoEtario[] = "{$num}: {$persona->rel_rango_etario->descripcion}";
+                }
+                if ($persona->rel_discapacidad) {
+                    $testDiscapacidad[] = "{$num}: {$persona->rel_discapacidad->descripcion}";
+                }
+                if ($persona->rel_poblaciones->count() > 0) {
+                    $testPoblaciones[] = "{$num}: " . $persona->rel_poblaciones->pluck('descripcion')->implode(', ');
+                }
+                if ($persona->rel_ocupaciones->count() > 0) {
+                    $testOcupaciones[] = "{$num}: " . $persona->rel_ocupaciones->pluck('descripcion')->implode(', ');
+                }
+            }
+            if ($pe->edad !== null) {
+                $testEdad[] = "{$num}: {$pe->edad}";
             }
 
             $cons = $pe->rel_consentimiento;
@@ -288,6 +358,13 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
         $hechos         = $contenido ? $contenido->rel_hechos_victimizantes->pluck('descripcion')->implode(', ') : '';
         $responsables   = $contenido ? $contenido->rel_responsables->pluck('descripcion')->implode(', ') : '';
         $practicas      = $contenido ? $contenido->rel_practicas_resistencia->pluck('descripcion')->implode(', ') : '';
+
+        // Lugares geograficos mencionados en el testimonio
+        $lugaresMencionados = $entrevista->rel_lugares_mencionados->map(function ($lugar) {
+            $depto = $lugar->rel_departamento ? $lugar->rel_departamento->descripcion : '';
+            $muni  = $lugar->rel_municipio ? $lugar->rel_municipio->descripcion : '';
+            return trim(implode(' - ', array_filter([$depto, $muni])));
+        })->filter()->implode(' | ');
 
         // Temas abordados: JSON del tesauro → texto plano separado por |
         $temas = '';
@@ -373,6 +450,18 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
 
             // PASO 2: TESTIMONIANTES
             implode(' | ', array_filter($testimoniantes)),
+            implode(' | ', $testNombreIdent),
+            implode(' | ', $testDeptoOrigen),
+            implode(' | ', $testMuniOrigen),
+            implode(' | ', $testEdad),
+            implode(' | ', $testSexo),
+            implode(' | ', $testIdentidad),
+            implode(' | ', $testOrientacion),
+            implode(' | ', $testEtnia),
+            implode(' | ', $testRangoEtario),
+            implode(' | ', $testDiscapacidad),
+            implode(' | ', $testPoblaciones),
+            implode(' | ', $testOcupaciones),
 
             // CONSENTIMIENTO
             implode(' | ', $consTipoDoc),
@@ -412,6 +501,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             $practicas,
             $contenido ? $contenido->detalle_resistencias : '',
             $responsables,
+            $lugaresMencionados,
             $contenido ? $contenido->responsables_individuales : '',
             $temas,
 

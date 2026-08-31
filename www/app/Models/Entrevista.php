@@ -141,6 +141,10 @@ class Entrevista extends Model
         return $this->hasOne(ContenidoTestimonio::class, 'id_e_ind_fvt', 'id_e_ind_fvt');
     }
 
+    public function rel_lugares_mencionados() {
+        return $this->hasMany(LugarMencionado::class, 'id_e_ind_fvt', 'id_e_ind_fvt');
+    }
+
     public function getFmtFechaAttribute() {
         if (empty($this->entrevista_fecha)) {
             return 'Sin fecha';
