@@ -134,6 +134,37 @@ class ProcesamientoController extends Controller
         return $stats;
     }
 
+    private function entidadesStatsForIds($ids)
+    {
+        $idsArray = array_unique(is_array($ids) ? $ids : $ids->toArray());
+        if (empty($idsArray)) {
+            return ['cantidad_entrevistas' => 0, 'cantidad_entidades' => 0];
+        }
+
+        $cantidadEntidades = DB::table('esclarecimiento.entidad_detectada')
+            ->whereIn('id_e_ind_fvt', $idsArray)
+            ->count();
+
+        return [
+            'cantidad_entrevistas' => count($idsArray),
+            'cantidad_entidades' => $cantidadEntidades,
+        ];
+    }
+
+    private function calcStatsAnonimizador($anonimizadorId)
+    {
+        $estados = ['asignada', 'en_edicion', 'enviada_revision', 'rechazada', 'aprobada'];
+        $stats = [];
+        foreach ($estados as $estado) {
+            $ids = DB::table('esclarecimiento.asignacion_anonimizacion')
+                ->where('id_anonimizador', $anonimizadorId)
+                ->where('estado', $estado)
+                ->distinct()->pluck('id_e_ind_fvt');
+            $stats[$estado] = $this->entidadesStatsForIds($ids);
+        }
+        return $stats;
+    }
+
     private function calcStatsGlobales($tipo)
     {
         $table = $tipo === 'transcripcion'
@@ -1417,11 +1448,11 @@ class ProcesamientoController extends Controller
         $user = Auth::user();
         $nivel = $user->id_nivel;
 
-        // Transcriptor (nivel 4): solo ve sus asignaciones de anonimizacion
+        // Anonimizador (nivel 4): solo ve sus asignaciones de anonimizacion
         if ($nivel == 4) {
             // Incluir aprobadas para que vea su trabajo finalizado
             $asignaciones = AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                ->with(['rel_entrevista'])
+                ->with(['rel_entrevista', 'rel_adjunto', 'rel_revisor'])
                 ->orderByRaw("CASE estado
                     WHEN 'rechazada' THEN 1
                     WHEN 'asignada' THEN 2
@@ -1432,18 +1463,7 @@ class ProcesamientoController extends Controller
                 ->orderBy('fecha_asignacion', 'desc')
                 ->paginate(20);
 
-            $stats = [
-                'asignadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_ASIGNADA)->count(),
-                'en_edicion' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_EN_EDICION)->count(),
-                'enviadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_ENVIADA_REVISION)->count(),
-                'rechazadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_RECHAZADA)->count(),
-                'aprobadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_APROBADA)->count(),
-            ];
+            $stats = $this->calcStatsAnonimizador($user->id_entrevistador);
 
             return view('procesamientos.anonimizacion-anonimizador', compact('asignaciones', 'stats'));
         }
