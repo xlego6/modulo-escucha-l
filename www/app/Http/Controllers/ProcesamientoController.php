@@ -2094,8 +2094,7 @@ class ProcesamientoController extends Controller
         $request->validate([
             'id_e_ind_fvt' => 'required|integer',
             'id_anonimizador' => 'required|integer',
-            'tipos_anonimizar' => 'nullable|string',
-            'formato_reemplazo' => 'nullable|string',
+            'id_adjunto' => 'nullable|integer',
         ]);
 
         // Verificar que no exista una asignacion activa para esta entrevista
@@ -2123,10 +2122,9 @@ class ProcesamientoController extends Controller
             'id_e_ind_fvt' => $request->id_e_ind_fvt,
             'id_anonimizador' => $request->id_anonimizador,
             'id_asignado_por' => $user->id,
+            'id_adjunto' => $request->id_adjunto,
             'estado' => AsignacionAnonimizacion::ESTADO_ASIGNADA,
             'fecha_asignacion' => now(),
-            'tipos_anonimizar' => $request->tipos_anonimizar ?? 'PER,LOC',
-            'formato_reemplazo' => $request->formato_reemplazo ?? 'brackets',
             'texto_anonimizado' => $anonimizacionPrevia ? $anonimizacionPrevia->texto_anonimizado : null,
         ]);
 

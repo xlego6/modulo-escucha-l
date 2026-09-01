@@ -162,8 +162,26 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     @if(!$asignacion || $asignacion->estado == 'aprobada')
+                                    @php
+                                        $documentosData = $entrevista->rel_adjuntos
+                                            ->whereIn('id_tipo', [
+                                                \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
+                                                \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL,
+                                            ])
+                                            ->map(function($a) {
+                                                return [
+                                                    'id' => $a->id_adjunto,
+                                                    'nombre' => $a->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL
+                                                        ? 'Transcripción final'
+                                                        : 'Transcripción automatizada',
+                                                    'tipo' => $a->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL
+                                                        ? 'final'
+                                                        : 'automatizada',
+                                                ];
+                                            })->values()->toJson();
+                                    @endphp
                                     <button type="button" class="btn btn-sm btn-info"
-                                            onclick="abrirModalAsignar({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}')"
+                                            onclick="abrirModalAsignar({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}', {!! htmlspecialchars($documentosData, ENT_QUOTES) !!})"
                                             title="{{ $asignacion && $asignacion->estado == 'aprobada' ? 'Reasignar anonimizador' : 'Asignar a anonimizador' }}">
                                         <i class="fas fa-user-plus"></i>
                                     </button>
@@ -230,75 +248,11 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Tipos a anonimizar</label>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input tipo-check" id="tipo-PER" value="PER" checked>
-                                    <label class="custom-control-label" for="tipo-PER">
-                                        <span class="badge badge-primary">PER</span> Personas
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input tipo-check" id="tipo-LOC" value="LOC" checked>
-                                    <label class="custom-control-label" for="tipo-LOC">
-                                        <span class="badge badge-success">LOC</span> Lugares
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input tipo-check" id="tipo-ORG" value="ORG">
-                                    <label class="custom-control-label" for="tipo-ORG">
-                                        <span class="badge badge-info">ORG</span> Organizaciones
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input tipo-check" id="tipo-DATE" value="DATE">
-                                    <label class="custom-control-label" for="tipo-DATE">
-                                        <span class="badge badge-secondary">DATE</span> Fechas
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input tipo-check" id="tipo-EVENT" value="EVENT">
-                                    <label class="custom-control-label" for="tipo-EVENT">
-                                        <span class="badge badge-warning">EVENT</span> Eventos
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input tipo-check" id="tipo-GUN" value="GUN">
-                                    <label class="custom-control-label" for="tipo-GUN">
-                                        <span class="badge badge-danger">GUN</span> Armas
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input tipo-check" id="tipo-MISC" value="MISC">
-                                    <label class="custom-control-label" for="tipo-MISC">
-                                        <span class="badge badge-dark">MISC</span> Otros
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Formato de reemplazo</label>
-                        <select class="form-control" id="formato_reemplazo" name="formato_reemplazo">
-                            <option value="brackets">[TIPO] - Ej: [PER], [LOC]</option>
-                            <option value="numbered">[TIPO_N] - Ej: [PER_1], [LOC_2]</option>
-                            <option value="redacted">[REDACTADO]</option>
-                            <option value="asterisks">***</option>
+                        <label for="id_adjunto">Documento a anonimizar</label>
+                        <select class="form-control" id="id_adjunto" name="id_adjunto">
+                            <option value="">-- Sin documento asociado --</option>
                         </select>
+                        <small class="form-text text-muted">Referencia informativa del documento que se anonimizará.</small>
                     </div>
 
                     <div id="asignar_error" class="alert alert-danger d-none"></div>
@@ -317,11 +271,21 @@
 
 @section('js')
 <script>
-function abrirModalAsignar(id, codigo) {
+function abrirModalAsignar(id, codigo, documentos) {
     $('#asignar_id_entrevista').val(id);
     $('#asignar_codigo').val(codigo);
     $('#asignar_error').addClass('d-none');
     $('#id_anonimizador').val('');
+
+    documentos = documentos || [];
+    var $sel = $('#id_adjunto').empty().append('<option value="">-- Sin documento asociado --</option>');
+    documentos.forEach(function(doc) {
+        $sel.append($('<option>').val(doc.id).text(doc.nombre));
+    });
+    // Preseleccionar la transcripción final si existe, si no la automatizada
+    var final = documentos.find(function(d) { return d.tipo === 'final'; });
+    $sel.val(final ? final.id : (documentos[0] ? documentos[0].id : ''));
+
     $('#modalAsignar').modal('show');
 }
 
@@ -332,12 +296,6 @@ $('#formAsignar').on('submit', function(e) {
     btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Asignando...');
     $('#asignar_error').addClass('d-none');
 
-    // Obtener tipos seleccionados
-    var tipos = [];
-    $('.tipo-check:checked').each(function() {
-        tipos.push($(this).val());
-    });
-
     $.ajax({
         url: '{{ route("procesamientos.asignar-anonimizacion") }}',
         method: 'POST',
@@ -345,8 +303,7 @@ $('#formAsignar').on('submit', function(e) {
             _token: '{{ csrf_token() }}',
             id_e_ind_fvt: $('#asignar_id_entrevista').val(),
             id_anonimizador: $('#id_anonimizador').val(),
-            tipos_anonimizar: tipos.join(','),
-            formato_reemplazo: $('#formato_reemplazo').val()
+            id_adjunto: $('#id_adjunto').val()
         },
         success: function(response) {
             $('#modalAsignar').modal('hide');
