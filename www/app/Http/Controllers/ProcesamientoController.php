@@ -1287,44 +1287,14 @@ class ProcesamientoController extends Controller
     /**
      * Deteccion de entidades
      */
+    /**
+     * Listado de entidades (retirado): reemplazado por la pestaña Anonimización
+     * de /procesamientos/transcripcion (ver automatizacionDeteccionEntidades()).
+     * Se deja como redirección para no romper enlaces/marcadores antiguos.
+     */
     public function entidades()
     {
-        // Buscar entrevistas con transcripción (adjunto tipo 312 o anotaciones legacy)
-        $pendientes = Entrevista::where('id_activo', 1)
-            ->where(function($q) {
-                // Tiene adjunto de transcripción automatizada
-                $q->whereHas('rel_adjuntos', function($qa) {
-                    $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
-                       ->whereNotNull('texto_extraido')
-                       ->where('texto_extraido', '!=', '');
-                })
-                // O tiene anotaciones legacy
-                ->orWhere(function($ql) {
-                    $ql->whereNotNull('anotaciones')
-                       ->where('anotaciones', '!=', '');
-                });
-            })
-            // Cargar adjuntos de audio/video para mostrar el conteo correcto
-            ->with(['rel_adjuntos' => function($q) {
-                $q->where(function($qa) {
-                    $qa->where('tipo_mime', 'like', '%audio%')
-                       ->orWhere('tipo_mime', 'like', '%video%');
-                });
-            }])
-            ->orderBy('updated_at', 'desc')
-            ->paginate(20);
-
-        $tiposEntidades = [
-            'PER' => 'Personas',
-            'LOC' => 'Lugares',
-            'ORG' => 'Organizaciones',
-            'MISC' => 'Miscelaneos',
-            'DATE' => 'Fechas',
-            'EVENT' => 'Eventos',
-            'GUN' => 'Armas',
-        ];
-
-        return view('procesamientos.entidades', compact('pendientes', 'tiposEntidades'));
+        return redirect()->route('procesamientos.transcripcion', ['tipo' => 'anonimizacion']);
     }
 
     /**
@@ -2229,6 +2199,45 @@ class ProcesamientoController extends Controller
             'message' => 'Anonimizacion asignada correctamente',
             'asignacion' => $asignacion->id_asignacion
         ]);
+    }
+
+    /**
+     * Desasignar anonimizacion (Admin/Lider unicamente).
+     *
+     * A diferencia de transcripción, el permiso "puede_editar" sobre el módulo
+     * procesamientos.anonimizacion también lo tiene el anonimizador (nivel 4),
+     * porque ese mismo módulo cubre su propia cola de trabajo. Por eso aquí se
+     * exige explícitamente nivel Admin/Líder en vez de reusar RolModuloPermiso::puedeEditar,
+     * para que un anonimizador no pueda desasignarse a sí mismo.
+     */
+    public function desasignarAnonimizacion($id)
+    {
+        $user = Auth::user();
+
+        if (!in_array($user->id_nivel, [1, 2])) {
+            flash('No tiene permisos para desasignar anonimizaciones.')->error();
+            return redirect()->route('procesamientos.anonimizacion');
+        }
+
+        $asignacion = AsignacionAnonimizacion::with(['rel_anonimizador.rel_usuario', 'rel_entrevista'])->findOrFail($id);
+        $nombreAnonimizador = $asignacion->rel_anonimizador->rel_usuario->name ?? 'N/A';
+        $estadoAnterior = $asignacion->estado;
+
+        TrazaActividad::create([
+            'fecha_hora' => now(),
+            'id_usuario' => $user->id,
+            'accion' => 'desasignar_anonimizacion',
+            'objeto' => 'anonimizacion',
+            'id_registro' => $asignacion->id_asignacion,
+            'codigo' => $asignacion->rel_entrevista?->entrevista_codigo,
+            'referencia' => "Desasignación de anonimización (entrevista #{$asignacion->id_e_ind_fvt}, estado anterior: {$estadoAnterior}, anonimizador: {$nombreAnonimizador})",
+            'ip' => request()->ip(),
+        ]);
+
+        $asignacion->delete();
+
+        flash("Asignación eliminada (anonimizador: {$nombreAnonimizador}).")->success();
+        return redirect()->route('procesamientos.anonimizacion');
     }
 
     /**

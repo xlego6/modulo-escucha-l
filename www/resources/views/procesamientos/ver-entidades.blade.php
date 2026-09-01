@@ -125,7 +125,7 @@ Entidades: {{ $entrevista->entrevista_codigo }}
                    class="btn btn-danger btn-block">
                     <i class="fas fa-user-secret mr-2"></i>Previsualizar Anonimizacion
                 </a>
-                <a href="{{ route('procesamientos.entidades') }}" class="btn btn-secondary btn-block">
+                <a href="{{ route('procesamientos.transcripcion', ['tipo' => 'anonimizacion']) }}" class="btn btn-secondary btn-block">
                     <i class="fas fa-arrow-left mr-2"></i>Volver
                 </a>
             </div>

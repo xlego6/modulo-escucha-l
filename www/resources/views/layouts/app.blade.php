@@ -193,16 +193,6 @@
                             </li>
                             @endif
 
-                            {{-- Entidades --}}
-                            @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.entidades'))
-                            <li class="nav-item">
-                                <a href="{{ route('procesamientos.entidades') }}" class="nav-link {{ request()->routeIs('procesamientos.entidades') || request()->routeIs('procesamientos.ver-entidades') ? 'active' : '' }}">
-                                    <i class="fas fa-tags nav-icon"></i>
-                                    <p>Entidades</p>
-                                </a>
-                            </li>
-                            @endif
-
                             {{-- Anonimización --}}
                             @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.anonimizacion'))
                             <li class="nav-item">
