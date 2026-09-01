@@ -48,8 +48,6 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
         border-radius: 4px;
         margin: 0 2px;
         display: inline;
-        text-decoration: line-through;
-        opacity: 0.7;
     }
     .entity-descubierta.entity-PER { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
     .entity-descubierta.entity-LOC { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
@@ -127,13 +125,171 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
         background: #ffc107;
         color: #000;
     }
+    /* Estado activo de los botones de modo (Editor visual/Editar texto) y de cobertura (Todas/Ninguna) */
+    .card-tools .btn.active,
+    .btn-cobertura.active {
+        background-color: #343a40;
+        border-color: #343a40;
+        color: #fff;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .etiqueta-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 8px;
+        border-bottom: 1px solid #f1f1f1;
+        font-size: 12px;
+    }
+    .etiqueta-item:last-child { border-bottom: none; }
+    .etiqueta-item .btn-eliminar-etiqueta {
+        padding: 0 4px;
+        line-height: 1;
+    }
 </style>
 @endsection
 
 @section('content')
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Anonimizacion</h3>
+                <div class="card-tools">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-default active" onclick="mostrarVista('visual')">
+                            <i class="fas fa-mouse-pointer"></i> Editor visual
+                        </button>
+                        <button type="button" class="btn btn-default" onclick="mostrarVista('editar')">
+                            <i class="fas fa-edit"></i> Editar texto
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <form action="{{ route('procesamientos.generar-anonimizacion', $entrevista->id_e_ind_fvt) }}"
+                  method="POST" id="formAnonimizacion">
+                @csrf
+                <input type="hidden" name="tipos" id="input-tipos" value="">
+                <input type="hidden" name="formato" id="input-formato" value="">
+                <input type="hidden" name="entidades_manuales" id="input_entidades_manuales">
+                <input type="hidden" name="estado_entidades" id="input_estado_entidades">
+                <input type="hidden" name="entidades_eliminadas" id="input_entidades_eliminadas">
+
+                <div class="card-body p-2">
+                    {{-- Vista Edicion (texto liquido) --}}
+                    <div id="vista-editar" style="display: none;">
+                        <textarea name="texto_anonimizado" id="texto_anonimizado" class="form-control"
+                                  style="min-height: 500px; resize: vertical; font-family: monospace;"></textarea>
+                    </div>
+
+                    @php $transcripcionOriginal = $entrevista->getTextoParaProcesamiento(); @endphp
+
+                    {{-- Vista Visual (entidades clicables) --}}
+                    <div id="vista-visual" class="p-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="leyenda-entidades">
+                                <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PER]</span> Cubierta</span>
+                                <span class="leyenda-item"><span class="entity-descubierta entity-PER" style="font-size:11px">Juan</span> Visible</span>
+                                <span class="text-muted small ml-2">| Clic en entidad para cubrir/descubrir</span>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-dark mr-1 btn-cobertura" id="btn-cubrir-todas" onclick="cubrirTodas()" title="Cubrir todas las entidades">
+                                    <i class="fas fa-eye-slash"></i> Todas
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary btn-cobertura" id="btn-descubrir-todas" onclick="descubrirTodas()" title="Descubrir todas las entidades">
+                                    <i class="fas fa-eye"></i> Ninguna
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-2">
+                                    <i class="fas fa-file-alt mr-1"></i>Texto Original
+                                    <small class="text-secondary">(seleccione texto para etiquetar)</small>
+                                </h6>
+                                <div class="editor-visual-container texto-seleccionable" id="texto-original-marcado" style="background: #fffbea;">
+                                    {{-- Texto original con entidades resaltadas --}}
+                                </div>
+                            </div>
+
+                            {{-- Menu contextual para agregar entidades --}}
+                            <div class="entity-menu" id="entity-menu">
+                                <div class="entity-menu-header">Etiquetar como:</div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('PER')">
+                                    <span class="badge badge-primary">PER</span> Persona
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('LOC')">
+                                    <span class="badge badge-success">LOC</span> Lugar
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('ORG')">
+                                    <span class="badge badge-info">ORG</span> Organizacion
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('DATE')">
+                                    <span class="badge badge-secondary">DATE</span> Fecha
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('EVENT')">
+                                    <span class="badge badge-warning">EVENT</span> Evento
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('GUN')">
+                                    <span class="badge badge-danger">GUN</span> Arma
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('MISC')">
+                                    <span class="badge badge-dark">MISC</span> Otros
+                                </div>
+                            </div>
+
+                            {{-- Menu contextual (clic derecho) sobre entidades --}}
+                            <div class="entity-menu" id="entity-context-menu">
+                                <div class="entity-menu-header" id="ctx-header">Entidad</div>
+                                <div class="entity-menu-item" id="ctx-cubrir-todas">
+                                    <i class="fas fa-eye-slash mr-1 text-dark"></i> Cubrir todas las instancias
+                                </div>
+                                <div class="entity-menu-item" id="ctx-descubrir-todas">
+                                    <i class="fas fa-eye mr-1 text-secondary"></i> Descubrir todas las instancias
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-2">
+                                    <i class="fas fa-user-secret mr-1"></i>Anonimizado
+                                    <small class="text-secondary">(clic para editar)</small>
+                                </h6>
+                                <div class="editor-visual-container" id="editor-visual">
+                                    {{-- Se llena dinamicamente con entidades clicables --}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <span class="badge badge-dark" id="contador-cubiertas">0</span> cubiertas
+                            <span class="badge badge-secondary ml-2" id="contador-descubiertas">0</span> visibles
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('¿Generar y guardar la version anonimizada?')">
+                        <i class="fas fa-save mr-2"></i>Guardar Version Anonimizada
+                    </button>
+                    <a href="{{ route('procesamientos.anonimizacion') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-2"></i>Volver
+                    </a>
+                    <button type="button" class="btn btn-outline-primary float-right" onclick="copiarAnonimizado()">
+                        <i class="fas fa-copy mr-2"></i>Copiar Texto
+                    </button>
+                    <span class="text-muted ml-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <span id="charCount">0</span> caracteres
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Tarjetas de información (parte inferior) --}}
 <div class="row">
-    <!-- Configuracion -->
-    <div class="col-md-3">
+    <div class="col-md-6">
         <div class="card card-danger">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Configuracion</h3>
@@ -210,157 +366,18 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
                 </div>
             </div>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Resumen</h3>
-            </div>
-            <div class="card-body p-0">
-                <table class="table table-sm mb-0">
-                    <tbody id="resumen-entidades">
-                        <!-- Se llena dinamicamente -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
-    <!-- Editor visual -->
-    <div class="col-md-9">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Anonimizacion</h3>
-                <div class="card-tools">
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-default" onclick="mostrarVista('editar')">
-                            <i class="fas fa-edit"></i> Editar texto
-                        </button>
-                        <button type="button" class="btn btn-default active" onclick="mostrarVista('visual')">
-                            <i class="fas fa-mouse-pointer"></i> Editor visual
-                        </button>
-                    </div>
+                <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Etiquetas asignadas</h3>
+            </div>
+            <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                <div id="resumen-entidades">
+                    <!-- Se llena dinamicamente -->
                 </div>
             </div>
-            <form action="{{ route('procesamientos.generar-anonimizacion', $entrevista->id_e_ind_fvt) }}"
-                  method="POST" id="formAnonimizacion">
-                @csrf
-                <input type="hidden" name="tipos" id="input-tipos" value="">
-                <input type="hidden" name="formato" id="input-formato" value="">
-                <input type="hidden" name="entidades_manuales" id="input_entidades_manuales">
-                <input type="hidden" name="estado_entidades" id="input_estado_entidades">
-                <input type="hidden" name="entidades_eliminadas" id="input_entidades_eliminadas">
-
-                <div class="card-body p-2">
-                    {{-- Vista Edicion (texto liquido) --}}
-                    <div id="vista-editar" style="display: none;">
-                        <textarea name="texto_anonimizado" id="texto_anonimizado" class="form-control"
-                                  style="min-height: 500px; resize: vertical; font-family: monospace;"></textarea>
-                    </div>
-
-                    @php $transcripcionOriginal = $entrevista->getTextoParaProcesamiento(); @endphp
-
-                    {{-- Vista Visual (entidades clicables) --}}
-                    <div id="vista-visual" class="p-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="leyenda-entidades">
-                                <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PER]</span> Cubierta</span>
-                                <span class="leyenda-item"><span class="entity-descubierta entity-PER" style="font-size:11px;text-decoration:line-through">Juan</span> Visible</span>
-                                <span class="text-muted small ml-2">| Clic en entidad para cubrir/descubrir</span>
-                            </div>
-                            <div>
-                                <button type="button" class="btn btn-sm btn-outline-dark mr-1" onclick="cubrirTodas()" title="Cubrir todas las entidades">
-                                    <i class="fas fa-eye-slash"></i> Todas
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="descubrirTodas()" title="Descubrir todas las entidades">
-                                    <i class="fas fa-eye"></i> Ninguna
-                                </button>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2">
-                                    <i class="fas fa-file-alt mr-1"></i>Texto Original
-                                    <small class="text-secondary">(seleccione texto para etiquetar)</small>
-                                </h6>
-                                <div class="editor-visual-container texto-seleccionable" id="texto-original-marcado" style="background: #fffbea;">
-                                    {{-- Texto original con entidades resaltadas --}}
-                                </div>
-                            </div>
-
-                            {{-- Menu contextual para agregar entidades --}}
-                            <div class="entity-menu" id="entity-menu">
-                                <div class="entity-menu-header">Etiquetar como:</div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('PER')">
-                                    <span class="badge badge-primary">PER</span> Persona
-                                </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('LOC')">
-                                    <span class="badge badge-success">LOC</span> Lugar
-                                </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('ORG')">
-                                    <span class="badge badge-info">ORG</span> Organizacion
-                                </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('DATE')">
-                                    <span class="badge badge-secondary">DATE</span> Fecha
-                                </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('EVENT')">
-                                    <span class="badge badge-warning">EVENT</span> Evento
-                                </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('GUN')">
-                                    <span class="badge badge-danger">GUN</span> Arma
-                                </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('MISC')">
-                                    <span class="badge badge-dark">MISC</span> Otros
-                                </div>
-                            </div>
-
-                            {{-- Menu contextual (clic derecho) sobre entidades --}}
-                            <div class="entity-menu" id="entity-context-menu">
-                                <div class="entity-menu-header" id="ctx-header">Entidad</div>
-                                <div class="entity-menu-item" id="ctx-cubrir-todas">
-                                    <i class="fas fa-eye-slash mr-1 text-dark"></i> Cubrir todas las instancias
-                                </div>
-                                <div class="entity-menu-item" id="ctx-descubrir-todas">
-                                    <i class="fas fa-eye mr-1 text-secondary"></i> Descubrir todas las instancias
-                                </div>
-                                <div class="entity-menu-item text-danger" id="ctx-eliminar-etiqueta" style="border-top:1px solid #eee;margin-top:2px;padding-top:6px;">
-                                    <i class="fas fa-trash mr-1"></i> Eliminar etiqueta
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2">
-                                    <i class="fas fa-user-secret mr-1"></i>Anonimizado
-                                    <small class="text-secondary">(clic para editar)</small>
-                                </h6>
-                                <div class="editor-visual-container" id="editor-visual">
-                                    {{-- Se llena dinamicamente con entidades clicables --}}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <span class="badge badge-dark" id="contador-cubiertas">0</span> cubiertas
-                            <span class="badge badge-secondary ml-2" id="contador-descubiertas">0</span> visibles
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-danger"
-                            onclick="return confirm('¿Generar y guardar la version anonimizada?')">
-                        <i class="fas fa-save mr-2"></i>Guardar Version Anonimizada
-                    </button>
-                    <a href="{{ route('procesamientos.anonimizacion') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left mr-2"></i>Volver
-                    </a>
-                    <button type="button" class="btn btn-outline-primary float-right" onclick="copiarAnonimizado()">
-                        <i class="fas fa-copy mr-2"></i>Copiar Texto
-                    </button>
-                    <span class="text-muted ml-3">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span id="charCount">0</span> caracteres
-                    </span>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -497,18 +514,10 @@ $(document).ready(function() {
         sincronizarConTextarea();
     });
 
-    $('#ctx-eliminar-etiqueta').on('click', function() {
-        if (!entidadContextual) return;
-        var texto = entidadContextual.text, tipo = entidadContextual.type;
-        if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
-        estadoEntidades = estadoEntidades.filter(function(ent) {
-            return !(ent.text === texto && ent.type === tipo);
-        });
-        $('#entity-context-menu').removeClass('show');
-        entidadContextual = null;
-        renderizarEditorVisual();
-        sincronizarConTextarea();
-        if (typeof toastr !== 'undefined') toastr.info('Etiqueta "' + texto + '" (' + tipo + ') eliminada');
+    // "Eliminar etiqueta" vive ahora en el panel de abajo ("Etiquetas asignadas"),
+    // delegado porque la lista se re-renderiza dinamicamente (ver eliminarEtiqueta()).
+    $('#resumen-entidades').on('click', '.btn-eliminar-etiqueta', function() {
+        eliminarEtiqueta($(this).data('text'), $(this).data('type'));
     });
 
     // Antes de enviar el formulario, guardar entidades y estado
@@ -730,6 +739,22 @@ function descubrirTodas() {
     renderizarEditorVisual();
 }
 
+function actualizarBotonesCobertura() {
+    var todasCubiertas = estadoEntidades.length > 0 && estadoEntidades.every(function(e) { return e.cubierta; });
+    var ningunaCubierta = estadoEntidades.length > 0 && estadoEntidades.every(function(e) { return !e.cubierta; });
+    $('#btn-cubrir-todas').toggleClass('active', todasCubiertas);
+    $('#btn-descubrir-todas').toggleClass('active', ningunaCubierta);
+}
+
+function eliminarEtiqueta(texto, tipo) {
+    if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
+    estadoEntidades = estadoEntidades.filter(function(ent) {
+        return !(ent.text === texto && ent.type === tipo);
+    });
+    renderizarEditorVisual();
+    if (typeof toastr !== 'undefined') toastr.info('Etiqueta "' + texto + '" (' + tipo + ') eliminada');
+}
+
 function agregarEntidad(tipo) {
     if (!seleccionActual) return;
 
@@ -858,6 +883,8 @@ function actualizarContadores() {
 
     $('#contador-cubiertas').text(cubiertas);
     $('#contador-descubiertas').text(descubiertas);
+    actualizarBotonesCobertura();
+    actualizarResumen();
 }
 
 function sincronizarConTextarea() {
@@ -889,22 +916,39 @@ function sincronizarConTextarea() {
 }
 
 function actualizarResumen() {
-    var resumen = {};
-    var total = 0;
+    // Lista de etiquetas distintas (agrupadas por texto+tipo) con su conteo de
+    // ocurrencias y un boton para eliminarlas todas (ver eliminarEtiqueta()).
+    var badgeClasses = { PER:'primary', LOC:'success', ORG:'info', DATE:'secondary', EVENT:'warning', GUN:'danger', MISC:'dark' };
+    var grupos = {};
+    var orden = [];
 
     estadoEntidades.forEach(function(ent) {
-        if (!resumen[ent.type]) resumen[ent.type] = 0;
-        resumen[ent.type]++;
-        total++;
+        var key = ent.type + '::' + ent.text;
+        if (!grupos[key]) {
+            grupos[key] = { text: ent.text, type: ent.type, count: 0 };
+            orden.push(key);
+        }
+        grupos[key].count++;
     });
 
-    var html = '';
-    for (var tipo in resumen) {
-        html += '<tr><td><span class="badge badge-dark">' + tipo + '</span></td>' +
-                '<td class="text-right">' + resumen[tipo] + '</td></tr>';
+    if (orden.length === 0) {
+        $('#resumen-entidades').html('<p class="text-muted text-center small py-3 mb-0">Sin etiquetas</p>');
+        return;
     }
-    html += '<tr class="table-active"><td><strong>Total</strong></td>' +
-            '<td class="text-right"><strong>' + total + '</strong></td></tr>';
+
+    var html = '';
+    orden.forEach(function(key) {
+        var g = grupos[key];
+        var bc = badgeClasses[g.type] || 'dark';
+        html += '<div class="etiqueta-item">' +
+                    '<span><span class="badge badge-' + bc + '">' + g.type + '</span> ' +
+                    escapeHtml(g.text) + ' <span class="text-muted">(' + g.count + ')</span></span>' +
+                    '<button type="button" class="btn btn-sm btn-link text-danger btn-eliminar-etiqueta" ' +
+                        'data-text="' + escapeHtml(g.text).replace(/"/g, '&quot;') + '" data-type="' + g.type + '" title="Eliminar etiqueta">' +
+                        '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                '</div>';
+    });
 
     $('#resumen-entidades').html(html);
 }

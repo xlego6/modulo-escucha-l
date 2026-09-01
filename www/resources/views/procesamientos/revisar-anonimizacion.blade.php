@@ -44,8 +44,6 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         border-radius: 4px;
         margin: 0 2px;
         display: inline;
-        text-decoration: line-through;
-        opacity: 0.7;
     }
     .entity-descubierta.entity-PER { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
     .entity-descubierta.entity-LOC { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
@@ -135,135 +133,33 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         background: #ffc107;
         color: #000;
     }
+    /* Estado activo de los botones de modo (Editor visual/Editar texto) y de cobertura (Todas/Ninguna) */
+    .card-tools .btn.active,
+    .btn-cobertura.active {
+        background-color: #343a40;
+        border-color: #343a40;
+        color: #fff;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .etiqueta-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 8px;
+        border-bottom: 1px solid #f1f1f1;
+        font-size: 12px;
+    }
+    .etiqueta-item:last-child { border-bottom: none; }
+    .etiqueta-item .btn-eliminar-etiqueta {
+        padding: 0 4px;
+        line-height: 1;
+    }
 </style>
 @endsection
 
 @section('content')
-<div class="row">
-    {{-- Panel izquierdo: Informacion --}}
-    <div class="col-md-4">
-        {{-- Informacion de la asignacion --}}
-        <div class="card card-warning">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Revision Pendiente</h3>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-5">Anonimizador:</dt>
-                    <dd class="col-sm-7">
-                        <i class="fas fa-user mr-1"></i>
-                        {{ $asignacion->rel_anonimizador->rel_usuario->name ?? 'N/A' }}
-                    </dd>
-
-                    <dt class="col-sm-5">Asignada por:</dt>
-                    <dd class="col-sm-7">{{ $asignacion->rel_asignado_por->name ?? 'N/A' }}</dd>
-
-                    <dt class="col-sm-5">Fecha Asignacion:</dt>
-                    <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}</dd>
-
-                    <dt class="col-sm-5">Fecha Envio:</dt>
-                    <dd class="col-sm-7">
-                        @if($asignacion->fecha_envio_revision)
-                            {{ $asignacion->fecha_envio_revision->format('d/m/Y H:i') }}
-                        @endif
-                    </dd>
-
-                    <dt class="col-sm-5">Tipos:</dt>
-                    <dd class="col-sm-7">
-                        @foreach(explode(',', $asignacion->tipos_anonimizar ?? 'PER,LOC') as $tipo)
-                            <span class="badge badge-dark">{{ $tipo }}</span>
-                        @endforeach
-                    </dd>
-
-                    <dt class="col-sm-5">Formato:</dt>
-                    <dd class="col-sm-7"><code>{{ $asignacion->formato_reemplazo }}</code></dd>
-                </dl>
-            </div>
-        </div>
-
-        {{-- Informacion de la entrevista --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Datos de la Entrevista</h3>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Codigo:</dt>
-                    <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
-
-                    <dt class="col-sm-4">Titulo:</dt>
-                    <dd class="col-sm-8">{{ $entrevista->titulo }}</dd>
-
-                    <dt class="col-sm-4">Fecha:</dt>
-                    <dd class="col-sm-8">{{ $entrevista->entrevista_fecha ? \Carbon\Carbon::parse($entrevista->entrevista_fecha)->format('d/m/Y') : '-' }}</dd>
-                </dl>
-                <hr>
-                <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}" class="btn btn-sm btn-outline-info" target="_blank">
-                    <i class="fas fa-external-link-alt mr-1"></i> Ver entrevista completa
-                </a>
-            </div>
-        </div>
-
-        {{-- Resumen de entidades --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Entidades Detectadas</h3>
-            </div>
-            <div class="card-body">
-                @php
-                    $entidadesPorTipo = collect($entidades)->groupBy('type');
-                @endphp
-                @foreach($entidadesPorTipo as $tipo => $items)
-                <div class="mb-2">
-                    <strong class="badge badge-dark">{{ $tipo }}</strong>
-                    <span class="text-muted">({{ $items->count() }})</span>
-                    <div class="mt-1">
-                        @foreach($items->take(5) as $ent)
-                            <span class="entity-badge entity-{{ $tipo }}">{{ $ent['text'] }}</span>
-                        @endforeach
-                        @if($items->count() > 5)
-                            <span class="text-muted">+{{ $items->count() - 5 }} mas</span>
-                        @endif
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Botones de accion --}}
-        <div class="card card-outline card-primary">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-gavel mr-2"></i>Decision</h3>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('procesamientos.aprobar-anonimizacion', $asignacion->id_asignacion) }}" method="POST" class="mb-3">
-                    @csrf
-                    <div class="form-group">
-                        <label>Comentario (opcional)</label>
-                        <textarea name="comentario" class="form-control" rows="2" placeholder="Comentario de aprobacion..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-success btn-block" onclick="return confirm('¿Aprobar esta anonimizacion como version final?')">
-                        <i class="fas fa-check mr-1"></i> Aprobar Anonimizacion
-                    </button>
-                </form>
-
-                <hr>
-
-                <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#modalRechazar">
-                    <i class="fas fa-times mr-1"></i> Rechazar y Devolver
-                </button>
-
-                <hr>
-
-                <a href="{{ route('procesamientos.anonimizacion') }}" class="btn btn-secondary btn-block">
-                    <i class="fas fa-arrow-left mr-1"></i> Volver
-                </a>
-            </div>
-        </div>
-    </div>
-
-    {{-- Panel derecho: Anonimizacion (Editable) --}}
-    <div class="col-md-8">
+<div class="row mb-3">
+    <div class="col-12">
         @php $transcripcionOriginal = $entrevista->getTextoParaProcesamiento(); @endphp
 
         <div class="card">
@@ -271,11 +167,11 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                 <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Anonimizacion (Editable)</h3>
                 <div class="card-tools">
                     <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-default" onclick="mostrarVista('editar')">
-                            <i class="fas fa-edit"></i> Editar texto
-                        </button>
                         <button type="button" class="btn btn-default active" onclick="mostrarVista('visual')">
                             <i class="fas fa-mouse-pointer"></i> Editor visual
+                        </button>
+                        <button type="button" class="btn btn-default" onclick="mostrarVista('editar')">
+                            <i class="fas fa-edit"></i> Editar texto
                         </button>
                     </div>
                 </div>
@@ -297,14 +193,14 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="leyenda-entidades">
                                 <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PER]</span> Cubierta</span>
-                                <span class="leyenda-item"><span class="entity-descubierta entity-PER" style="font-size:11px;text-decoration:line-through">Juan</span> Visible</span>
+                                <span class="leyenda-item"><span class="entity-descubierta entity-PER" style="font-size:11px">Juan</span> Visible</span>
                                 <span class="text-muted small ml-2">| Clic en entidad para cubrir/descubrir</span>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-sm btn-outline-dark mr-1" onclick="cubrirTodas()" title="Cubrir todas las entidades">
+                                <button type="button" class="btn btn-sm btn-outline-dark mr-1 btn-cobertura" id="btn-cubrir-todas" onclick="cubrirTodas()" title="Cubrir todas las entidades">
                                     <i class="fas fa-eye-slash"></i> Todas
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="descubrirTodas()" title="Descubrir todas las entidades">
+                                <button type="button" class="btn btn-sm btn-outline-secondary btn-cobertura" id="btn-descubrir-todas" onclick="descubrirTodas()" title="Descubrir todas las entidades">
                                     <i class="fas fa-eye"></i> Ninguna
                                 </button>
                             </div>
@@ -355,9 +251,6 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                                 <div class="entity-menu-item" id="ctx-descubrir-todas">
                                     <i class="fas fa-eye mr-1 text-secondary"></i> Descubrir todas las instancias
                                 </div>
-                                <div class="entity-menu-item text-danger" id="ctx-eliminar-etiqueta" style="border-top:1px solid #eee;margin-top:2px;padding-top:6px;">
-                                    <i class="fas fa-trash mr-1"></i> Eliminar etiqueta
-                                </div>
                             </div>
 
                             <div class="col-md-6">
@@ -386,6 +279,112 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                     </span>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+{{-- Tarjetas de información y decisión (parte inferior) --}}
+<div class="row">
+    <div class="col-md-3">
+        {{-- Informacion de la asignacion --}}
+        <div class="card card-warning">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Revision Pendiente</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Anonimizador:</dt>
+                    <dd class="col-sm-7">
+                        <i class="fas fa-user mr-1"></i>
+                        {{ $asignacion->rel_anonimizador->rel_usuario->name ?? 'N/A' }}
+                    </dd>
+
+                    <dt class="col-sm-5">Asignada por:</dt>
+                    <dd class="col-sm-7">{{ $asignacion->rel_asignado_por->name ?? 'N/A' }}</dd>
+
+                    <dt class="col-sm-5">Fecha Asignacion:</dt>
+                    <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}</dd>
+
+                    <dt class="col-sm-5">Fecha Envio:</dt>
+                    <dd class="col-sm-7">
+                        @if($asignacion->fecha_envio_revision)
+                            {{ $asignacion->fecha_envio_revision->format('d/m/Y H:i') }}
+                        @endif
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        {{-- Informacion de la entrevista --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Datos de la Entrevista</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Codigo:</dt>
+                    <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
+
+                    <dt class="col-sm-4">Titulo:</dt>
+                    <dd class="col-sm-8">{{ $entrevista->titulo }}</dd>
+
+                    <dt class="col-sm-4">Fecha:</dt>
+                    <dd class="col-sm-8">{{ $entrevista->entrevista_fecha ? \Carbon\Carbon::parse($entrevista->entrevista_fecha)->format('d/m/Y') : '-' }}</dd>
+                </dl>
+                <hr>
+                <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}" class="btn btn-sm btn-outline-info" target="_blank">
+                    <i class="fas fa-external-link-alt mr-1"></i> Ver entrevista completa
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        {{-- Etiquetas asignadas (lista completa, con opcion de eliminar) --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Etiquetas asignadas</h3>
+            </div>
+            <div class="card-body p-0" style="max-height: 260px; overflow-y: auto;">
+                <div id="resumen-entidades">
+                    <!-- Se llena dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        {{-- Botones de accion --}}
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-gavel mr-2"></i>Decision</h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('procesamientos.aprobar-anonimizacion', $asignacion->id_asignacion) }}" method="POST" class="mb-3">
+                    @csrf
+                    <div class="form-group">
+                        <label>Comentario (opcional)</label>
+                        <textarea name="comentario" class="form-control" rows="2" placeholder="Comentario de aprobacion..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-block" onclick="return confirm('¿Aprobar esta anonimizacion como version final?')">
+                        <i class="fas fa-check mr-1"></i> Aprobar Anonimizacion
+                    </button>
+                </form>
+
+                <hr>
+
+                <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#modalRechazar">
+                    <i class="fas fa-times mr-1"></i> Rechazar y Devolver
+                </button>
+
+                <hr>
+
+                <a href="{{ route('procesamientos.anonimizacion') }}" class="btn btn-secondary btn-block">
+                    <i class="fas fa-arrow-left mr-1"></i> Volver
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -616,18 +615,10 @@ $(document).ready(function() {
         sincronizarConTextarea();
     });
 
-    $('#ctx-eliminar-etiqueta').on('click', function() {
-        if (!entidadContextual) return;
-        var texto = entidadContextual.text, tipo = entidadContextual.type;
-        if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
-        estadoEntidades = estadoEntidades.filter(function(ent) {
-            return !(ent.text === texto && ent.type === tipo);
-        });
-        $('#entity-context-menu').removeClass('show');
-        entidadContextual = null;
-        renderizarEditorVisual();
-        sincronizarConTextarea();
-        if (typeof toastr !== 'undefined') toastr.info('Etiqueta "' + texto + '" (' + tipo + ') eliminada');
+    // "Eliminar etiqueta" vive ahora en el panel inferior ("Etiquetas asignadas"),
+    // delegado porque la lista se re-renderiza dinamicamente (ver eliminarEtiqueta()).
+    $('#resumen-entidades').on('click', '.btn-eliminar-etiqueta', function() {
+        eliminarEtiqueta($(this).data('text'), $(this).data('type'));
     });
 });
 
@@ -815,6 +806,61 @@ function descubrirTodas() {
     sincronizarConTextarea();
 }
 
+function actualizarBotonesCobertura() {
+    var todasCubiertas = estadoEntidades.length > 0 && estadoEntidades.every(function(e) { return e.cubierta; });
+    var ningunaCubierta = estadoEntidades.length > 0 && estadoEntidades.every(function(e) { return !e.cubierta; });
+    $('#btn-cubrir-todas').toggleClass('active', todasCubiertas);
+    $('#btn-descubrir-todas').toggleClass('active', ningunaCubierta);
+}
+
+function eliminarEtiqueta(texto, tipo) {
+    if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
+    estadoEntidades = estadoEntidades.filter(function(ent) {
+        return !(ent.text === texto && ent.type === tipo);
+    });
+    renderizarEditorVisual();
+    sincronizarConTextarea();
+    if (typeof toastr !== 'undefined') toastr.info('Etiqueta "' + texto + '" (' + tipo + ') eliminada');
+}
+
+function actualizarResumen() {
+    // Lista de etiquetas distintas (agrupadas por texto+tipo) con su conteo de
+    // ocurrencias y un boton para eliminarlas todas.
+    var badgeClasses = { PER:'primary', LOC:'success', ORG:'info', DATE:'secondary', EVENT:'warning', GUN:'danger', MISC:'dark' };
+    var grupos = {};
+    var orden = [];
+
+    estadoEntidades.forEach(function(ent) {
+        var key = ent.type + '::' + ent.text;
+        if (!grupos[key]) {
+            grupos[key] = { text: ent.text, type: ent.type, count: 0 };
+            orden.push(key);
+        }
+        grupos[key].count++;
+    });
+
+    if (orden.length === 0) {
+        $('#resumen-entidades').html('<p class="text-muted text-center small py-3 mb-0">Sin etiquetas</p>');
+        return;
+    }
+
+    var html = '';
+    orden.forEach(function(key) {
+        var g = grupos[key];
+        var bc = badgeClasses[g.type] || 'dark';
+        html += '<div class="etiqueta-item">' +
+                    '<span><span class="badge badge-' + bc + '">' + g.type + '</span> ' +
+                    escapeHtml(g.text) + ' <span class="text-muted">(' + g.count + ')</span></span>' +
+                    '<button type="button" class="btn btn-sm btn-link text-danger btn-eliminar-etiqueta" ' +
+                        'data-text="' + escapeHtml(g.text).replace(/"/g, '&quot;') + '" data-type="' + g.type + '" title="Eliminar etiqueta">' +
+                        '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                '</div>';
+    });
+
+    $('#resumen-entidades').html(html);
+}
+
 function agregarEntidad(tipo) {
     if (!seleccionActual) return;
 
@@ -951,6 +997,8 @@ function actualizarContadores() {
 
     $('#contador-cubiertas').text(cubiertas);
     $('#contador-descubiertas').text(descubiertas);
+    actualizarBotonesCobertura();
+    actualizarResumen();
 }
 
 function sincronizarConTextarea() {
