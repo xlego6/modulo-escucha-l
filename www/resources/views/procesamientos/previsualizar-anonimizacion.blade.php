@@ -19,13 +19,17 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
         border-radius: 4px;
         margin: 0 2px;
     }
-    .entity-PER { background-color: #cce5ff; border: 1px solid #b8daff; }
-    .entity-LOC { background-color: #d4edda; border: 1px solid #c3e6cb; }
-    .entity-ORG { background-color: #d1ecf1; border: 1px solid #bee5eb; }
-    .entity-DATE { background-color: #e2e3e5; border: 1px solid #d6d8db; }
-    .entity-EVENT { background-color: #fff3cd; border: 1px solid #ffeeba; }
-    .entity-GUN { background-color: #f8d7da; border: 1px solid #f5c6cb; }
-    .entity-MISC { background-color: #d6d8d9; border: 1px solid #c6c8ca; }
+    .entity-NUMERO { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .entity-PERSONA { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
+    .entity-ORGANIZACION { background-color: #e2d9f3; border: 1px solid #d4c5ec; color: #4a2a7a; }
+    .entity-LUGAR { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .entity-GENTILICIO { background-color: #dcdcf7; border: 1px solid #c7c7f0; color: #34348a; }
+    .entity-FECHA { background-color: #e2e3e5; border: 1px solid #d6d8db; color: #383d41; }
+    .entity-EDAD { background-color: #ffe5d0; border: 1px solid #ffd8b8; color: #7a4a12; }
+    .entity-OCUPACION { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    .entity-GRUPO_ARMADO { background-color: #e8c4c4; border: 1px solid #dba8a8; color: #5c1f1f; }
+    .entity-ROL_ARMADO { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+    .entity-ETNICO { background-color: #c8f0d4; border: 1px solid #a8e6bc; color: #1e5c34; }
     .entity-clickable {
         cursor: pointer;
         transition: all 0.2s ease;
@@ -49,13 +53,17 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
         margin: 0 2px;
         display: inline;
     }
-    .entity-descubierta.entity-PER { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
-    .entity-descubierta.entity-LOC { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
-    .entity-descubierta.entity-ORG { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
-    .entity-descubierta.entity-DATE { background-color: #e2e3e5; border: 1px solid #d6d8db; color: #383d41; }
-    .entity-descubierta.entity-EVENT { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
-    .entity-descubierta.entity-GUN { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
-    .entity-descubierta.entity-MISC { background-color: #d6d8d9; border: 1px solid #c6c8ca; color: #1b1e21; }
+    .entity-descubierta.entity-NUMERO { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .entity-descubierta.entity-PERSONA { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
+    .entity-descubierta.entity-ORGANIZACION { background-color: #e2d9f3; border: 1px solid #d4c5ec; color: #4a2a7a; }
+    .entity-descubierta.entity-LUGAR { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .entity-descubierta.entity-GENTILICIO { background-color: #dcdcf7; border: 1px solid #c7c7f0; color: #34348a; }
+    .entity-descubierta.entity-FECHA { background-color: #e2e3e5; border: 1px solid #d6d8db; color: #383d41; }
+    .entity-descubierta.entity-EDAD { background-color: #ffe5d0; border: 1px solid #ffd8b8; color: #7a4a12; }
+    .entity-descubierta.entity-OCUPACION { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    .entity-descubierta.entity-GRUPO_ARMADO { background-color: #e8c4c4; border: 1px solid #dba8a8; color: #5c1f1f; }
+    .entity-descubierta.entity-ROL_ARMADO { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+    .entity-descubierta.entity-ETNICO { background-color: #c8f0d4; border: 1px solid #a8e6bc; color: #1e5c34; }
     .editor-visual-container {
         line-height: 2.2;
         font-size: 14px;
@@ -188,8 +196,8 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
                     <div id="vista-visual" class="p-2">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="leyenda-entidades">
-                                <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PER]</span> Cubierta</span>
-                                <span class="leyenda-item"><span class="entity-descubierta entity-PER" style="font-size:11px">Juan</span> Visible</span>
+                                <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PERSONA]</span> Cubierta</span>
+                                <span class="leyenda-item"><span class="entity-descubierta entity-PERSONA" style="font-size:11px">Juan</span> Visible</span>
                                 <span class="text-muted small ml-2">| Clic en entidad para cubrir/descubrir</span>
                             </div>
                             <div>
@@ -215,26 +223,38 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
                             {{-- Menu contextual para agregar entidades --}}
                             <div class="entity-menu" id="entity-menu">
                                 <div class="entity-menu-header">Etiquetar como:</div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('PER')">
-                                    <span class="badge badge-primary">PER</span> Persona
+                                <div class="entity-menu-item" onclick="agregarEntidad('NUMERO')">
+                                    <span class="badge entity-NUMERO">NUMERO</span> Número/identificador
                                 </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('LOC')">
-                                    <span class="badge badge-success">LOC</span> Lugar
+                                <div class="entity-menu-item" onclick="agregarEntidad('PERSONA')">
+                                    <span class="badge entity-PERSONA">PERSONA</span> Persona
                                 </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('ORG')">
-                                    <span class="badge badge-info">ORG</span> Organizacion
+                                <div class="entity-menu-item" onclick="agregarEntidad('ORGANIZACION')">
+                                    <span class="badge entity-ORGANIZACION">ORGANIZACION</span> Organización
                                 </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('DATE')">
-                                    <span class="badge badge-secondary">DATE</span> Fecha
+                                <div class="entity-menu-item" onclick="agregarEntidad('LUGAR')">
+                                    <span class="badge entity-LUGAR">LUGAR</span> Lugar
                                 </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('EVENT')">
-                                    <span class="badge badge-warning">EVENT</span> Evento
+                                <div class="entity-menu-item" onclick="agregarEntidad('GENTILICIO')">
+                                    <span class="badge entity-GENTILICIO">GENTILICIO</span> Gentilicio
                                 </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('GUN')">
-                                    <span class="badge badge-danger">GUN</span> Arma
+                                <div class="entity-menu-item" onclick="agregarEntidad('FECHA')">
+                                    <span class="badge entity-FECHA">FECHA</span> Fecha
                                 </div>
-                                <div class="entity-menu-item" onclick="agregarEntidad('MISC')">
-                                    <span class="badge badge-dark">MISC</span> Otros
+                                <div class="entity-menu-item" onclick="agregarEntidad('EDAD')">
+                                    <span class="badge entity-EDAD">EDAD</span> Edad
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('OCUPACION')">
+                                    <span class="badge entity-OCUPACION">OCUPACION</span> Ocupación
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('GRUPO_ARMADO')">
+                                    <span class="badge entity-GRUPO_ARMADO">GRUPO_ARMADO</span> Grupo armado
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('ROL_ARMADO')">
+                                    <span class="badge entity-ROL_ARMADO">ROL_ARMADO</span> Rol en grupo armado
+                                </div>
+                                <div class="entity-menu-item" onclick="agregarEntidad('ETNICO')">
+                                    <span class="badge entity-ETNICO">ETNICO</span> Étnico
                                 </div>
                             </div>
 
@@ -296,62 +316,20 @@ Previsualizar: {{ $entrevista->entrevista_codigo }}
             </div>
             <div class="card-body">
                 <p class="text-muted small">Tipos a anonimizar:</p>
+                @php
+                    $tiposActivos = \App\Models\EntidadDetectada::tiposPorDefecto();
+                @endphp
+                @foreach(\App\Models\EntidadDetectada::tipos() as $tipoKey => $tipoLabel)
                 <div class="form-group">
                     <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-PER" value="PER" checked>
-                        <label class="custom-control-label" for="check-PER">
-                            <span class="badge badge-primary">PER</span> Personas
+                        <input type="checkbox" class="custom-control-input tipo-check" id="check-{{ $tipoKey }}" value="{{ $tipoKey }}"
+                               {{ in_array($tipoKey, $tiposActivos) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="check-{{ $tipoKey }}">
+                            <span class="badge entity-{{ $tipoKey }}">{{ $tipoKey }}</span> {{ $tipoLabel }}
                         </label>
                     </div>
                 </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-LOC" value="LOC" checked>
-                        <label class="custom-control-label" for="check-LOC">
-                            <span class="badge badge-success">LOC</span> Lugares
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-ORG" value="ORG">
-                        <label class="custom-control-label" for="check-ORG">
-                            <span class="badge badge-info">ORG</span> Organizaciones
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-DATE" value="DATE">
-                        <label class="custom-control-label" for="check-DATE">
-                            <span class="badge badge-secondary">DATE</span> Fechas
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-EVENT" value="EVENT">
-                        <label class="custom-control-label" for="check-EVENT">
-                            <span class="badge badge-warning">EVENT</span> Eventos
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-GUN" value="GUN">
-                        <label class="custom-control-label" for="check-GUN">
-                            <span class="badge badge-danger">GUN</span> Armas
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-MISC" value="MISC">
-                        <label class="custom-control-label" for="check-MISC">
-                            <span class="badge badge-dark">MISC</span> Otros
-                        </label>
-                    </div>
-                </div>
+                @endforeach
 
                 <hr>
 
@@ -485,9 +463,7 @@ $(document).ready(function() {
         var ent = estadoEntidades.find(function(en) { return en.id === id; });
         if (!ent) return;
         entidadContextual = { text: ent.text, type: ent.type };
-        var badgeClasses = { PER:'primary', LOC:'success', ORG:'info', DATE:'secondary', EVENT:'warning', GUN:'danger', MISC:'dark' };
-        var bc = badgeClasses[ent.type] || 'dark';
-        $('#ctx-header').html('<span class="badge badge-' + bc + '">' + ent.type + '</span> &ldquo;' + escapeHtml(ent.text) + '&rdquo;');
+        $('#ctx-header').html('<span class="badge entity-' + ent.type + '">' + ent.type + '</span> &ldquo;' + escapeHtml(ent.text) + '&rdquo;');
         var posX = e.clientX + 5, posY = e.clientY + 5;
         if (posX + 230 > window.innerWidth) posX = e.clientX - 235;
         if (posY + 130 > window.innerHeight) posY = e.clientY - 135;
@@ -715,7 +691,7 @@ function toggleEntidad($span) {
         ? 'Clic para descubrir: ' + ent.text
         : 'Clic para cubrir como: ' + ent.reemplazo;
 
-    $span.removeClass('entity-cubierta entity-descubierta entity-PER entity-LOC entity-ORG entity-DATE entity-EVENT entity-GUN entity-MISC');
+    $span.removeClass('entity-cubierta entity-descubierta entity-NUMERO entity-PERSONA entity-ORGANIZACION entity-LUGAR entity-GENTILICIO entity-FECHA entity-EDAD entity-OCUPACION entity-GRUPO_ARMADO entity-ROL_ARMADO entity-ETNICO');
     $span.addClass('entity-clickable ' + claseEstado);
     $span.text(textoMostrar);
     $span.attr('title', tooltip);
@@ -918,7 +894,6 @@ function sincronizarConTextarea() {
 function actualizarResumen() {
     // Lista de etiquetas distintas (agrupadas por texto+tipo) con su conteo de
     // ocurrencias y un boton para eliminarlas todas (ver eliminarEtiqueta()).
-    var badgeClasses = { PER:'primary', LOC:'success', ORG:'info', DATE:'secondary', EVENT:'warning', GUN:'danger', MISC:'dark' };
     var grupos = {};
     var orden = [];
 
@@ -939,9 +914,8 @@ function actualizarResumen() {
     var html = '';
     orden.forEach(function(key) {
         var g = grupos[key];
-        var bc = badgeClasses[g.type] || 'dark';
         html += '<div class="etiqueta-item">' +
-                    '<span><span class="badge badge-' + bc + '">' + g.type + '</span> ' +
+                    '<span><span class="badge entity-' + g.type + '">' + g.type + '</span> ' +
                     escapeHtml(g.text) + ' <span class="text-muted">(' + g.count + ')</span></span>' +
                     '<button type="button" class="btn btn-sm btn-link text-danger btn-eliminar-etiqueta" ' +
                         'data-text="' + escapeHtml(g.text).replace(/"/g, '&quot;') + '" data-type="' + g.type + '" title="Eliminar etiqueta">' +

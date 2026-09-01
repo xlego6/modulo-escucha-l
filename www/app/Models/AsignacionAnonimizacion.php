@@ -105,7 +105,7 @@ class AsignacionAnonimizacion extends Model
 
     public function getTiposArrayAttribute()
     {
-        return explode(',', $this->tipos_anonimizar ?? 'PER,LOC');
+        return explode(',', $this->tipos_anonimizar ?? implode(',', \App\Models\EntidadDetectada::tiposPorDefecto()));
     }
 
     // Scopes

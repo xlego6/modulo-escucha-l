@@ -1309,14 +1309,17 @@ class ProcesamientoController extends Controller
             return response()->json(['error' => 'La entrevista no tiene transcripcion'], 400);
         }
 
-        // Obtener tipos a detectar (por defecto todos excepto MISC)
-        $tiposPermitidos = ['PER', 'LOC', 'ORG', 'DATE', 'EVENT', 'GUN', 'MISC'];
-        $tiposADetectar = $tiposPermitidos; // Por defecto todos
+        // El modelo spaCy estandar (es_core_news_lg/sm) solo produce PER/LOC/ORG/MISC.
+        // Se mapean a la taxonomia propia (MISC se descarta deliberadamente, sin
+        // equivalente claro); el resto de la taxonomia solo se etiqueta manualmente.
+        $mapeo = EntidadDetectada::mapeoDeteccionAutomatica();
+        $tiposDisponibles = array_values($mapeo);
+        $tiposADetectar = $tiposDisponibles; // Por defecto, todos los detectables automaticamente
 
         if ($request->has('tipos') && !empty($request->tipos)) {
             $tiposADetectar = array_intersect(
                 explode(',', $request->tipos),
-                $tiposPermitidos
+                $tiposDisponibles
             );
         }
 
@@ -1332,10 +1335,11 @@ class ProcesamientoController extends Controller
             $entidadesGuardadas = 0;
 
             foreach ($result['entities'] as $entidad) {
-                $tipo = $entidad['type'] ?? $entidad['label'] ?? 'MISC';
+                $tipoSpacy = $entidad['type'] ?? $entidad['label'] ?? null;
+                $tipo = $mapeo[$tipoSpacy] ?? null;
 
-                // Solo guardar si el tipo está en los seleccionados
-                if (!in_array($tipo, $tiposADetectar)) {
+                // Tipo no mapeado (ej. MISC) o no seleccionado: se descarta
+                if ($tipo === null || !in_array($tipo, $tiposADetectar)) {
                     continue;
                 }
 
@@ -1504,27 +1508,48 @@ class ProcesamientoController extends Controller
             return response()->json(['error' => 'La entrevista no tiene transcripcion'], 400);
         }
 
-        // Tipos de entidades a anonimizar
-        $tipos = $request->input('tipos', 'PER,LOC');
+        // Tipos de entidades a anonimizar (taxonomia propia)
+        $tipos = $request->input('tipos', implode(',', EntidadDetectada::tiposPorDefecto()));
         $tiposArray = is_array($tipos) ? $tipos : explode(',', $tipos);
         $formato = $request->input('formato', 'brackets');
+
+        // El servicio NER /anonymize compara contra las etiquetas crudas que produce
+        // spaCy (PER/LOC/ORG), no contra la taxonomia propia: hay que traducir de vuelta.
+        // Los tipos sin equivalente automatico (NUMERO, FECHA, etc.) se descartan aqui,
+        // igual que en detectarEntidades().
+        $mapeoInverso = array_flip(EntidadDetectada::mapeoDeteccionAutomatica());
+        $tiposSpacy = array_values(array_filter(array_map(
+            fn($t) => $mapeoInverso[$t] ?? null,
+            $tiposArray
+        )));
 
         // Llamar al servicio de anonimizacion
         $result = $this->procesamientoService->anonymize(
             $textoTranscripcion,
-            $tiposArray,
+            $tiposSpacy,
             $formato
         );
 
         if ($result['success']) {
+            // El servicio inserta el placeholder con la etiqueta cruda de spaCy
+            // (ej. "[PER]", "[PER_1]"): se traduce a la taxonomia propia.
+            $anonymizedText = $result['anonymized_text'] ?? '';
+            foreach (EntidadDetectada::mapeoDeteccionAutomatica() as $tipoSpacy => $tipoApp) {
+                $anonymizedText = preg_replace(
+                    '/\[' . preg_quote($tipoSpacy, '/') . '(_\d+)?\]/',
+                    '[' . $tipoApp . '$1]',
+                    $anonymizedText
+                );
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Anonimizacion completada',
                 'entrevista_id' => $id,
                 'original_length' => strlen($textoTranscripcion),
-                'anonymized_length' => strlen($result['anonymized_text'] ?? ''),
+                'anonymized_length' => strlen($anonymizedText),
                 'replacements' => $result['stats']['total_replaced'] ?? 0,
-                'anonymized_text' => $result['anonymized_text'] ?? ''
+                'anonymized_text' => $anonymizedText
             ]);
         }
 
