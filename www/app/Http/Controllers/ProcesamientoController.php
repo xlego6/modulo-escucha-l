@@ -49,12 +49,11 @@ class ProcesamientoController extends Controller
             ->orderBy('u.name')
             ->get();
 
-        // Anonimizadores para el filtro
-        $anonimizadores = DB::table('esclarecimiento.asignacion_anonimizacion as aa')
-            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'aa.id_anonimizador')
+        // Anonimizadores para el filtro: todos los Líderes (2) y Anonimizadores (4)
+        $anonimizadores = DB::table('esclarecimiento.entrevistador as e')
             ->join('users as u', 'u.id', '=', 'e.id_usuario')
+            ->whereIn('e.id_nivel', [2, 4])
             ->select('e.id_entrevistador', 'u.name', 'e.id_dependencia_origen')
-            ->distinct()
             ->orderBy('u.name')
             ->get();
 
@@ -1408,8 +1407,8 @@ class ProcesamientoController extends Controller
             ->orderBy('fecha_envio_revision', 'asc')
             ->get();
 
-        // Anonimizadores disponibles (nivel 4)
-        $anonimizadores = Entrevistador::where('id_nivel', 4)
+        // Anonimizadores y Líderes disponibles para asignar (nivel 2 y 4)
+        $anonimizadores = Entrevistador::whereIn('id_nivel', [2, 4])
             ->with('rel_usuario')
             ->get();
 
