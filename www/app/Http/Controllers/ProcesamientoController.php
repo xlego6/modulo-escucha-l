@@ -49,12 +49,11 @@ class ProcesamientoController extends Controller
             ->orderBy('u.name')
             ->get();
 
-        // Anonimizadores para el filtro
-        $anonimizadores = DB::table('esclarecimiento.asignacion_anonimizacion as aa')
-            ->join('esclarecimiento.entrevistador as e', 'e.id_entrevistador', '=', 'aa.id_anonimizador')
+        // Anonimizadores para el filtro: todos los Líderes (2) y Anonimizadores (4)
+        $anonimizadores = DB::table('esclarecimiento.entrevistador as e')
             ->join('users as u', 'u.id', '=', 'e.id_usuario')
+            ->whereIn('e.id_nivel', [2, 4])
             ->select('e.id_entrevistador', 'u.name', 'e.id_dependencia_origen')
-            ->distinct()
             ->orderBy('u.name')
             ->get();
 
@@ -131,6 +130,37 @@ class ProcesamientoController extends Controller
                 ->where('estado', $estado)
                 ->distinct()->pluck('id_e_ind_fvt');
             $stats[$estado] = $this->audioStatsForIds($ids);
+        }
+        return $stats;
+    }
+
+    private function entidadesStatsForIds($ids)
+    {
+        $idsArray = array_unique(is_array($ids) ? $ids : $ids->toArray());
+        if (empty($idsArray)) {
+            return ['cantidad_entrevistas' => 0, 'cantidad_entidades' => 0];
+        }
+
+        $cantidadEntidades = DB::table('esclarecimiento.entidad_detectada')
+            ->whereIn('id_e_ind_fvt', $idsArray)
+            ->count();
+
+        return [
+            'cantidad_entrevistas' => count($idsArray),
+            'cantidad_entidades' => $cantidadEntidades,
+        ];
+    }
+
+    private function calcStatsAnonimizador($anonimizadorId)
+    {
+        $estados = ['asignada', 'en_edicion', 'enviada_revision', 'rechazada', 'aprobada'];
+        $stats = [];
+        foreach ($estados as $estado) {
+            $ids = DB::table('esclarecimiento.asignacion_anonimizacion')
+                ->where('id_anonimizador', $anonimizadorId)
+                ->where('estado', $estado)
+                ->distinct()->pluck('id_e_ind_fvt');
+            $stats[$estado] = $this->entidadesStatsForIds($ids);
         }
         return $stats;
     }
@@ -320,6 +350,12 @@ class ProcesamientoController extends Controller
      */
     public function transcripcion(Request $request)
     {
+        $tipoAutomatizacion = $request->get('tipo', 'transcripcion');
+
+        if ($tipoAutomatizacion === 'anonimizacion') {
+            return $this->automatizacionDeteccionEntidades($request);
+        }
+
         $codigo = trim((string) $request->input('codigo', ''));
         $audioNombre = trim((string) $request->input('audio', ''));
         $estado = (string) $request->input('estado', '');
@@ -384,8 +420,67 @@ class ProcesamientoController extends Controller
 
         // Estado del servicio
         $servicioStatus = $this->procesamientoService->transcriptionStatus();
+        $tipo = 'transcripcion';
 
-        return view('procesamientos.transcripcion', compact('entrevistas', 'enProceso', 'servicioStatus', 'codigo', 'audioNombre', 'estado'));
+        return view('procesamientos.transcripcion', compact('entrevistas', 'enProceso', 'servicioStatus', 'codigo', 'audioNombre', 'estado', 'tipo'));
+    }
+
+    /**
+     * Automatización: deteccion de entidades (NER) en lote, pestaña "Anonimización"
+     * dentro de /procesamientos/transcripcion (mismo mecanismo que transcripcion()).
+     */
+    private function automatizacionDeteccionEntidades(Request $request)
+    {
+        $tipo = 'anonimizacion';
+        $codigo = trim((string) $request->input('codigo', ''));
+        $documento = (string) $request->input('documento', '');
+        $estado = (string) $request->input('estado', '');
+
+        $tieneFinal = function ($q) {
+            $q->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL)
+              ->whereNotNull('texto_extraido')->where('texto_extraido', '!=', '');
+        };
+        $tieneAutomatizada = function ($q) {
+            $q->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
+              ->whereNotNull('texto_extraido')->where('texto_extraido', '!=', '');
+        };
+
+        $query = Entrevista::where('id_activo', 1)
+            ->where(function ($q) use ($tieneFinal, $tieneAutomatizada) {
+                $q->whereHas('rel_adjuntos', $tieneFinal)
+                  ->orWhereHas('rel_adjuntos', $tieneAutomatizada)
+                  ->orWhere(function ($ql) {
+                      $ql->whereNotNull('anotaciones')->where('anotaciones', '!=', '');
+                  });
+            });
+
+        if ($codigo !== '') {
+            $query->where('entrevista_codigo', 'like', '%' . $codigo . '%');
+        }
+
+        if ($documento === 'final') {
+            $query->whereHas('rel_adjuntos', $tieneFinal);
+        } elseif ($documento === 'automatizada') {
+            $query->whereDoesntHave('rel_adjuntos', $tieneFinal)
+                  ->whereHas('rel_adjuntos', $tieneAutomatizada);
+        }
+
+        if ($estado === 'detectada') {
+            $query->whereNotNull('entidades_detectadas_at');
+        } elseif ($estado === 'pendiente') {
+            $query->whereNull('entidades_detectadas_at');
+        }
+
+        $entrevistas = $query
+            ->with('rel_adjuntos')
+            ->withCount('rel_entidades')
+            ->orderBy('updated_at', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
+
+        $servicioStatus = $this->procesamientoService->nerStatus();
+
+        return view('procesamientos.transcripcion', compact('entrevistas', 'servicioStatus', 'codigo', 'documento', 'estado', 'tipo'));
     }
 
     /**
@@ -1353,11 +1448,11 @@ class ProcesamientoController extends Controller
         $user = Auth::user();
         $nivel = $user->id_nivel;
 
-        // Transcriptor (nivel 4): solo ve sus asignaciones de anonimizacion
+        // Anonimizador (nivel 4): solo ve sus asignaciones de anonimizacion
         if ($nivel == 4) {
             // Incluir aprobadas para que vea su trabajo finalizado
             $asignaciones = AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                ->with(['rel_entrevista'])
+                ->with(['rel_entrevista', 'rel_adjunto', 'rel_revisor'])
                 ->orderByRaw("CASE estado
                     WHEN 'rechazada' THEN 1
                     WHEN 'asignada' THEN 2
@@ -1368,18 +1463,7 @@ class ProcesamientoController extends Controller
                 ->orderBy('fecha_asignacion', 'desc')
                 ->paginate(20);
 
-            $stats = [
-                'asignadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_ASIGNADA)->count(),
-                'en_edicion' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_EN_EDICION)->count(),
-                'enviadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_ENVIADA_REVISION)->count(),
-                'rechazadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_RECHAZADA)->count(),
-                'aprobadas' => AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
-                    ->where('estado', AsignacionAnonimizacion::ESTADO_APROBADA)->count(),
-            ];
+            $stats = $this->calcStatsAnonimizador($user->id_entrevistador);
 
             return view('procesamientos.anonimizacion-anonimizador', compact('asignaciones', 'stats'));
         }
@@ -1408,8 +1492,8 @@ class ProcesamientoController extends Controller
             ->orderBy('fecha_envio_revision', 'asc')
             ->get();
 
-        // Anonimizadores disponibles (nivel 4)
-        $anonimizadores = Entrevistador::where('id_nivel', 4)
+        // Anonimizadores y Líderes disponibles para asignar (nivel 2 y 4)
+        $anonimizadores = Entrevistador::whereIn('id_nivel', [2, 4])
             ->with('rel_usuario')
             ->get();
 
@@ -2095,8 +2179,7 @@ class ProcesamientoController extends Controller
         $request->validate([
             'id_e_ind_fvt' => 'required|integer',
             'id_anonimizador' => 'required|integer',
-            'tipos_anonimizar' => 'nullable|string',
-            'formato_reemplazo' => 'nullable|string',
+            'id_adjunto' => 'nullable|integer',
         ]);
 
         // Verificar que no exista una asignacion activa para esta entrevista
@@ -2124,10 +2207,9 @@ class ProcesamientoController extends Controller
             'id_e_ind_fvt' => $request->id_e_ind_fvt,
             'id_anonimizador' => $request->id_anonimizador,
             'id_asignado_por' => $user->id,
+            'id_adjunto' => $request->id_adjunto,
             'estado' => AsignacionAnonimizacion::ESTADO_ASIGNADA,
             'fecha_asignacion' => now(),
-            'tipos_anonimizar' => $request->tipos_anonimizar ?? 'PER,LOC',
-            'formato_reemplazo' => $request->formato_reemplazo ?? 'brackets',
             'texto_anonimizado' => $anonimizacionPrevia ? $anonimizacionPrevia->texto_anonimizado : null,
         ]);
 
