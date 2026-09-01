@@ -319,6 +319,12 @@ class ProcesamientoController extends Controller
      */
     public function transcripcion(Request $request)
     {
+        $tipoAutomatizacion = $request->get('tipo', 'transcripcion');
+
+        if ($tipoAutomatizacion === 'anonimizacion') {
+            return $this->automatizacionDeteccionEntidades($request);
+        }
+
         $codigo = trim((string) $request->input('codigo', ''));
         $audioNombre = trim((string) $request->input('audio', ''));
         $estado = (string) $request->input('estado', '');
@@ -383,8 +389,67 @@ class ProcesamientoController extends Controller
 
         // Estado del servicio
         $servicioStatus = $this->procesamientoService->transcriptionStatus();
+        $tipo = 'transcripcion';
 
-        return view('procesamientos.transcripcion', compact('entrevistas', 'enProceso', 'servicioStatus', 'codigo', 'audioNombre', 'estado'));
+        return view('procesamientos.transcripcion', compact('entrevistas', 'enProceso', 'servicioStatus', 'codigo', 'audioNombre', 'estado', 'tipo'));
+    }
+
+    /**
+     * Automatización: deteccion de entidades (NER) en lote, pestaña "Anonimización"
+     * dentro de /procesamientos/transcripcion (mismo mecanismo que transcripcion()).
+     */
+    private function automatizacionDeteccionEntidades(Request $request)
+    {
+        $tipo = 'anonimizacion';
+        $codigo = trim((string) $request->input('codigo', ''));
+        $documento = (string) $request->input('documento', '');
+        $estado = (string) $request->input('estado', '');
+
+        $tieneFinal = function ($q) {
+            $q->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL)
+              ->whereNotNull('texto_extraido')->where('texto_extraido', '!=', '');
+        };
+        $tieneAutomatizada = function ($q) {
+            $q->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
+              ->whereNotNull('texto_extraido')->where('texto_extraido', '!=', '');
+        };
+
+        $query = Entrevista::where('id_activo', 1)
+            ->where(function ($q) use ($tieneFinal, $tieneAutomatizada) {
+                $q->whereHas('rel_adjuntos', $tieneFinal)
+                  ->orWhereHas('rel_adjuntos', $tieneAutomatizada)
+                  ->orWhere(function ($ql) {
+                      $ql->whereNotNull('anotaciones')->where('anotaciones', '!=', '');
+                  });
+            });
+
+        if ($codigo !== '') {
+            $query->where('entrevista_codigo', 'like', '%' . $codigo . '%');
+        }
+
+        if ($documento === 'final') {
+            $query->whereHas('rel_adjuntos', $tieneFinal);
+        } elseif ($documento === 'automatizada') {
+            $query->whereDoesntHave('rel_adjuntos', $tieneFinal)
+                  ->whereHas('rel_adjuntos', $tieneAutomatizada);
+        }
+
+        if ($estado === 'detectada') {
+            $query->whereNotNull('entidades_detectadas_at');
+        } elseif ($estado === 'pendiente') {
+            $query->whereNull('entidades_detectadas_at');
+        }
+
+        $entrevistas = $query
+            ->with('rel_adjuntos')
+            ->withCount('rel_entidades')
+            ->orderBy('updated_at', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
+
+        $servicioStatus = $this->procesamientoService->nerStatus();
+
+        return view('procesamientos.transcripcion', compact('entrevistas', 'servicioStatus', 'codigo', 'documento', 'estado', 'tipo'));
     }
 
     /**

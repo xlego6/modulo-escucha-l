@@ -1,9 +1,45 @@
 @extends('layouts.app')
 
-@section('title', 'Transcripcion Automatizada')
-@section('content_header', 'Transcripcion Automatizada')
+@section('title', $tipo === 'anonimizacion' ? 'Anonimizacion Automatizada' : 'Transcripcion Automatizada')
+@section('content_header', $tipo === 'anonimizacion' ? 'Anonimizacion Automatizada' : 'Transcripcion Automatizada')
+
+@section('css')
+<style>
+.tipo-selector { display: flex; gap: 10px; flex-wrap: wrap; }
+.tipo-selector .btn { flex: 1; min-width: 160px; text-align: left; padding: 12px 18px; }
+.tipo-selector .btn.active { box-shadow: 0 0 0 3px rgba(235,192,26,0.5); }
+.tipo-selector .btn small { display: block; font-weight: normal; opacity: 0.75; margin-top: 2px; }
+</style>
+@endsection
 
 @section('content')
+
+{{-- Selector Transcripcion / Anonimizacion --}}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card card-outline card-primary mb-0">
+            <div class="card-header py-2">
+                <h3 class="card-title"><i class="fas fa-robot mr-2"></i>Automatización</h3>
+            </div>
+            <div class="card-body py-2">
+                <div class="tipo-selector">
+                    <a href="{{ route('procesamientos.transcripcion') }}?tipo=transcripcion"
+                       class="btn btn-outline-primary {{ $tipo === 'transcripcion' ? 'active' : '' }}">
+                        <i class="fas fa-microphone-alt"></i> Transcripción
+                        <small>Transcripción automática de audios</small>
+                    </a>
+                    <a href="{{ route('procesamientos.transcripcion') }}?tipo=anonimizacion"
+                       class="btn btn-outline-danger {{ $tipo === 'anonimizacion' ? 'active' : '' }}">
+                        <i class="fas fa-user-secret"></i> Anonimización
+                        <small>Detección automática de entidades (NER)</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if($tipo === 'transcripcion')
 <!-- Panel de Resultado Individual -->
 <div class="row" id="panel-resultado" style="display: none;">
     <div class="col-12">
@@ -469,6 +505,251 @@
         </div>
     </div>
 </div>
+@else
+<!-- Panel de Resultado Individual (deteccion de entidades) -->
+<div class="row" id="panel-resultado-ent" style="display: none;">
+    <div class="col-12">
+        <div class="card" id="card-resultado-ent">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Resultado de Deteccion</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" onclick="$('#panel-resultado-ent').slideUp()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="resultado-ent-exito" style="display: none;">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <strong>Deteccion completada exitosamente</strong>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <small class="text-muted">Entrevista:</small><br>
+                            <strong id="res-ent-codigo"></strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Entidades detectadas:</small><br>
+                            <strong id="res-ent-total"></strong>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="#" id="btn-ver-entidades" class="btn btn-sm btn-danger">
+                                <i class="fas fa-eye mr-1"></i>Ver entidades
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div id="resultado-ent-error" style="display: none;">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Error en la deteccion</strong>
+                    </div>
+                    <p id="res-ent-error-mensaje" class="text-danger"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Panel de Progreso en Lote (deteccion de entidades) -->
+<div class="row" id="panel-lote-ent" style="display: none;">
+    <div class="col-12">
+        <div class="card card-danger">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Deteccion en Lote</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3 text-center">
+                        <h3 class="mb-0" id="lote-ent-procesados">0</h3>
+                        <small class="text-muted">Procesados</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="mb-0 text-primary" id="lote-ent-total">0</h3>
+                        <small class="text-muted">Total</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="mb-0 text-success" id="lote-ent-exitosos">0</h3>
+                        <small class="text-muted">Exitosos</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="mb-0 text-danger" id="lote-ent-errores">0</h3>
+                        <small class="text-muted">Errores</small>
+                    </div>
+                </div>
+
+                <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress-bar bg-danger" id="lote-ent-progress-bar" role="progressbar" style="width: 0%">
+                        <span id="lote-ent-progress-text">0%</span>
+                    </div>
+                </div>
+
+                <div id="lote-ent-status" class="mb-3">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    <span id="lote-ent-mensaje">Iniciando...</span>
+                </div>
+
+                <div class="card card-outline card-secondary collapsed-card">
+                    <div class="card-header py-2">
+                        <h3 class="card-title text-sm"><i class="fas fa-list mr-2"></i>Registro de actividad</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0" style="display: none; max-height: 200px; overflow-y: auto;">
+                        <ul class="list-group list-group-flush" id="lote-ent-log"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas</h3>
+            </div>
+            <div class="card-body border-bottom">
+                <form method="GET" action="{{ route('procesamientos.transcripcion') }}" class="row align-items-end">
+                    <input type="hidden" name="tipo" value="anonimizacion">
+                    <div class="col-md-4 form-group mb-2 mb-md-0">
+                        <label for="f-codigo-ent" class="mb-1">Codigo</label>
+                        <input type="text" class="form-control form-control-sm" id="f-codigo-ent" name="codigo"
+                               value="{{ $codigo }}" placeholder="Ej: EI-2026-001">
+                    </div>
+                    <div class="col-md-4 form-group mb-2 mb-md-0">
+                        <label for="f-documento-ent" class="mb-1">Documento base</label>
+                        <select class="form-control form-control-sm" id="f-documento-ent" name="documento">
+                            <option value="" {{ $documento === '' ? 'selected' : '' }}>Cualquiera</option>
+                            <option value="final" {{ $documento === 'final' ? 'selected' : '' }}>Transcripción final</option>
+                            <option value="automatizada" {{ $documento === 'automatizada' ? 'selected' : '' }}>Transcripción automatizada</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 form-group mb-2 mb-md-0">
+                        <label for="f-estado-ent" class="mb-1">Estado</label>
+                        <select class="form-control form-control-sm" id="f-estado-ent" name="estado">
+                            <option value="" {{ $estado === '' ? 'selected' : '' }}>Todos</option>
+                            <option value="detectada" {{ $estado === 'detectada' ? 'selected' : '' }}>Con entidades detectadas</option>
+                            <option value="pendiente" {{ $estado === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 form-group mb-0 d-flex">
+                        <button type="submit" class="btn btn-sm btn-primary mr-1" title="Buscar">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        @if($codigo !== '' || $documento !== '' || $estado !== '')
+                        <a href="{{ route('procesamientos.transcripcion') }}?tipo=anonimizacion" class="btn btn-sm btn-outline-secondary" title="Limpiar filtros">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"></th>
+                            <th style="width: 110px;">Codigo</th>
+                            <th>Titulo</th>
+                            <th style="width: 150px;">Documento base</th>
+                            <th style="width: 120px;">Entidades</th>
+                            <th style="width: 90px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($entrevistas as $entrevista)
+                        @php
+                            $tieneFinal = $entrevista->rel_adjuntos->contains(fn($a) => $a->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL && !empty($a->texto_extraido));
+                            $tieneAutomatizada = $entrevista->rel_adjuntos->contains(fn($a) => $a->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA && !empty($a->texto_extraido));
+                        @endphp
+                        <tr class="entrevista-row">
+                            <td>
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input check-item-ent"
+                                           id="check-ent{{ $entrevista->id_e_ind_fvt }}"
+                                           value="{{ $entrevista->id_e_ind_fvt }}">
+                                    <label class="custom-control-label" for="check-ent{{ $entrevista->id_e_ind_fvt }}"></label>
+                                </div>
+                            </td>
+                            <td><code>{{ $entrevista->entrevista_codigo }}</code></td>
+                            <td>
+                                <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}">
+                                    {{ \Illuminate\Support\Str::limit($entrevista->titulo, 40) }}
+                                </a>
+                            </td>
+                            <td>
+                                @if($tieneFinal)
+                                    <span class="badge badge-success">Transcripción final</span>
+                                @elseif($tieneAutomatizada)
+                                    <span class="badge badge-warning">Transcripción automatizada</span>
+                                @else
+                                    <span class="badge badge-secondary">Sin transcripción</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($entrevista->entidades_detectadas_at)
+                                    <span class="badge badge-danger" id="entidades-badge-{{ $entrevista->id_e_ind_fvt }}">
+                                        {{ $entrevista->rel_entidades_count }} entidades
+                                    </span>
+                                    <br><small class="text-muted">{{ \Carbon\Carbon::parse($entrevista->entidades_detectadas_at)->format('d/m/Y') }}</small>
+                                @else
+                                    <span class="badge badge-light text-muted" id="entidades-badge-{{ $entrevista->id_e_ind_fvt }}">Sin detectar</span>
+                                @endif
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger btn-detectar-entidades"
+                                        data-id="{{ $entrevista->id_e_ind_fvt }}"
+                                        data-codigo="{{ $entrevista->entrevista_codigo }}"
+                                        title="Detectar entidades">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-user-secret fa-2x mb-2"></i><br>
+                                No hay entrevistas con transcripción disponible
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($entrevistas->hasPages())
+            <div class="card-footer">
+                {{ $entrevistas->links() }}
+            </div>
+            @endif
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Acciones en lote -->
+        <div class="card card-danger">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Acciones en Lote</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Seleccione entrevistas de la lista para detectar entidades en lote.</p>
+                <div class="form-group">
+                    <label>Entrevistas seleccionadas:</label>
+                    <span id="count-seleccionadas-ent" class="badge badge-danger">0</span>
+                </div>
+                <button class="btn btn-danger btn-block" id="btn-procesar-lote-ent" disabled>
+                    <i class="fas fa-play mr-2"></i>Iniciar Detección
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @section('js')
@@ -1200,5 +1481,133 @@ function detectarGPU() {
         $('#gpu-status').html('<i class="fas fa-question-circle text-secondary mr-1"></i> No se pudo detectar');
     });
 }
+
+// ============ Deteccion de entidades (pestaña Anonimizacion) ============
+$(document).ready(function() {
+    var loteEntCancelado = false;
+
+    function detectarEntidadesUna(id) {
+        return $.ajax({
+            url: '{{ url("procesamientos/entidades") }}/' + id + '/detectar',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}' }
+        });
+    }
+
+    function actualizarBadgeEntidades(id, total) {
+        $('#entidades-badge-' + id)
+            .removeClass('badge-light text-muted')
+            .addClass('badge-danger')
+            .text(total + ' entidades');
+    }
+
+    function logEntEntry(tipo, mensaje) {
+        var icono = tipo === 'success' ? 'fa-check text-success' : (tipo === 'error' ? 'fa-times text-danger' : 'fa-info-circle text-info');
+        var hora = new Date().toLocaleTimeString();
+        var $log = $('#lote-ent-log');
+        $log.append(
+            '<li class="list-group-item py-1 px-2 text-sm"><i class="fas ' + icono + ' mr-2"></i>' +
+            '<span class="text-muted">' + hora + '</span> ' + $('<div>').text(mensaje).html() + '</li>'
+        );
+        $log.scrollTop($log[0].scrollHeight);
+    }
+
+    $('.check-item-ent').on('change', function() {
+        var count = $('.check-item-ent:checked').length;
+        $('#count-seleccionadas-ent').text(count);
+        $('#btn-procesar-lote-ent').prop('disabled', count === 0);
+    });
+
+    $('.btn-detectar-entidades').on('click', function() {
+        var btn = $(this);
+        var id = btn.data('id');
+        var codigo = btn.data('codigo');
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        $('#panel-resultado-ent').slideDown();
+        $('#resultado-ent-exito, #resultado-ent-error').hide();
+        $('html, body').animate({ scrollTop: 0 }, 300);
+
+        detectarEntidadesUna(id).done(function(response) {
+            if (response.success) {
+                $('#res-ent-codigo').text(codigo);
+                $('#res-ent-total').text(response.total_entidades);
+                $('#btn-ver-entidades').attr('href', '{{ url("procesamientos/entidades") }}/' + id);
+                $('#resultado-ent-exito').show();
+                actualizarBadgeEntidades(id, response.total_entidades);
+            } else {
+                $('#res-ent-error-mensaje').text(response.error || 'Error desconocido');
+                $('#resultado-ent-error').show();
+            }
+        }).fail(function(xhr) {
+            $('#res-ent-error-mensaje').text(xhr.responseJSON?.error || 'Error de conexion con el servidor');
+            $('#resultado-ent-error').show();
+        }).always(function() {
+            btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
+        });
+    });
+
+    function procesarLoteEntSecuencial(ids, idx, contadores) {
+        if (idx >= ids.length || loteEntCancelado) {
+            $('#lote-ent-status i').removeClass('fa-spinner fa-spin').addClass('fa-check text-success');
+            $('#lote-ent-mensaje').text('Finalizado: ' + contadores.exitosos + ' exitosos, ' + contadores.errores + ' con error.');
+            $('.check-item-ent, #btn-procesar-lote-ent').prop('disabled', false);
+            $('#count-seleccionadas-ent').text(0);
+            $('.check-item-ent').prop('checked', false);
+            return;
+        }
+
+        var item = ids[idx];
+        logEntEntry('info', 'Detectando entidades en ' + item.codigo + '...');
+
+        detectarEntidadesUna(item.id).done(function(response) {
+            if (response.success) {
+                contadores.exitosos++;
+                logEntEntry('success', item.codigo + ': ' + response.total_entidades + ' entidades detectadas.');
+                actualizarBadgeEntidades(item.id, response.total_entidades);
+            } else {
+                contadores.errores++;
+                logEntEntry('error', item.codigo + ': ' + (response.error || 'Error desconocido'));
+            }
+        }).fail(function(xhr) {
+            contadores.errores++;
+            logEntEntry('error', item.codigo + ': ' + (xhr.responseJSON?.error || 'Error de conexion'));
+        }).always(function() {
+            var procesados = idx + 1;
+            $('#lote-ent-procesados').text(procesados);
+            $('#lote-ent-exitosos').text(contadores.exitosos);
+            $('#lote-ent-errores').text(contadores.errores);
+            var pct = Math.round((procesados / ids.length) * 100);
+            $('#lote-ent-progress-bar').css('width', pct + '%');
+            $('#lote-ent-progress-text').text(pct + '%');
+
+            procesarLoteEntSecuencial(ids, idx + 1, contadores);
+        });
+    }
+
+    $('#btn-procesar-lote-ent').on('click', function() {
+        var ids = $('.check-item-ent:checked').map(function() {
+            return { id: $(this).val(), codigo: $(this).closest('tr').find('code').text() };
+        }).get();
+        if (ids.length === 0) return;
+        if (!confirm('¿Detectar entidades para ' + ids.length + ' entrevista(s)? Se procesan una por una y puede tardar segun la cantidad.')) return;
+
+        loteEntCancelado = false;
+        $('#panel-lote-ent').slideDown();
+        $('html, body').animate({ scrollTop: 0 }, 300);
+        $('#lote-ent-log').empty();
+        $('#lote-ent-total').text(ids.length);
+        $('#lote-ent-procesados').text(0);
+        $('#lote-ent-exitosos').text(0);
+        $('#lote-ent-errores').text(0);
+        $('#lote-ent-progress-bar').css('width', '0%');
+        $('#lote-ent-progress-text').text('0%');
+        $('#lote-ent-mensaje').text('Procesando...');
+        $('#lote-ent-status i').removeClass('fa-check text-success').addClass('fa-spinner fa-spin');
+        $('.check-item-ent, #btn-procesar-lote-ent').prop('disabled', true);
+
+        procesarLoteEntSecuencial(ids, 0, { exitosos: 0, errores: 0 });
+    });
+});
 </script>
 @endsection

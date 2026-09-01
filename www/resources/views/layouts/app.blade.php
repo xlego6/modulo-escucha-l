@@ -173,12 +173,12 @@
                             </li>
                             @endif
 
-                            {{-- Transcripción --}}
+                            {{-- Automatización (transcripción y anonimización automáticas) --}}
                             @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.transcripcion'))
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.transcripcion') }}" class="nav-link {{ request()->routeIs('procesamientos.transcripcion') ? 'active' : '' }}">
-                                    <i class="fas fa-microphone nav-icon"></i>
-                                    <p>Transcripcion</p>
+                                    <i class="fas fa-robot nav-icon"></i>
+                                    <p>Automatización</p>
                                 </a>
                             </li>
                             @endif

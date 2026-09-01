@@ -75,6 +75,10 @@ class Entrevista extends Model
         return $this->hasMany(Adjunto::class, 'id_e_ind_fvt', 'id_e_ind_fvt');
     }
 
+    public function rel_entidades() {
+        return $this->hasMany(EntidadDetectada::class, 'id_e_ind_fvt', 'id_e_ind_fvt');
+    }
+
     public function rel_consentimiento() {
         return $this->hasOne(Consentimiento::class, 'id_e_ind_fvt', 'id_e_ind_fvt');
     }
