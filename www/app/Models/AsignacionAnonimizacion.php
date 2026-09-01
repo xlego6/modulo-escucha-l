@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\User;
+use App\Models\Adjunto;
 use Illuminate\Database\Eloquent\Model;
 
 class AsignacionAnonimizacion extends Model
@@ -12,6 +13,7 @@ class AsignacionAnonimizacion extends Model
 
     protected $fillable = [
         'id_e_ind_fvt',
+        'id_adjunto',
         'id_anonimizador',
         'id_asignado_por',
         'estado',
@@ -21,9 +23,11 @@ class AsignacionAnonimizacion extends Model
         'fecha_revision',
         'id_revisor',
         'comentario_revision',
+        'historial_comentarios',
         'tipos_anonimizar',
         'formato_reemplazo',
         'texto_anonimizado',
+        'segundos_edicion_activa',
     ];
 
     protected $casts = [
@@ -33,6 +37,7 @@ class AsignacionAnonimizacion extends Model
         'fecha_revision' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'historial_comentarios' => 'array',
     ];
 
     // Estados posibles
@@ -72,6 +77,11 @@ class AsignacionAnonimizacion extends Model
     public function rel_revisor()
     {
         return $this->belongsTo(User::class, 'id_revisor', 'id');
+    }
+
+    public function rel_adjunto()
+    {
+        return $this->belongsTo(Adjunto::class, 'id_adjunto', 'id_adjunto');
     }
 
     // Accessors
