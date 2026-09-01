@@ -194,6 +194,13 @@
                                         <i class="fas fa-microphone-slash"></i>
                                     </button>
                                     @endif
+                                    @if($asignacion && $asignacion->estado != 'aprobada')
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                            onclick="abrirModalDesasignar({{ $asignacion->id_asignacion }}, '{{ $entrevista->entrevista_codigo }}', '{{ $asignacion->estado }}')"
+                                            title="Desasignar">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -267,10 +274,54 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Desasignar --}}
+<div class="modal fade" id="modalDesasignar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h5 class="modal-title"><i class="fas fa-user-minus mr-2"></i>Desasignar Anonimización</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Entrevista: <strong id="desasignar-codigo"></strong></p>
+                <div id="desasignar-aviso-trabajo" class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <strong>Atención:</strong> Esta asignación está en estado <strong id="desasignar-estado-label"></strong>.
+                    El trabajo realizado por el anonimizador se perderá.
+                </div>
+                <p class="text-muted small mb-0">Esta acción no se puede deshacer. La entrevista quedará libre para ser reasignada.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form id="formDesasignar" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-user-minus mr-1"></i> Confirmar Desasignación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('js')
 <script>
+function abrirModalDesasignar(idAsignacion, codigo, estado) {
+    var etiquetas = {
+        asignada: 'Asignada',
+        en_edicion: 'En Edición',
+        enviada_revision: 'Enviada a Revisión',
+        rechazada: 'Rechazada'
+    };
+    $('#desasignar-codigo').text(codigo);
+    $('#desasignar-estado-label').text(etiquetas[estado] || estado);
+    $('#formDesasignar').attr('action', '{{ url("procesamientos/asignacion-anonimizacion") }}/' + idAsignacion + '/desasignar');
+    $('#modalDesasignar').modal('show');
+}
+
 function abrirModalAsignar(id, codigo, documentos) {
     $('#asignar_id_entrevista').val(id);
     $('#asignar_codigo').val(codigo);

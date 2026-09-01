@@ -257,6 +257,9 @@ Route::middleware(['auth'])->group(function () {
             // Asignación de anonimización (Admin/Líder)
             Route::post('procesamientos/asignar-anonimizacion', [ProcesamientoController::class, 'asignarAnonimizacion'])->name('procesamientos.asignar-anonimizacion');
 
+            // Desasignar anonimización (Admin/Líder unicamente, ver ProcesamientoController::desasignarAnonimizacion)
+            Route::delete('procesamientos/asignacion-anonimizacion/{id}/desasignar', [ProcesamientoController::class, 'desasignarAnonimizacion'])->name('procesamientos.desasignar-anonimizacion');
+
             // Edición de anonimización asignada
             Route::get('procesamientos/anonimizacion-asignada/{id}/editar', [ProcesamientoController::class, 'editarAnonimizacionAsignada'])->name('procesamientos.editar-anonimizacion-asignada');
             Route::post('procesamientos/anonimizacion-asignada/{id}/guardar', [ProcesamientoController::class, 'guardarAnonimizacionAsignada'])->name('procesamientos.guardar-anonimizacion-asignada');

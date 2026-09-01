@@ -732,10 +732,10 @@ function fmtDur($seg) {
         </div></a>
     </div>
     <div class="col-md-3 col-sm-6">
-        <a href="{{ route('procesamientos.entidades') }}" class="small-box-footer">
+        <a href="{{ route('procesamientos.transcripcion', ['tipo' => 'anonimizacion']) }}" class="small-box-footer">
         <div class="small-box bg-warning">
-            <div class="inner"><h4>Entidades</h4><p>Detección NER (spaCy)</p></div>
-            <div class="icon"><i class="fas fa-tags"></i></div>
+            <div class="inner"><h4>Automatización</h4><p>Detección NER en lote (spaCy)</p></div>
+            <div class="icon"><i class="fas fa-robot"></i></div>
         </div></a>
     </div>
     <div class="col-md-3 col-sm-6">
