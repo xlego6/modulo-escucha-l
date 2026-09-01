@@ -19,13 +19,17 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         border-radius: 4px;
         margin: 0 2px;
     }
-    .entity-PER { background-color: #cce5ff; border: 1px solid #b8daff; }
-    .entity-LOC { background-color: #d4edda; border: 1px solid #c3e6cb; }
-    .entity-ORG { background-color: #d1ecf1; border: 1px solid #bee5eb; }
-    .entity-DATE { background-color: #e2e3e5; border: 1px solid #d6d8db; }
-    .entity-EVENT { background-color: #fff3cd; border: 1px solid #ffeeba; }
-    .entity-GUN { background-color: #f8d7da; border: 1px solid #f5c6cb; }
-    .entity-MISC { background-color: #d6d8d9; border: 1px solid #c6c8ca; }
+    .entity-NUMERO { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .entity-PERSONA { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
+    .entity-ORGANIZACION { background-color: #e2d9f3; border: 1px solid #d4c5ec; color: #4a2a7a; }
+    .entity-LUGAR { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .entity-GENTILICIO { background-color: #dcdcf7; border: 1px solid #c7c7f0; color: #34348a; }
+    .entity-FECHA { background-color: #e2e3e5; border: 1px solid #d6d8db; color: #383d41; }
+    .entity-EDAD { background-color: #ffe5d0; border: 1px solid #ffd8b8; color: #7a4a12; }
+    .entity-OCUPACION { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    .entity-GRUPO_ARMADO { background-color: #e8c4c4; border: 1px solid #dba8a8; color: #5c1f1f; }
+    .entity-ROL_ARMADO { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+    .entity-ETNICO { background-color: #c8f0d4; border: 1px solid #a8e6bc; color: #1e5c34; }
     .transcripcion-container {
         line-height: 2;
         font-size: 14px;
@@ -68,16 +72,18 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         border-radius: 4px;
         margin: 0 2px;
         display: inline;
-        text-decoration: line-through;
-        opacity: 0.7;
     }
-    .entity-descubierta.entity-PER { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
-    .entity-descubierta.entity-LOC { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
-    .entity-descubierta.entity-ORG { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
-    .entity-descubierta.entity-DATE { background-color: #e2e3e5; border: 1px solid #d6d8db; color: #383d41; }
-    .entity-descubierta.entity-EVENT { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
-    .entity-descubierta.entity-GUN { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
-    .entity-descubierta.entity-MISC { background-color: #d6d8d9; border: 1px solid #c6c8ca; color: #1b1e21; }
+    .entity-descubierta.entity-NUMERO { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .entity-descubierta.entity-PERSONA { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
+    .entity-descubierta.entity-ORGANIZACION { background-color: #e2d9f3; border: 1px solid #d4c5ec; color: #4a2a7a; }
+    .entity-descubierta.entity-LUGAR { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .entity-descubierta.entity-GENTILICIO { background-color: #dcdcf7; border: 1px solid #c7c7f0; color: #34348a; }
+    .entity-descubierta.entity-FECHA { background-color: #e2e3e5; border: 1px solid #d6d8db; color: #383d41; }
+    .entity-descubierta.entity-EDAD { background-color: #ffe5d0; border: 1px solid #ffd8b8; color: #7a4a12; }
+    .entity-descubierta.entity-OCUPACION { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    .entity-descubierta.entity-GRUPO_ARMADO { background-color: #e8c4c4; border: 1px solid #dba8a8; color: #5c1f1f; }
+    .entity-descubierta.entity-ROL_ARMADO { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+    .entity-descubierta.entity-ETNICO { background-color: #c8f0d4; border: 1px solid #a8e6bc; color: #1e5c34; }
     .editor-visual-container {
         line-height: 2.2;
         font-size: 14px;
@@ -155,159 +161,43 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         background: #ffc107;
         color: #000;
     }
+    /* Estado activo de los botones de modo (Editor visual/Editar texto) y de cobertura (Todas/Ninguna) */
+    .card-tools .btn.active,
+    .btn-cobertura.active {
+        background-color: #343a40;
+        border-color: #343a40;
+        color: #fff;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .etiqueta-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 8px;
+        border-bottom: 1px solid #f1f1f1;
+        font-size: 12px;
+    }
+    .etiqueta-item:last-child { border-bottom: none; }
+    .etiqueta-item .btn-eliminar-etiqueta {
+        padding: 0 4px;
+        line-height: 1;
+    }
 </style>
 @endsection
 
 @section('content')
-<div class="row">
-    {{-- Panel izquierdo: Informacion y Configuracion --}}
-    <div class="col-md-3">
-        {{-- Estado de la asignacion --}}
-        <div class="card card-danger">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Asignacion</h3>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-5">Estado:</dt>
-                    <dd class="col-sm-7">
-                        <span class="badge {{ $asignacion->estado_badge_class }}">
-                            {{ $asignacion->fmt_estado }}
-                        </span>
-                    </dd>
-                    <dt class="col-sm-5">Asignada:</dt>
-                    <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y') }}</dd>
-                </dl>
-
-                @if($asignacion->estado == 'rechazada' && $asignacion->comentario_revision)
-                <hr>
-                <div class="alert alert-danger mb-0">
-                    <strong><i class="fas fa-exclamation-circle mr-1"></i>Motivo del rechazo:</strong><br>
-                    {{ $asignacion->comentario_revision }}
-                </div>
-                @endif
-            </div>
-        </div>
-
-        {{-- Configuracion de tipos --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Configuracion</h3>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Tipos a anonimizar:</p>
-                @php
-                    $tiposActivos = explode(',', $asignacion->tipos_anonimizar ?? 'PER,LOC');
-                @endphp
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-PER" value="PER"
-                               {{ in_array('PER', $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-PER">
-                            <span class="badge badge-primary">PER</span> Personas
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-LOC" value="LOC"
-                               {{ in_array('LOC', $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-LOC">
-                            <span class="badge badge-success">LOC</span> Lugares
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-ORG" value="ORG"
-                               {{ in_array('ORG', $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-ORG">
-                            <span class="badge badge-info">ORG</span> Organizaciones
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-DATE" value="DATE"
-                               {{ in_array('DATE', $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-DATE">
-                            <span class="badge badge-secondary">DATE</span> Fechas
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-EVENT" value="EVENT"
-                               {{ in_array('EVENT', $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-EVENT">
-                            <span class="badge badge-warning">EVENT</span> Eventos
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-GUN" value="GUN"
-                               {{ in_array('GUN', $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-GUN">
-                            <span class="badge badge-danger">GUN</span> Armas
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-MISC" value="MISC"
-                               {{ in_array('MISC', $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-MISC">
-                            <span class="badge badge-dark">MISC</span> Otros
-                        </label>
-                    </div>
-                </div>
-
-                <hr>
-
-                <div class="form-group">
-                    <label class="small">Formato:</label>
-                    <select class="form-control form-control-sm" id="formato">
-                        <option value="brackets" {{ $asignacion->formato_reemplazo == 'brackets' ? 'selected' : '' }}>[TIPO]</option>
-                        <option value="numbered" {{ $asignacion->formato_reemplazo == 'numbered' ? 'selected' : '' }}>[TIPO_1]</option>
-                        <option value="redacted" {{ $asignacion->formato_reemplazo == 'redacted' ? 'selected' : '' }}>[REDACTADO]</option>
-                        <option value="asterisks" {{ $asignacion->formato_reemplazo == 'asterisks' ? 'selected' : '' }}>***</option>
-                    </select>
-                </div>
-
-                <button class="btn btn-outline-secondary btn-sm btn-block" onclick="generarAnonimizacion()">
-                    <i class="fas fa-magic mr-1"></i>Generar Automatico
-                </button>
-            </div>
-        </div>
-
-        {{-- Resumen de entidades --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Entidades</h3>
-            </div>
-            <div class="card-body p-0">
-                <table class="table table-sm mb-0">
-                    <tbody id="resumen-entidades">
-                        <!-- Se llena dinamicamente -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {{-- Panel derecho: Editor --}}
-    <div class="col-md-9">
+<div class="row mb-3">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Texto Anonimizado (Editable)</h3>
                 <div class="card-tools">
                     <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-default" onclick="mostrarVista('editar')">
-                            <i class="fas fa-edit"></i> Editar texto
-                        </button>
                         <button type="button" class="btn btn-default active" onclick="mostrarVista('visual')">
                             <i class="fas fa-mouse-pointer"></i> Editor visual
+                        </button>
+                        <button type="button" class="btn btn-default" onclick="mostrarVista('editar')">
+                            <i class="fas fa-edit"></i> Editar texto
                         </button>
                     </div>
                 </div>
@@ -335,14 +225,14 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                     <div id="vista-visual" class="p-2">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="leyenda-entidades">
-                                <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PER]</span> Cubierta</span>
-                                <span class="leyenda-item"><span class="entity-descubierta entity-PER" style="font-size:11px;text-decoration:line-through">Juan</span> Visible</span>
+                                <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PERSONA]</span> Cubierta</span>
+                                <span class="leyenda-item"><span class="entity-descubierta entity-PERSONA" style="font-size:11px">Juan</span> Visible</span>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-sm btn-outline-dark mr-1" onclick="cubrirTodas()" title="Cubrir todas las entidades">
+                                <button type="button" class="btn btn-sm btn-outline-dark mr-1 btn-cobertura" id="btn-cubrir-todas" onclick="cubrirTodas()" title="Cubrir todas las entidades">
                                     <i class="fas fa-eye-slash"></i> Todas
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="descubrirTodas()" title="Descubrir todas las entidades">
+                                <button type="button" class="btn btn-sm btn-outline-secondary btn-cobertura" id="btn-descubrir-todas" onclick="descubrirTodas()" title="Descubrir todas las entidades">
                                     <i class="fas fa-eye"></i> Ninguna
                                 </button>
                             </div>
@@ -361,26 +251,38 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                         {{-- Menu contextual para agregar entidades --}}
                         <div class="entity-menu" id="entity-menu">
                             <div class="entity-menu-header">Etiquetar como:</div>
-                            <div class="entity-menu-item" onclick="agregarEntidad('PER')">
-                                <span class="badge badge-primary">PER</span> Persona
+                            <div class="entity-menu-item" onclick="agregarEntidad('NUMERO')">
+                                <span class="badge entity-NUMERO">NUMERO</span> Número/identificador
                             </div>
-                            <div class="entity-menu-item" onclick="agregarEntidad('LOC')">
-                                <span class="badge badge-success">LOC</span> Lugar
+                            <div class="entity-menu-item" onclick="agregarEntidad('PERSONA')">
+                                <span class="badge entity-PERSONA">PERSONA</span> Persona
                             </div>
-                            <div class="entity-menu-item" onclick="agregarEntidad('ORG')">
-                                <span class="badge badge-info">ORG</span> Organizacion
+                            <div class="entity-menu-item" onclick="agregarEntidad('ORGANIZACION')">
+                                <span class="badge entity-ORGANIZACION">ORGANIZACION</span> Organización
                             </div>
-                            <div class="entity-menu-item" onclick="agregarEntidad('DATE')">
-                                <span class="badge badge-secondary">DATE</span> Fecha
+                            <div class="entity-menu-item" onclick="agregarEntidad('LUGAR')">
+                                <span class="badge entity-LUGAR">LUGAR</span> Lugar
                             </div>
-                            <div class="entity-menu-item" onclick="agregarEntidad('EVENT')">
-                                <span class="badge badge-warning">EVENT</span> Evento
+                            <div class="entity-menu-item" onclick="agregarEntidad('GENTILICIO')">
+                                <span class="badge entity-GENTILICIO">GENTILICIO</span> Gentilicio
                             </div>
-                            <div class="entity-menu-item" onclick="agregarEntidad('GUN')">
-                                <span class="badge badge-danger">GUN</span> Arma
+                            <div class="entity-menu-item" onclick="agregarEntidad('FECHA')">
+                                <span class="badge entity-FECHA">FECHA</span> Fecha
                             </div>
-                            <div class="entity-menu-item" onclick="agregarEntidad('MISC')">
-                                <span class="badge badge-dark">MISC</span> Otros
+                            <div class="entity-menu-item" onclick="agregarEntidad('EDAD')">
+                                <span class="badge entity-EDAD">EDAD</span> Edad
+                            </div>
+                            <div class="entity-menu-item" onclick="agregarEntidad('OCUPACION')">
+                                <span class="badge entity-OCUPACION">OCUPACION</span> Ocupación
+                            </div>
+                            <div class="entity-menu-item" onclick="agregarEntidad('GRUPO_ARMADO')">
+                                <span class="badge entity-GRUPO_ARMADO">GRUPO_ARMADO</span> Grupo armado
+                            </div>
+                            <div class="entity-menu-item" onclick="agregarEntidad('ROL_ARMADO')">
+                                <span class="badge entity-ROL_ARMADO">ROL_ARMADO</span> Rol en grupo armado
+                            </div>
+                            <div class="entity-menu-item" onclick="agregarEntidad('ETNICO')">
+                                <span class="badge entity-ETNICO">ETNICO</span> Étnico
                             </div>
                         </div>
 
@@ -392,9 +294,6 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                             </div>
                             <div class="entity-menu-item" id="ctx-descubrir-todas">
                                 <i class="fas fa-eye mr-1 text-secondary"></i> Descubrir todas las instancias
-                            </div>
-                            <div class="entity-menu-item text-danger" id="ctx-eliminar-etiqueta" style="border-top:1px solid #eee;margin-top:2px;padding-top:6px;">
-                                <i class="fas fa-trash mr-1"></i> Eliminar etiqueta
                             </div>
                         </div>
 
@@ -451,12 +350,100 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                 </div>
             </div>
         </div>
-
-        <a href="{{ route('procesamientos.anonimizacion') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left mr-1"></i> Volver
-        </a>
     </div>
 </div>
+
+{{-- Tarjetas de información (parte inferior) --}}
+<div class="row">
+    <div class="col-md-4">
+        {{-- Estado de la asignacion --}}
+        <div class="card card-danger">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Asignacion</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Estado:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge {{ $asignacion->estado_badge_class }}">
+                            {{ $asignacion->fmt_estado }}
+                        </span>
+                    </dd>
+                    <dt class="col-sm-5">Asignada:</dt>
+                    <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y') }}</dd>
+                </dl>
+
+                @if($asignacion->estado == 'rechazada' && $asignacion->comentario_revision)
+                <hr>
+                <div class="alert alert-danger mb-0">
+                    <strong><i class="fas fa-exclamation-circle mr-1"></i>Motivo del rechazo:</strong><br>
+                    {{ $asignacion->comentario_revision }}
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        {{-- Configuracion de tipos --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Configuracion</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Tipos a anonimizar:</p>
+                @php
+                    $tiposActivos = explode(',', $asignacion->tipos_anonimizar ?? implode(',', \App\Models\EntidadDetectada::tiposPorDefecto()));
+                @endphp
+                @foreach(\App\Models\EntidadDetectada::tipos() as $tipoKey => $tipoLabel)
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input tipo-check" id="check-{{ $tipoKey }}" value="{{ $tipoKey }}"
+                               {{ in_array($tipoKey, $tiposActivos) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="check-{{ $tipoKey }}">
+                            <span class="badge entity-{{ $tipoKey }}">{{ $tipoKey }}</span> {{ $tipoLabel }}
+                        </label>
+                    </div>
+                </div>
+                @endforeach
+
+                <hr>
+
+                <div class="form-group">
+                    <label class="small">Formato:</label>
+                    <select class="form-control form-control-sm" id="formato">
+                        <option value="brackets" {{ $asignacion->formato_reemplazo == 'brackets' ? 'selected' : '' }}>[TIPO]</option>
+                        <option value="numbered" {{ $asignacion->formato_reemplazo == 'numbered' ? 'selected' : '' }}>[TIPO_1]</option>
+                        <option value="redacted" {{ $asignacion->formato_reemplazo == 'redacted' ? 'selected' : '' }}>[REDACTADO]</option>
+                        <option value="asterisks" {{ $asignacion->formato_reemplazo == 'asterisks' ? 'selected' : '' }}>***</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-outline-secondary btn-sm btn-block" onclick="generarAnonimizacion()">
+                    <i class="fas fa-magic mr-1"></i>Generar Automatico
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        {{-- Etiquetas asignadas (con opcion de eliminar) --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Etiquetas asignadas</h3>
+            </div>
+            <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                <div id="resumen-entidades">
+                    <!-- Se llena dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{{ route('procesamientos.anonimizacion') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left mr-1"></i> Volver
+</a>
 @endsection
 
 @section('js')
@@ -574,9 +561,7 @@ $(document).ready(function() {
         var ent = estadoEntidades.find(function(en) { return en.id === id; });
         if (!ent) return;
         entidadContextual = { text: ent.text, type: ent.type };
-        var badgeClasses = { PER:'primary', LOC:'success', ORG:'info', DATE:'secondary', EVENT:'warning', GUN:'danger', MISC:'dark' };
-        var bc = badgeClasses[ent.type] || 'dark';
-        $('#ctx-header').html('<span class="badge badge-' + bc + '">' + ent.type + '</span> &ldquo;' + escapeHtml(ent.text) + '&rdquo;');
+        $('#ctx-header').html('<span class="badge entity-' + ent.type + '">' + ent.type + '</span> &ldquo;' + escapeHtml(ent.text) + '&rdquo;');
         var posX = e.clientX + 5, posY = e.clientY + 5;
         if (posX + 230 > window.innerWidth) posX = e.clientX - 235;
         if (posY + 130 > window.innerHeight) posY = e.clientY - 135;
@@ -603,18 +588,10 @@ $(document).ready(function() {
         sincronizarConTextarea();
     });
 
-    $('#ctx-eliminar-etiqueta').on('click', function() {
-        if (!entidadContextual) return;
-        var texto = entidadContextual.text, tipo = entidadContextual.type;
-        if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
-        estadoEntidades = estadoEntidades.filter(function(ent) {
-            return !(ent.text === texto && ent.type === tipo);
-        });
-        $('#entity-context-menu').removeClass('show');
-        entidadContextual = null;
-        renderizarEditorVisual();
-        sincronizarConTextarea();
-        if (typeof toastr !== 'undefined') toastr.info('Etiqueta "' + texto + '" (' + tipo + ') eliminada');
+    // "Eliminar etiqueta" vive ahora en el panel izquierdo (tarjeta "Etiquetas asignadas"),
+    // delegado porque la lista se re-renderiza dinamicamente (ver eliminarEtiqueta()).
+    $('#resumen-entidades').on('click', '.btn-eliminar-etiqueta', function() {
+        eliminarEtiqueta($(this).data('text'), $(this).data('type'));
     });
 
     // Antes de enviar el formulario, guardar las entidades manuales y el estado de todas
@@ -827,7 +804,7 @@ function toggleEntidad($span) {
         ? 'Clic para descubrir: ' + ent.text
         : 'Clic para cubrir como: ' + ent.reemplazo;
 
-    $span.removeClass('entity-cubierta entity-descubierta entity-PER entity-LOC entity-ORG entity-DATE entity-EVENT entity-GUN entity-MISC');
+    $span.removeClass('entity-cubierta entity-descubierta entity-NUMERO entity-PERSONA entity-ORGANIZACION entity-LUGAR entity-GENTILICIO entity-FECHA entity-EDAD entity-OCUPACION entity-GRUPO_ARMADO entity-ROL_ARMADO entity-ETNICO');
     $span.addClass('entity-clickable ' + claseEstado);
     $span.text(textoMostrar);
     $span.attr('title', tooltip);
@@ -851,6 +828,23 @@ function descubrirTodas() {
     });
     renderizarEditorVisual();
     sincronizarConTextarea();
+}
+
+function actualizarBotonesCobertura() {
+    var todasCubiertas = estadoEntidades.length > 0 && estadoEntidades.every(function(e) { return e.cubierta; });
+    var ningunaCubierta = estadoEntidades.length > 0 && estadoEntidades.every(function(e) { return !e.cubierta; });
+    $('#btn-cubrir-todas').toggleClass('active', todasCubiertas);
+    $('#btn-descubrir-todas').toggleClass('active', ningunaCubierta);
+}
+
+function eliminarEtiqueta(texto, tipo) {
+    if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
+    estadoEntidades = estadoEntidades.filter(function(ent) {
+        return !(ent.text === texto && ent.type === tipo);
+    });
+    renderizarEditorVisual();
+    sincronizarConTextarea();
+    if (typeof toastr !== 'undefined') toastr.info('Etiqueta "' + texto + '" (' + tipo + ') eliminada');
 }
 
 function agregarEntidad(tipo) {
@@ -1002,6 +996,8 @@ function actualizarContadores() {
 
     $('#contador-cubiertas').text(cubiertas);
     $('#contador-descubiertas').text(descubiertas);
+    actualizarBotonesCobertura();
+    actualizarResumen();
 }
 
 function sincronizarConTextarea() {
@@ -1103,29 +1099,37 @@ function generarAnonimizacion() {
 }
 
 function actualizarResumen() {
-    var tiposSeleccionados = [];
-    $('.tipo-check:checked').each(function() {
-        tiposSeleccionados.push($(this).val());
-    });
+    // Lista de etiquetas distintas (agrupadas por texto+tipo) con su conteo de
+    // ocurrencias y un boton para eliminarlas todas (ver eliminarEtiqueta()).
+    var grupos = {};
+    var orden = [];
 
-    var resumen = {};
-    var total = 0;
-
-    entidades.forEach(function(ent) {
-        if (tiposSeleccionados.includes(ent.type)) {
-            if (!resumen[ent.type]) resumen[ent.type] = 0;
-            resumen[ent.type]++;
-            total++;
+    estadoEntidades.forEach(function(ent) {
+        var key = ent.type + '::' + ent.text;
+        if (!grupos[key]) {
+            grupos[key] = { text: ent.text, type: ent.type, count: 0 };
+            orden.push(key);
         }
+        grupos[key].count++;
     });
+
+    if (orden.length === 0) {
+        $('#resumen-entidades').html('<p class="text-muted text-center small py-3 mb-0">Sin etiquetas</p>');
+        return;
+    }
 
     var html = '';
-    for (var tipo in resumen) {
-        html += '<tr><td><span class="badge badge-dark">' + tipo + '</span></td>' +
-                '<td class="text-right">' + resumen[tipo] + '</td></tr>';
-    }
-    html += '<tr class="table-active"><td><strong>Total</strong></td>' +
-            '<td class="text-right"><strong>' + total + '</strong></td></tr>';
+    orden.forEach(function(key) {
+        var g = grupos[key];
+        html += '<div class="etiqueta-item">' +
+                    '<span><span class="badge entity-' + g.type + '">' + g.type + '</span> ' +
+                    escapeHtml(g.text) + ' <span class="text-muted">(' + g.count + ')</span></span>' +
+                    '<button type="button" class="btn btn-sm btn-link text-danger btn-eliminar-etiqueta" ' +
+                        'data-text="' + escapeHtml(g.text).replace(/"/g, '&quot;') + '" data-type="' + g.type + '" title="Eliminar etiqueta">' +
+                        '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                '</div>';
+    });
 
     $('#resumen-entidades').html(html);
 }

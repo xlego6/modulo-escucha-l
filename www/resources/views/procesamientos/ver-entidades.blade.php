@@ -13,13 +13,17 @@ Entidades: {{ $entrevista->entrevista_codigo }}
         margin: 0 2px;
         cursor: pointer;
     }
-    .entity-PER { background-color: #cce5ff; border: 1px solid #b8daff; }
-    .entity-LOC { background-color: #d4edda; border: 1px solid #c3e6cb; }
-    .entity-ORG { background-color: #d1ecf1; border: 1px solid #bee5eb; }
-    .entity-DATE { background-color: #e2e3e5; border: 1px solid #d6d8db; }
-    .entity-EVENT { background-color: #fff3cd; border: 1px solid #ffeeba; }
-    .entity-GUN { background-color: #f8d7da; border: 1px solid #f5c6cb; }
-    .entity-MISC { background-color: #d6d8d9; border: 1px solid #c6c8ca; }
+    .entity-NUMERO { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+    .entity-PERSONA { background-color: #cce5ff; border: 1px solid #b8daff; }
+    .entity-ORGANIZACION { background-color: #e2d9f3; border: 1px solid #d4c5ec; }
+    .entity-LUGAR { background-color: #d4edda; border: 1px solid #c3e6cb; }
+    .entity-GENTILICIO { background-color: #dcdcf7; border: 1px solid #c7c7f0; }
+    .entity-FECHA { background-color: #e2e3e5; border: 1px solid #d6d8db; }
+    .entity-EDAD { background-color: #ffe5d0; border: 1px solid #ffd8b8; }
+    .entity-OCUPACION { background-color: #d1ecf1; border: 1px solid #bee5eb; }
+    .entity-GRUPO_ARMADO { background-color: #e8c4c4; border: 1px solid #dba8a8; }
+    .entity-ROL_ARMADO { background-color: #fff3cd; border: 1px solid #ffeeba; }
+    .entity-ETNICO { background-color: #c8f0d4; border: 1px solid #a8e6bc; }
     .entity-label {
         font-size: 10px;
         font-weight: bold;
@@ -167,13 +171,17 @@ $(document).ready(function() {
     });
 
     var colores = {
-        'PER': '#007bff',
-        'LOC': '#28a745',
-        'ORG': '#17a2b8',
-        'DATE': '#6c757d',
-        'EVENT': '#ffc107',
-        'GUN': '#dc3545',
-        'MISC': '#343a40'
+        'NUMERO': '#dc3545',
+        'PERSONA': '#007bff',
+        'ORGANIZACION': '#8e5fd6',
+        'LUGAR': '#28a745',
+        'GENTILICIO': '#5c5cd6',
+        'FECHA': '#6c757d',
+        'EDAD': '#e08a3c',
+        'OCUPACION': '#17a2b8',
+        'GRUPO_ARMADO': '#8b2e2e',
+        'ROL_ARMADO': '#ffc107',
+        'ETNICO': '#2e8b57'
     };
 
     new Chart(document.getElementById('chartEntidades'), {
