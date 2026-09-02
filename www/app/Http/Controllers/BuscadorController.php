@@ -223,9 +223,23 @@ class BuscadorController extends Controller
                                  ->orWhere('responsables_individuales', 'ILIKE', '%' . $term . '%')
                                  ->orWhere('temas_abordados', 'ILIKE', '%' . $term . '%');
                           })
+                          // Transcripción final: se busca siempre que exista.
                           ->orWhereHas('rel_adjuntos', function($qa) use ($term) {
-                              $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
+                              $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL)
                                  ->where('texto_extraido', 'ILIKE', '%' . $term . '%');
+                          })
+                          // Transcripción automatizada: solo se busca si NO hay final
+                          // (una vez hay final, la automatizada queda oculta/superada).
+                          ->orWhere(function($q2) use ($term) {
+                              $q2->whereDoesntHave('rel_adjuntos', function($qf) {
+                                      $qf->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL)
+                                         ->whereNotNull('texto_extraido')
+                                         ->where('texto_extraido', '!=', '');
+                                  })
+                                  ->whereHas('rel_adjuntos', function($qa) use ($term) {
+                                      $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
+                                         ->where('texto_extraido', 'ILIKE', '%' . $term . '%');
+                                  });
                           });
                     };
 

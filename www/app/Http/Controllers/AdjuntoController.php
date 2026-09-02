@@ -39,6 +39,23 @@ class AdjuntoController extends Controller
         $marcaAgua = Adjunto::generarMarcaAgua();
 
         $user = Auth::user();
+
+        // Ocultar (no eliminar) la transcripcion automatizada una vez existe
+        // la transcripcion final, para todos los roles salvo Admin.
+        if ($user->id_nivel != 1) {
+            $tieneFinalTexto = $entrevista->rel_adjuntos->contains(
+                fn($a) => $a->id_tipo == Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL && !empty($a->texto_extraido)
+            );
+            if ($tieneFinalTexto) {
+                $entrevista->setRelation(
+                    'rel_adjuntos',
+                    $entrevista->rel_adjuntos->reject(
+                        fn($a) => $a->id_tipo == Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA
+                    )->values()
+                );
+            }
+        }
+
         $entrevistadorActual = \App\Models\Entrevistador::where('id_usuario', $user->id)->first();
 
         // Determine permissions
@@ -538,7 +555,7 @@ class AdjuntoController extends Controller
      * Descargar transcripción en formato FormTR (DOCX o PDF)
      *
      * @param int    $id_entrevista
-     * @param string $tipo    'auto' | 'final'
+     * @param string $tipo    'auto' | 'final' | 'anonimizada'
      * @param string $formato 'docx' | 'pdf'
      */
     public function descargarFormTR($id_entrevista, string $tipo, string $formato)
@@ -558,9 +575,11 @@ class AdjuntoController extends Controller
         ])->findOrFail($id_entrevista);
 
         // Verificar que existe transcripción del tipo solicitado
-        $tipoAdjunto = $tipo === 'final'
-            ? Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL
-            : Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA;
+        $tipoAdjunto = match ($tipo) {
+            'final'       => Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL,
+            'anonimizada' => Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA,
+            default       => Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
+        };
 
         $adjunto = $entrevista->rel_adjuntos->firstWhere('id_tipo', $tipoAdjunto);
 
@@ -570,9 +589,13 @@ class AdjuntoController extends Controller
         }
 
         $service  = new TranscripcionDocService();
-        $tipoDoc  = $tipo === 'final' ? 'final' : 'auto';
+        $tipoDoc  = in_array($tipo, ['final', 'anonimizada']) ? $tipo : 'auto';
         $codigo   = $entrevista->entrevista_codigo;
-        $sufijo   = $tipo === 'final' ? 'Final' : 'Auto';
+        $sufijo   = match ($tipo) {
+            'final'       => 'Final',
+            'anonimizada' => 'Anonimizada',
+            default       => 'Auto',
+        };
 
         TrazaActividad::create([
             'fecha_hora' => now(),

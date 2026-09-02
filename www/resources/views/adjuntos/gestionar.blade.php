@@ -292,7 +292,8 @@
                         @php
                             $esTranscripcionAuto = $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA;
                             $esTranscripcionFinal = $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL;
-                            $esTranscripcion = $esTranscripcionAuto || $esTranscripcionFinal;
+                            $esTranscripcionAnonimizada = $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA;
+                            $esTranscripcion = $esTranscripcionAuto || $esTranscripcionFinal || $esTranscripcionAnonimizada;
                         @endphp
                         <tr id="fila-{{ $adjunto->id_adjunto }}">
                             <td class="text-center">
@@ -300,6 +301,8 @@
                                     <i class="fas fa-file-signature fa-lg text-success" title="Transcripcion Final"></i>
                                 @elseif($esTranscripcionAuto)
                                     <i class="fas fa-robot fa-lg text-primary" title="Transcripcion Automatizada"></i>
+                                @elseif($esTranscripcionAnonimizada)
+                                    <i class="fas fa-user-secret fa-lg text-danger" title="Transcripcion Anonimizada (publica)"></i>
                                 @elseif($adjunto->es_audio)
                                     <i class="fas fa-file-audio fa-lg text-info"></i>
                                 @elseif($adjunto->es_video)
@@ -365,7 +368,9 @@
                                     @endif
                                     @if($esTranscripcion && !empty($adjunto->texto_extraido) && $puedeGestionar && !$esRolRestringido)
                                     @php
-                                        $tipoFormTR = $esTranscripcionFinal ? 'final' : 'auto';
+                                        $tipoFormTR = $esTranscripcionFinal
+                                            ? 'final'
+                                            : ($esTranscripcionAnonimizada ? 'anonimizada' : 'auto');
                                     @endphp
                                     <div class="btn-group btn-group-sm">
                                         <button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" title="Descargar transcripción">
@@ -479,7 +484,8 @@
                     $docs = $entrevista->rel_adjuntos->filter(fn($a) => $a->es_documento)->count();
                     $transcAuto = $entrevista->rel_adjuntos->filter(fn($a) => $a->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)->count();
                     $transcFinal = $entrevista->rel_adjuntos->filter(fn($a) => $a->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL)->count();
-                    $otros = $total - $audios - $videos - $docs - $transcAuto - $transcFinal;
+                    $transcAnonimizada = $entrevista->rel_adjuntos->filter(fn($a) => $a->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA)->count();
+                    $otros = $total - $audios - $videos - $docs - $transcAuto - $transcFinal - $transcAnonimizada;
                     $tamano_total = $entrevista->rel_adjuntos->sum('tamano');
                 @endphp
                 <table class="table table-sm table-borderless">
@@ -502,6 +508,10 @@
                     <tr>
                         <td><i class="fas fa-file-signature text-success"></i> Transc. Final</td>
                         <td class="text-right"><strong>{{ $transcFinal }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-user-secret text-danger"></i> Transc. Anonimizada</td>
+                        <td class="text-right"><strong>{{ $transcAnonimizada }}</strong></td>
                     </tr>
                     <tr>
                         <td><i class="fas fa-file text-secondary"></i> Otros</td>
@@ -682,7 +692,7 @@ $(document).ready(function() {
     // Textos de transcripciones (cargados desde PHP)
     const transcripciones = {
         @foreach($entrevista->rel_adjuntos as $adjunto)
-            @if(($adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA || $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL) && $adjunto->texto_extraido)
+            @if(in_array($adjunto->id_tipo, [\App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA, \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL, \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA]) && $adjunto->texto_extraido)
                 {{ $adjunto->id_adjunto }}: @json($adjunto->texto_extraido),
             @endif
         @endforeach
@@ -695,6 +705,8 @@ $(document).ready(function() {
                 {{ $adjunto->id_adjunto }}: 'automatizada',
             @elseif($adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL)
                 {{ $adjunto->id_adjunto }}: 'final',
+            @elseif($adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA)
+                {{ $adjunto->id_adjunto }}: 'anonimizada',
             @endif
         @endforeach
     };
@@ -703,7 +715,7 @@ $(document).ready(function() {
     const documentosTexto = {
         @foreach($entrevista->rel_adjuntos as $adjunto)
             @php
-                $esTransAdj = $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA || $adjunto->id_tipo == \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL;
+                $esTransAdj = in_array($adjunto->id_tipo, [\App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA, \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL, \App\Models\Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA]);
             @endphp
             @if(!$esTransAdj && !empty($adjunto->texto_extraido))
                 {{ $adjunto->id_adjunto }}: @json($adjunto->texto_extraido),
@@ -1141,9 +1153,10 @@ $(document).ready(function() {
             let palabras = texto.split(/\s+/).filter(w => w.length > 0).length;
             let tipoTrans = tiposTranscripcion[id] || 'automatizada';
             let esFinal = tipoTrans === 'final';
-            let icono = esFinal ? 'fa-file-signature' : 'fa-robot';
-            let titulo = esFinal ? 'Transcripcion Final' : 'Transcripcion Automatizada';
-            let colorHeader = esFinal ? '#2e7d32' : '#333';
+            let esAnonimizada = tipoTrans === 'anonimizada';
+            let icono = esAnonimizada ? 'fa-user-secret' : (esFinal ? 'fa-file-signature' : 'fa-robot');
+            let titulo = esAnonimizada ? 'Transcripcion Anonimizada (publica)' : (esFinal ? 'Transcripcion Final' : 'Transcripcion Automatizada');
+            let colorHeader = esAnonimizada ? '#a71d2a' : (esFinal ? '#2e7d32' : '#333');
             necesitaMarca = true;
 
             contenido = `
