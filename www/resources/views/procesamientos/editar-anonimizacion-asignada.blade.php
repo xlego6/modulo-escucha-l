@@ -207,6 +207,9 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Texto Anonimizado (Editable)</h3>
                 <div class="card-tools">
+                    <button type="button" class="btn btn-outline-secondary btn-sm mr-1" onclick="confirmarGenerarAnonimizacion()" title="Cubrir todas las entidades detectadas y regenerar el texto">
+                        <i class="fas fa-magic mr-1"></i>Generar Automatico
+                    </button>
                     <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-default active" onclick="mostrarVista('visual')">
                             <i class="fas fa-mouse-pointer"></i> Editor visual
@@ -220,8 +223,6 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
             <form action="{{ route('procesamientos.guardar-anonimizacion-asignada', $asignacion->id_asignacion) }}"
                   method="POST" id="formAnonimizacion">
                 @csrf
-                <input type="hidden" name="tipos_anonimizar" id="input_tipos">
-                <input type="hidden" name="formato_reemplazo" id="input_formato">
                 <input type="hidden" name="entidades_manuales" id="input_entidades_manuales">
                 <input type="hidden" name="estado_entidades" id="input_estado_entidades">
                 <input type="hidden" name="entidades_eliminadas" id="input_entidades_eliminadas">
@@ -414,49 +415,7 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         </div>
     </div>
 
-    <div class="col-md-4">
-        {{-- Configuracion de tipos --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Configuracion</h3>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Tipos a anonimizar:</p>
-                @php
-                    $tiposActivos = explode(',', $asignacion->tipos_anonimizar ?? implode(',', \App\Models\EntidadDetectada::tiposPorDefecto()));
-                @endphp
-                @foreach(\App\Models\EntidadDetectada::tipos() as $tipoKey => $tipoLabel)
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-{{ $tipoKey }}" value="{{ $tipoKey }}"
-                               {{ in_array($tipoKey, $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-{{ $tipoKey }}">
-                            <span class="badge entity-{{ $tipoKey }}">{{ $tipoKey }}</span> {{ $tipoLabel }}
-                        </label>
-                    </div>
-                </div>
-                @endforeach
-
-                <hr>
-
-                <div class="form-group">
-                    <label class="small">Formato:</label>
-                    <select class="form-control form-control-sm" id="formato">
-                        <option value="brackets" {{ $asignacion->formato_reemplazo == 'brackets' ? 'selected' : '' }}>[TIPO]</option>
-                        <option value="numbered" {{ $asignacion->formato_reemplazo == 'numbered' ? 'selected' : '' }}>[TIPO_1]</option>
-                        <option value="redacted" {{ $asignacion->formato_reemplazo == 'redacted' ? 'selected' : '' }}>[REDACTADO]</option>
-                        <option value="asterisks" {{ $asignacion->formato_reemplazo == 'asterisks' ? 'selected' : '' }}>***</option>
-                    </select>
-                </div>
-
-                <button class="btn btn-outline-secondary btn-sm btn-block" onclick="generarAnonimizacion()">
-                    <i class="fas fa-magic mr-1"></i>Generar Automatico
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
+    <div class="col-md-8">
         {{-- Etiquetas asignadas (con opcion de eliminar) --}}
         <div class="card">
             <div class="card-header">
@@ -505,7 +464,6 @@ var syncingScroll = false;
 
 $(document).ready(function() {
     actualizarResumen();
-    actualizarInputs();
 
     // Si no hay texto anonimizado, generar automaticamente
     if ($('#texto_anonimizado').val().trim() === '') {
@@ -527,12 +485,6 @@ $(document).ready(function() {
     $('#texto_anonimizado').on('input', function() {
         $('#charCount').text($(this).val().length);
         $('#texto-preview').text($(this).val());
-    });
-
-    // Actualizar inputs al cambiar opciones
-    $('.tipo-check, #formato').on('change', function() {
-        actualizarInputs();
-        inicializarEditorVisual();
     });
 
     // Detectar seleccion de texto en el panel original
@@ -731,28 +683,14 @@ $(document).ready(function() {
     });
 });
 
-function actualizarInputs() {
-    var tipos = [];
-    $('.tipo-check:checked').each(function() {
-        tipos.push($(this).val());
-    });
-    $('#input_tipos').val(tipos.join(','));
-    $('#input_formato').val($('#formato').val());
-}
-
 // =====================================================
 // EDITOR VISUAL - Entidades clicables
 // =====================================================
 
 function inicializarEditorVisual() {
-    var tiposSeleccionados = [];
-    $('.tipo-check:checked').each(function() {
-        tiposSeleccionados.push($(this).val());
-    });
-
-    var formato = $('#formato').val();
-
-    // Preparar TODAS las entidades (no filtrar por tipo)
+    // Todas las entidades detectadas se consideran por igual, sin filtrar por
+    // tipo -- son las mismas que ya se ven en /procesamientos/transcripcion
+    // (pestaña Anonimizacion), no hay una seleccion aparte aqui.
     estadoEntidades = [];
     var contadores = {};
     var idCounter = 0;
@@ -763,32 +701,13 @@ function inicializarEditorVisual() {
         .sort((a, b) => (a.start || 0) - (b.start || 0));
 
     entidadesOrdenadas.forEach(function(ent) {
-        // Contador por tipo
+        // Contador por tipo (formato de reemplazo unico: [TIPO_N])
         if (!contadores[ent.type]) contadores[ent.type] = 0;
         contadores[ent.type]++;
+        var reemplazo = '[' + ent.type + '_' + contadores[ent.type] + ']';
 
-        // Generar reemplazo segun formato
-        var reemplazo = '';
-        switch(formato) {
-            case 'brackets':
-                reemplazo = '[' + ent.type + ']';
-                break;
-            case 'numbered':
-                reemplazo = '[' + ent.type + '_' + contadores[ent.type] + ']';
-                break;
-            case 'redacted':
-                reemplazo = '[REDACTADO]';
-                break;
-            case 'asterisks':
-                reemplazo = '*'.repeat(ent.text.length);
-                break;
-        }
-
-        // Determinar si esta cubierta o descubierta
-        // - Si el tipo NO esta seleccionado: siempre descubierta (no anonimizar)
-        // - Si el tipo esta seleccionado: segun el estado guardado (excluir)
-        var tipoSeleccionado = tiposSeleccionados.includes(ent.type);
-        var estaCubierta = tipoSeleccionado ? !ent.excluir : false;
+        // Cubierta segun el estado guardado por entidad (excluir_anonimizacion)
+        var estaCubierta = !ent.excluir;
 
         estadoEntidades.push({
             id: idCounter++,
@@ -962,7 +881,6 @@ function eliminarEtiqueta(texto, tipo) {
 function agregarEntidad(tipo) {
     if (!seleccionActual) return;
 
-    var formato = $('#formato').val();
     var textoABuscar = seleccionActual.text;
     var entidadesAgregadas = 0;
 
@@ -987,22 +905,8 @@ function agregarEntidad(tipo) {
     // Todas las instancias del mismo texto comparten el mismo numero
     var numeroParaEstaPalabra = obtenerNumeroParaPalabra(tipo, textoABuscar);
 
-    // Generar reemplazo segun formato (mismo para todas las instancias)
-    var reemplazo = '';
-    switch(formato) {
-        case 'brackets':
-            reemplazo = '[' + tipo + ']';
-            break;
-        case 'numbered':
-            reemplazo = '[' + tipo + '_' + numeroParaEstaPalabra + ']';
-            break;
-        case 'redacted':
-            reemplazo = '[REDACTADO]';
-            break;
-        case 'asterisks':
-            reemplazo = '*'.repeat(textoABuscar.length);
-            break;
-    }
+    // Reemplazo con el formato unico [TIPO_N] (mismo para todas las instancias)
+    var reemplazo = '[' + tipo + '_' + numeroParaEstaPalabra + ']';
 
     // Agregar cada instancia como entidad (todas con el mismo reemplazo)
     instancias.forEach(function(inst) {
@@ -1217,54 +1121,53 @@ function formatearInlineAnonimizado(linea) {
 // FUNCIONES ORIGINALES
 // =====================================================
 
+function confirmarGenerarAnonimizacion() {
+    if (estadoEntidades.length > 0 && !confirm('Esto cubrira todas las entidades detectadas, incluyendo las que hayas descubierto manualmente.\n¿Continuar?')) {
+        return;
+    }
+    generarAnonimizacion();
+}
+
 function generarAnonimizacion() {
-    var tiposSeleccionados = [];
-    $('.tipo-check:checked').each(function() {
-        tiposSeleccionados.push($(this).val());
+    // Cubre todas las entidades detectadas (mismas que en
+    // /procesamientos/transcripcion, pestaña Anonimizacion) y reconstruye el
+    // texto por posicion (start/end), no por busqueda de texto -- una busqueda
+    // por texto puede marcar coincidencias dentro de otras palabras (ej. "Flor"
+    // dentro de "Floreciendo").
+    var entidadesOrdenadas = [...entidades]
+        .filter(e => e.text && typeof e.start === 'number' && typeof e.end === 'number')
+        .sort((a, b) => (a.start || 0) - (b.start || 0));
+
+    // Quitar solapamientos
+    var entidadesUnicas = [];
+    var finAnterior = -1;
+    entidadesOrdenadas.forEach(function(ent) {
+        if (ent.start >= finAnterior) {
+            entidadesUnicas.push(ent);
+            finAnterior = ent.end;
+        }
     });
 
-    var formato = $('#formato').val();
-    var texto = textoOriginal;
+    // Numerar en orden de aparicion
     var contadores = {};
-
-    // Ordenar entidades por posicion descendente para reemplazar de atras hacia adelante
-    var entidadesOrdenadas = [...entidades].sort((a, b) => (b.start || 0) - (a.start || 0));
-
-    // Reemplazar entidades
-    entidadesOrdenadas.forEach(function(ent) {
-        if (!tiposSeleccionados.includes(ent.type)) return;
-
-        // Contador por tipo
+    entidadesUnicas.forEach(function(ent) {
         if (!contadores[ent.type]) contadores[ent.type] = 0;
         contadores[ent.type]++;
+        ent._numero = contadores[ent.type];
+    });
 
-        // Generar reemplazo
-        var reemplazo = '';
-        switch(formato) {
-            case 'brackets':
-                reemplazo = '[' + ent.type + ']';
-                break;
-            case 'numbered':
-                reemplazo = '[' + ent.type + '_' + contadores[ent.type] + ']';
-                break;
-            case 'redacted':
-                reemplazo = '[REDACTADO]';
-                break;
-            case 'asterisks':
-                reemplazo = '*'.repeat(ent.text.length);
-                break;
-        }
-
-        // Reemplazar en texto
-        if (ent.text) {
-            var regex = new RegExp(escapeRegex(ent.text), 'gi');
-            texto = texto.replace(regex, reemplazo);
-        }
+    // Reemplazar de atras hacia adelante para no invalidar posiciones
+    var texto = textoOriginal;
+    entidadesUnicas.slice().sort((a, b) => b.start - a.start).forEach(function(ent) {
+        var reemplazo = '[' + ent.type + '_' + ent._numero + ']';
+        var antes = texto.substring(0, ent.start);
+        var despues = texto.substring(ent.end);
+        texto = antes + reemplazo + despues;
     });
 
     $('#texto_anonimizado').val(texto);
     $('#charCount').text(texto.length);
-    $('#texto-preview').text(texto);
+    if ($('#texto-preview').length) $('#texto-preview').text(texto);
 
     actualizarResumen();
 
@@ -1332,10 +1235,6 @@ function mostrarVista(vista) {
 
     $('.card-tools .btn').removeClass('active');
     $('.card-tools .btn[onclick*="' + vista + '"]').addClass('active');
-}
-
-function escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 </script>
 @endsection

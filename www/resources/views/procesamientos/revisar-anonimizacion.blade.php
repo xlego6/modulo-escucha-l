@@ -495,15 +495,14 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
 @section('js')
 @php
     $textoParaProcesar = $entrevista->getTextoParaProcesamiento() ?? '';
-    $tiposAnonimizar = $asignacion->tipos_anonimizar ?? implode(',', \App\Models\EntidadDetectada::tiposPorDefecto());
-    $formatoReemplazo = $asignacion->formato_reemplazo ?? 'numbered';
 @endphp
 <script>
 var entidades = @json($entidades);
 var textoOriginal = @json($textoParaProcesar);
 var textoAnonimizadoGuardado = @json($asignacion->texto_anonimizado ?? '');
-var tiposActivos = @json(explode(',', $tiposAnonimizar));
-var formatoActivo = @json($formatoReemplazo);
+// Formato de reemplazo unico [TIPO_N] para todas las entidades (sin
+// seleccion de tipos ni formato configurable, ver editar-anonimizacion-asignada).
+var formatoActivo = 'numbered';
 
 // Estado de las entidades en el editor visual
 var estadoEntidades = [];
