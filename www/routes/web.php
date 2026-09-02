@@ -250,7 +250,6 @@ Route::middleware(['auth'])->group(function () {
         // Anonimización: Admin(1), Líder(2), Transcriptor(4)
         Route::middleware(['nivel:procesamientos.anonimizacion'])->group(function () {
             Route::get('procesamientos/anonimizacion', [ProcesamientoController::class, 'anonimizacion'])->name('procesamientos.anonimizacion');
-            Route::get('procesamientos/anonimizacion/{id}/previsualizar', [ProcesamientoController::class, 'previsualizarAnonimizacion'])->name('procesamientos.previsualizar-anonimizacion');
             Route::post('procesamientos/anonimizacion/{id}', [ProcesamientoController::class, 'generarAnonimizacion'])->name('procesamientos.generar-anonimizacion');
             Route::post('procesamientos/anonimizacion/{id}/anonimizar-audio', [ProcesamientoController::class, 'anonimizarAudio'])->name('procesamientos.anonimizar-audio');
 

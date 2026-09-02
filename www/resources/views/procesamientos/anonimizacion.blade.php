@@ -3,46 +3,160 @@
 @section('title', 'Anonimizacion')
 @section('content_header', 'Anonimizacion de Testimonios')
 
+@section('css')
+<style>
+.stat-block { border-radius:6px; padding:10px 12px; color:#fff; min-height:80px; display:flex; flex-direction:column; justify-content:space-between; }
+.stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; opacity:.85; }
+.stat-main  { font-size:28px; font-weight:700; line-height:1.1; }
+.stat-row   { font-size:11px; opacity:.9; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; margin-top:2px; }
+.bg-asignadas   { background: linear-gradient(135deg,#4a1f1f,#7a2e2e); }
+.bg-en-edicion  { background: linear-gradient(135deg,#8e0000,#c62828); }
+.bg-en-revision { background: linear-gradient(135deg,#e65100,#fb8c00); }
+.bg-rechazadas  { background: linear-gradient(135deg,#4a0e0e,#8b1a1a); }
+.bg-aprobadas   { background: linear-gradient(135deg,#1b5e20,#388e3c); }
+.bg-totales     { background: linear-gradient(135deg,#4a148c,#7b1fa2); }
+.js-historial-pop { cursor: pointer; }
+.js-historial-pop:focus { outline: none; box-shadow: none; }
+.popover.historial-popover { min-width: 300px; max-width: 380px; font-size: 12px; }
+.popover.historial-popover .popover-header { font-size: 12px; }
+</style>
+@endsection
+
 @section('content')
-{{-- Estadisticas --}}
-<div class="row">
-    <div class="col-md-3">
-        <div class="info-box bg-danger">
-            <span class="info-box-icon"><i class="fas fa-file-alt"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Total Pendientes</span>
-                <span class="info-box-number">{{ $stats['pendientes'] }}</span>
+{{-- Bloques estadísticos --}}
+@php
+    $bt = $stats;
+    function fmtDurAnon($s) {
+        if (!$s) return '0m';
+        $h = intdiv($s, 3600); $m = intdiv($s % 3600, 60);
+        return $h ? "{$h}h {$m}m" : "{$m}m";
+    }
+@endphp
+<div class="row mb-3">
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-asignadas">
+            <div class="stat-label">Asignadas</div>
+            <div class="stat-main">{{ number_format($bt['asignada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['asignada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurAnon($bt['asignada']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="info-box bg-secondary">
-            <span class="info-box-icon"><i class="fas fa-user-check"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Asignadas</span>
-                <span class="info-box-number">{{ $stats['asignadas'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-en-edicion">
+            <div class="stat-label">En edición</div>
+            <div class="stat-main">{{ number_format($bt['en_edicion']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['en_edicion']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurAnon($bt['en_edicion']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="info-box bg-warning">
-            <span class="info-box-icon"><i class="fas fa-clock"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">En Revision</span>
-                <span class="info-box-number">{{ $stats['en_revision'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-en-revision">
+            <div class="stat-label">En revisión</div>
+            <div class="stat-main">{{ number_format($bt['enviada_revision']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['enviada_revision']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurAnon($bt['enviada_revision']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="info-box bg-success">
-            <span class="info-box-icon"><i class="fas fa-check-circle"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Finalizadas</span>
-                <span class="info-box-number">{{ $stats['aprobadas'] }}</span>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-rechazadas">
+            <div class="stat-label">Rechazadas</div>
+            <div class="stat-main">{{ number_format($bt['rechazada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['rechazada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurAnon($bt['rechazada']['duracion_total']) }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-aprobadas">
+            <div class="stat-label">Aprobadas</div>
+            <div class="stat-main">{{ number_format($bt['aprobada']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['aprobada']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurAnon($bt['aprobada']['duracion_total']) }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg col-md-4 col-6 mb-2">
+        <div class="stat-block bg-totales">
+            <div class="stat-label">Totales</div>
+            <div class="stat-main">{{ number_format($bt['totales']['cantidad_entrevistas']) }}</div>
+            <div class="stat-row">
+                <span><i class="fas fa-music"></i> {{ number_format($bt['totales']['cantidad_audios']) }}</span>
+                <span><i class="fas fa-clock"></i> {{ fmtDurAnon($bt['totales']['duracion_total']) }}</span>
             </div>
         </div>
     </div>
 </div>
+
+{{-- Mis anonimizaciones asignadas (solo Líder) --}}
+@if(isset($misAsignaciones) && $misAsignaciones->isNotEmpty())
+<div class="card card-danger card-outline mb-3">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-user-edit mr-2"></i>Mis anonimizaciones asignadas ({{ $misAsignaciones->count() }})</h3>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th>Código</th>
+                    <th>Asignada</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($misAsignaciones as $asig)
+                @php
+                    $badgeClassMis = [
+                        'asignada'         => 'badge-secondary',
+                        'en_edicion'       => 'badge-info',
+                        'enviada_revision'  => 'badge-warning',
+                        'rechazada'        => 'badge-danger',
+                    ][$asig->estado] ?? 'badge-secondary';
+                    $labelEstadoMis = [
+                        'asignada'         => 'Asignada',
+                        'en_edicion'       => 'En edición',
+                        'enviada_revision'  => 'En revisión',
+                        'rechazada'        => 'Rechazada',
+                    ][$asig->estado] ?? $asig->estado;
+                @endphp
+                <tr>
+                    <td><code>{{ $asig->rel_entrevista->entrevista_codigo ?? '-' }}</code></td>
+                    <td><small>{{ $asig->fecha_asignacion ? \Carbon\Carbon::parse($asig->fecha_asignacion)->format('d/m/Y') : '-' }}</small></td>
+                    <td>
+                        @php $histJsonMis = e(json_encode($asig->historial_comentarios ?: [])); @endphp
+                        <span class="badge {{ $badgeClassMis }} js-historial-pop"
+                              data-historial="{{ $histJsonMis }}"
+                              data-estado="{{ $asig->estado }}"
+                              data-comentario="{{ e($asig->comentario_revision ?? '') }}"
+                              tabindex="0">{{ $labelEstadoMis }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ route('procesamientos.editar-anonimizacion-asignada', $asig->id_asignacion) }}"
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        @if($asig->estado === 'enviada_revision')
+                        <a href="{{ route('procesamientos.ver-revision-anonimizacion', $asig->id_asignacion) }}"
+                           class="btn btn-sm btn-warning ml-1">
+                            <i class="fas fa-eye"></i> Revisar
+                        </a>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 
 {{-- Pendientes de Revision --}}
 @if($pendientesRevision->count() > 0)
@@ -89,6 +203,82 @@
 </div>
 @endif
 
+{{-- Filtros para Entrevistas con Transcripcion --}}
+<div class="card card-outline card-secondary mb-0">
+    <div class="card-header py-2">
+        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filtros</h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+        </div>
+    </div>
+    <div class="card-body py-2">
+        <form action="{{ route('procesamientos.anonimizacion') }}" method="GET">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Dependencia</label>
+                        <select name="filtro_dependencia" class="form-control form-control-sm">
+                            <option value="">-- Todas --</option>
+                            @foreach($dependenciasAnonimizacion as $dep)
+                                <option value="{{ $dep->id_item }}" {{ request('filtro_dependencia') == $dep->id_item ? 'selected' : '' }}>{{ $dep->descripcion }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Código</label>
+                        <input type="text" name="filtro_codigo" class="form-control form-control-sm" value="{{ request('filtro_codigo') }}" placeholder="Buscar código...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Entrevistador</label>
+                        <select name="filtro_entrevistador" class="form-control form-control-sm">
+                            <option value="">-- Todos --</option>
+                            @foreach($entrevistadoresAnonimizacion as $ent)
+                                <option value="{{ $ent->id_entrevistador }}" {{ request('filtro_entrevistador') == $ent->id_entrevistador ? 'selected' : '' }}>{{ $ent->rel_usuario->name ?? 'N/A' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Entidades</label>
+                        <select name="filtro_entidades" class="form-control form-control-sm">
+                            <option value="">-- Todas --</option>
+                            <option value="con" {{ request('filtro_entidades') === 'con' ? 'selected' : '' }}>Con entidades detectadas</option>
+                            <option value="sin" {{ request('filtro_entidades') === 'sin' ? 'selected' : '' }}>Sin detectar</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-2">
+                        <label class="small mb-1">Estado Asignación</label>
+                        <select name="filtro_asignacion" class="form-control form-control-sm">
+                            <option value="">-- Todos --</option>
+                            @foreach($estadosAsignacionAnonimizacion as $val => $label)
+                                <option value="{{ $val }}" {{ request('filtro_asignacion') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <button type="submit" class="btn btn-sm btn-primary mr-2">
+                    <i class="fas fa-search mr-1"></i>Filtrar
+                </button>
+                <a href="{{ route('procesamientos.anonimizacion') }}" class="btn btn-sm btn-default">
+                    <i class="fas fa-eraser mr-1"></i>Limpiar
+                </a>
+                @if(request()->hasAny(['filtro_dependencia','filtro_codigo','filtro_entrevistador','filtro_entidades','filtro_asignacion']))
+                    <span class="badge badge-info ml-2">Filtros activos</span>
+                @endif
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         {{-- Lista de Entrevistas para Asignar --}}
@@ -111,7 +301,7 @@
                         @forelse($pendientes as $entrevista)
                         @php
                             $asignacion = $asignacionesActivas->get($entrevista->id_e_ind_fvt);
-                            $tieneEntidades = \App\Models\EntidadDetectada::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)->count();
+                            $tieneEntidades = $entrevista->rel_entidades_count;
                         @endphp
                         <tr>
                             <td><code>{{ $entrevista->entrevista_codigo }}</code></td>
@@ -156,11 +346,6 @@
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <a href="{{ route('procesamientos.previsualizar-anonimizacion', $entrevista->id_e_ind_fvt) }}"
-                                       class="btn btn-sm {{ $asignacion && $asignacion->estado == 'aprobada' ? 'btn-success' : 'btn-danger' }}"
-                                       title="{{ $asignacion && $asignacion->estado == 'aprobada' ? 'Ver anonimizacion final' : 'Previsualizar/Editar anonimizacion' }}">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
                                     @if(!$asignacion || $asignacion->estado == 'aprobada')
                                     @php
                                         $documentosData = $entrevista->rel_adjuntos
@@ -309,6 +494,94 @@
 
 @section('js')
 <script>
+// Popover historial de revisión
+function renderHistorial(historial, estado, comentarioFallback) {
+    function esc(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    if (!Array.isArray(historial)) historial = [];
+
+    // Si el estado actual (aprobada/rechazada) no está en el historial pero hay
+    // comentario_revision, lo inyectamos como entrada sintética para no perderlo.
+    var estadosConComentario = ['aprobada', 'rechazada'];
+    if (estadosConComentario.indexOf(estado) !== -1) {
+        var yaEsta = historial.some(function(e) { return e.accion === estado; });
+        if (!yaEsta && comentarioFallback) {
+            historial = historial.concat([{ accion: estado, fecha: '', revisor: '', comentario: comentarioFallback }]);
+        }
+    }
+
+    if (historial.length === 0) {
+        return '<em class="text-muted">Sin historial de revisión</em>';
+    }
+    var html = '';
+    historial.slice().reverse().forEach(function(entrada, i) {
+        var esRechazo = entrada.accion === 'rechazada';
+        var icon  = esRechazo ? 'times-circle text-danger' : 'check-circle text-success';
+        var label = esRechazo ? 'Rechazada' : 'Aprobada';
+        var fecha = '';
+        if (entrada.fecha) {
+            try {
+                fecha = new Date(entrada.fecha).toLocaleString('es-CO', {
+                    day:'2-digit', month:'2-digit', year:'numeric',
+                    hour:'2-digit', minute:'2-digit'
+                });
+            } catch(ex) { fecha = entrada.fecha; }
+        }
+        var borde = i < historial.length - 1 ? ' border-bottom pb-1 mb-1' : '';
+        html += '<div class="' + borde + '">';
+        html += '<div class="d-flex justify-content-between">';
+        html += '<span><i class="fas fa-' + esc(icon) + ' mr-1"></i><strong>' + esc(label) + '</strong>';
+        if (entrada.revisor) html += ' <small class="text-muted">por ' + esc(entrada.revisor) + '</small>';
+        html += '</span>';
+        if (fecha) html += '<small class="text-muted ml-2">' + esc(fecha) + '</small>';
+        html += '</div>';
+        if (entrada.comentario) html += '<div class="text-muted mt-1">' + esc(entrada.comentario) + '</div>';
+        html += '</div>';
+    });
+    return html;
+}
+
+$(function() {
+    $('body').on('click', '.js-historial-pop', function() {
+        var $el = $(this);
+        // Si el popover ya está visible, cerrarlo (toggle)
+        if ($el.data('bs.popover') && $el.data('bs.popover').tip && $el.data('bs.popover').tip.hasClass('show')) {
+            $el.popover('hide');
+            return;
+        }
+        // Cerrar cualquier otro popover abierto
+        $('.js-historial-pop').not($el).popover('hide');
+
+        if (!$el.data('popover-init')) {
+            $el.data('popover-init', true);
+            $el.popover({
+                html:      true,
+                trigger:   'manual',
+                placement: 'left',
+                container: 'body',
+                template:  '<div class="popover historial-popover" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body"></div></div>',
+                title:     '<i class="fas fa-history mr-1"></i>Historial de revisión',
+                content:   function() {
+                    return renderHistorial(
+                        $(this).data('historial'),
+                        $(this).attr('data-estado'),
+                        $(this).attr('data-comentario')
+                    );
+                }
+            });
+        }
+        $el.popover('show');
+    });
+
+    // Cerrar al hacer click fuera
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.js-historial-pop, .popover').length) {
+            $('.js-historial-pop').popover('hide');
+        }
+    });
+});
+
 function abrirModalDesasignar(idAsignacion, codigo, estado) {
     var etiquetas = {
         asignada: 'Asignada',
