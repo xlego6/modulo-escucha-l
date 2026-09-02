@@ -772,8 +772,8 @@ function renderizarEditorVisual() {
     });
 
     // Escapar el texto restante (no entidades) y convertir saltos de linea
-    htmlEditor = htmlEditor.replace(/\n/g, '<br>');
-    htmlOriginal = htmlOriginal.replace(/\n/g, '<br>');
+    htmlEditor = formatearTextoAnonimizado(htmlEditor);
+    htmlOriginal = formatearTextoAnonimizado(htmlOriginal);
 
     $('#editor-visual').html(htmlEditor);
     $('#texto-original-marcado').html(htmlOriginal);
@@ -1053,6 +1053,50 @@ function escapeHtml(text) {
     var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Renderiza encabezados/listas/parrafos markdown sobre texto que ya trae
+// spans de entidades insertados (igual formato que el editor de transcripcion).
+function formatearTextoAnonimizado(html) {
+    var lineas = html.split('\n');
+    var out = '';
+    var enLista = false;
+
+    lineas.forEach(function(linea) {
+        var m;
+        if ((m = linea.match(/^### (.*)$/))) {
+            if (enLista) { out += '</ul>'; enLista = false; }
+            out += '<h4 class="preview-h4">' + formatearInlineAnonimizado(m[1]) + '</h4>';
+        } else if ((m = linea.match(/^## (.*)$/))) {
+            if (enLista) { out += '</ul>'; enLista = false; }
+            out += '<h3 class="preview-h3">' + formatearInlineAnonimizado(m[1]) + '</h3>';
+        } else if ((m = linea.match(/^# (.*)$/))) {
+            if (enLista) { out += '</ul>'; enLista = false; }
+            out += '<h2 class="preview-h2">' + formatearInlineAnonimizado(m[1]) + '</h2>';
+        } else if ((m = linea.match(/^[-*] (.*)$/))) {
+            if (!enLista) { out += '<ul class="preview-ul">'; enLista = true; }
+            out += '<li>' + formatearInlineAnonimizado(m[1]) + '</li>';
+        } else {
+            if (enLista) { out += '</ul>'; enLista = false; }
+            out += linea.trim() === '' ? '<br>' : '<p>' + formatearInlineAnonimizado(linea) + '</p>';
+        }
+    });
+
+    if (enLista) out += '</ul>';
+    return out;
+}
+
+function formatearInlineAnonimizado(linea) {
+    // Solo formatea los fragmentos de texto, nunca las etiquetas HTML de los
+    // spans de entidades ya insertados (evita, p. ej., que un guion bajo dentro
+    // de una clase como "entity-GRUPO_ARMADO" se confunda con subrayado).
+    return linea.split(/(<[^>]+>)/g).map(function(parte, i) {
+        if (i % 2 === 1) return parte;
+        return parte
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\b_(.+?)_\b/g, '<u>$1</u>');
+    }).join('');
 }
 
 function mostrarVista(vista) {
