@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Entrevista;
 use App\Models\Geo;
 use App\Models\AsignacionTranscripcion;
+use App\Models\AsignacionAnonimizacion;
 use Carbon\Carbon;
 use PhpOffice\PhpWord\TemplateProcessor;
 
@@ -54,32 +55,55 @@ class TranscripcionDocService
             ->sum('duracion');
         $duracion = $duracionSeg ? $this->fmtDuracion((int)$duracionSeg) : 'Sin información';
 
-        // Última asignación con fecha_inicio_edicion (fecha inicio transcripción)
-        $asignacion = AsignacionTranscripcion::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
-            ->whereNotNull('fecha_inicio_edicion')
-            ->with('rel_transcriptor.rel_usuario')
-            ->orderBy('fecha_inicio_edicion', 'desc')
-            ->first();
+        if ($tipo === 'anonimizada') {
+            // Última asignación de anonimización con fecha_inicio_edicion
+            $asignacion = AsignacionAnonimizacion::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+                ->whereNotNull('fecha_inicio_edicion')
+                ->with('rel_anonimizador.rel_usuario')
+                ->orderBy('fecha_inicio_edicion', 'desc')
+                ->first();
 
-        $fechaInicioTranscripcion = $asignacion?->fecha_inicio_edicion
-            ? $asignacion->fecha_inicio_edicion->format('d/m/Y')
-            : 'Sin información';
+            $fechaInicioTranscripcion = $asignacion?->fecha_inicio_edicion
+                ? $asignacion->fecha_inicio_edicion->format('d/m/Y')
+                : 'Sin información';
 
-        $fechaFinTranscripcion = $entrevista->transcripcion_completada_at
-            ? Carbon::parse($entrevista->transcripcion_completada_at)->format('d/m/Y')
-            : 'Sin información';
+            $fechaFinTranscripcion = $entrevista->anonimizacion_final_at
+                ? Carbon::parse($entrevista->anonimizacion_final_at)->format('d/m/Y')
+                : 'Sin información';
 
-        $nombreTranscriptor = $asignacion
-            ? ($asignacion->rel_transcriptor?->rel_usuario?->name ?? 'Sin información')
-            : 'Automatizada';
+            $nombreTranscriptor = $asignacion
+                ? ($asignacion->rel_anonimizador?->rel_usuario?->name ?? 'Sin información')
+                : 'Sin información';
+        } else {
+            // Última asignación con fecha_inicio_edicion (fecha inicio transcripción)
+            $asignacion = AsignacionTranscripcion::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+                ->whereNotNull('fecha_inicio_edicion')
+                ->with('rel_transcriptor.rel_usuario')
+                ->orderBy('fecha_inicio_edicion', 'desc')
+                ->first();
+
+            $fechaInicioTranscripcion = $asignacion?->fecha_inicio_edicion
+                ? $asignacion->fecha_inicio_edicion->format('d/m/Y')
+                : 'Sin información';
+
+            $fechaFinTranscripcion = $entrevista->transcripcion_completada_at
+                ? Carbon::parse($entrevista->transcripcion_completada_at)->format('d/m/Y')
+                : 'Sin información';
+
+            $nombreTranscriptor = $asignacion
+                ? ($asignacion->rel_transcriptor?->rel_usuario?->name ?? 'Sin información')
+                : 'Automatizada';
+        }
 
         $dependencia   = $entrevista->rel_dependencia_origen?->descripcion ?? 'Sin información';
         $tipoTestimonio = $entrevista->rel_tipo_testimonio?->descripcion   ?? 'Sin información';
 
         // Texto de transcripción
-        $tipoAdjunto = $tipo === 'final'
-            ? Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL
-            : Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA;
+        $tipoAdjunto = match ($tipo) {
+            'final'       => Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL,
+            'anonimizada' => Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_ANONIMIZADA,
+            default       => Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
+        };
 
         $adjunto = $entrevista->rel_adjuntos->firstWhere('id_tipo', $tipoAdjunto);
         $texto   = $adjunto?->texto_extraido ?? 'Sin transcripción disponible.';
