@@ -1014,6 +1014,13 @@ function obtenerNumeroParaPalabra(tipo, texto) {
 }
 
 // Buscar todas las instancias de un texto en el documento
+// Un caracter "de palabra" incluye letras acentuadas/eñes (\p{L} es Unicode,
+// a diferencia de \w de JS que solo reconoce ASCII) para que el chequeo de
+// limite de palabra funcione bien en español.
+function esCaracterDePalabra(c) {
+    return c !== undefined && /[\p{L}\p{N}_]/u.test(c);
+}
+
 function encontrarTodasInstancias(texto, buscar) {
     var instancias = [];
     var pos = 0;
@@ -1022,10 +1029,16 @@ function encontrarTodasInstancias(texto, buscar) {
         var idx = texto.indexOf(buscar, pos);
         if (idx === -1) break;
 
-        instancias.push({
-            start: idx,
-            end: idx + buscar.length
-        });
+        // Solo contar coincidencias de palabra completa: evita que "Flor"
+        // marque tambien dentro de "Floreciendo" o "Florero".
+        var charAntes = idx > 0 ? texto[idx - 1] : undefined;
+        var charDespues = idx + buscar.length < texto.length ? texto[idx + buscar.length] : undefined;
+        if (!esCaracterDePalabra(charAntes) && !esCaracterDePalabra(charDespues)) {
+            instancias.push({
+                start: idx,
+                end: idx + buscar.length
+            });
+        }
 
         pos = idx + 1;
     }
