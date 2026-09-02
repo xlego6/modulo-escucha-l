@@ -1061,18 +1061,34 @@ class ProcesamientoController extends Controller
             $queryPendientes->where('id_entrevistador', $request->filtro_entrevistador);
         }
 
+        // Transcripcion "agregada": el adjunto combinado (automatizada) o la final,
+        // con texto. Puede existir con texto aunque ningun audio individual tenga
+        // su propio texto_extraido poblado (ver [[project_pipeline_anonimizacion]] —
+        // mismo caso ya corregido en la pestaña Transcripcion de /procesamientos/transcripcion).
+        $tieneTextoAgregadoEd = function($q) {
+            $q->whereIn('id_tipo', [
+                    Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
+                    Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL,
+                ])
+                ->whereNotNull('texto_extraido')
+                ->where('texto_extraido', '!=', '');
+        };
+
         // Filtro transcripción automática
         if ($request->filled('filtro_trans_auto')) {
             if ($request->filtro_trans_auto === 'con') {
-                $queryPendientes->whereHas('rel_adjuntos', function($q) {
-                    $q->whereNotNull('texto_extraido')
-                      ->where(function($i) { $i->where('tipo_mime', 'like', '%audio%')->orWhere('tipo_mime', 'like', '%video%'); });
+                $queryPendientes->where(function($q) use ($tieneTextoAgregadoEd) {
+                    $q->whereHas('rel_adjuntos', function($qq) {
+                        $qq->whereNotNull('texto_extraido')
+                           ->where(function($i) { $i->where('tipo_mime', 'like', '%audio%')->orWhere('tipo_mime', 'like', '%video%'); });
+                    })
+                    ->orWhereHas('rel_adjuntos', $tieneTextoAgregadoEd);
                 });
             } else {
                 $queryPendientes->whereDoesntHave('rel_adjuntos', function($q) {
                     $q->whereNotNull('texto_extraido')
                       ->where(function($i) { $i->where('tipo_mime', 'like', '%audio%')->orWhere('tipo_mime', 'like', '%video%'); });
-                });
+                })->whereDoesntHave('rel_adjuntos', $tieneTextoAgregadoEd);
             }
         }
 
@@ -1100,6 +1116,7 @@ class ProcesamientoController extends Controller
                           ->orWhere('tipo_mime', 'like', '%video%');
                 })->where('nombre_original', 'not like', '%[Anonimizado]%');
             }])
+            ->withExists(['rel_adjuntos as tiene_texto_agregado' => $tieneTextoAgregadoEd])
             ->orderBy('updated_at', 'desc')
             ->paginate(20)
             ->appends($request->query());

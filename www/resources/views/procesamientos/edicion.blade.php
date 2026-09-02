@@ -360,7 +360,7 @@
                         @endif
                     </td>
                     <td>
-                        @if($audiosTranscritos === $totalAudios && $totalAudios > 0)
+                        @if(($audiosTranscritos === $totalAudios && $totalAudios > 0) || $entrevista->tiene_texto_agregado)
                             <span class="badge badge-success">
                                 <i class="fas fa-check mr-1"></i>Completa
                             </span>

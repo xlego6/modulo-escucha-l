@@ -88,6 +88,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         padding: 2px 6px;
         border-radius: 4px;
         margin: 0 2px;
+        cursor: context-menu;
     }
     .entity-original-label {
         font-size: 9px;
@@ -266,6 +267,14 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                                 </div>
                                 <div class="entity-menu-item" id="ctx-descubrir-todas">
                                     <i class="fas fa-eye mr-1 text-secondary"></i> Descubrir todas las instancias
+                                </div>
+                            </div>
+
+                            {{-- Menu contextual (clic derecho) sobre entidades ya etiquetadas del texto original --}}
+                            <div class="entity-menu" id="entity-original-context-menu">
+                                <div class="entity-menu-header" id="ctx-original-header">Entidad</div>
+                                <div class="entity-menu-item text-danger" id="ctx-quitar-etiqueta">
+                                    <i class="fas fa-trash-alt mr-1"></i> Quitar etiqueta
                                 </div>
                             </div>
 
@@ -484,6 +493,7 @@ var seleccionActual = null;
 
 // Para menu contextual y scroll sincronizado
 var entidadContextual = null;
+var entidadOriginalContextual = null;
 var syncingScroll = false;
 
 $(document).ready(function() {
@@ -590,6 +600,9 @@ $(document).ready(function() {
         if (!$(e.target).closest('#entity-context-menu').length) {
             $('#entity-context-menu').removeClass('show');
         }
+        if (!$(e.target).closest('#entity-original-context-menu').length) {
+            $('#entity-original-context-menu').removeClass('show');
+        }
     });
 
     // Scroll sincronizado entre columnas del editor visual
@@ -644,8 +657,27 @@ $(document).ready(function() {
         sincronizarConTextarea();
     });
 
-    // "Eliminar etiqueta" vive ahora en el panel inferior ("Etiquetas asignadas"),
-    // delegado porque la lista se re-renderiza dinamicamente (ver eliminarEtiqueta()).
+    // Menu contextual (clic derecho) sobre entidades ya etiquetadas en "Texto Original"
+    $(document).on('contextmenu', '#texto-original-marcado .entity-original', function(e) {
+        e.preventDefault();
+        var texto = $(this).data('text');
+        var tipo = $(this).data('type');
+        entidadOriginalContextual = { text: String(texto), type: tipo };
+        $('#ctx-original-header').html('<span class="badge entity-' + tipo + '">' + tipo + '</span> &ldquo;' + escapeHtml(String(texto)) + '&rdquo;');
+        var posX = e.clientX + 5, posY = e.clientY + 5;
+        if (posX + 200 > window.innerWidth) posX = e.clientX - 205;
+        if (posY + 80 > window.innerHeight) posY = e.clientY - 85;
+        $('#entity-original-context-menu').css({ top: posY, left: posX }).addClass('show');
+    });
+
+    $('#ctx-quitar-etiqueta').on('click', function() {
+        if (!entidadOriginalContextual) return;
+        $('#entity-original-context-menu').removeClass('show');
+        eliminarEtiqueta(entidadOriginalContextual.text, entidadOriginalContextual.type);
+    });
+
+    // "Eliminar etiqueta" tambien esta disponible en la tarjeta "Etiquetas asignadas"
+    // (delegado porque la lista se re-renderiza dinamicamente, ver eliminarEtiqueta()).
     $('#resumen-entidades').on('click', '.btn-eliminar-etiqueta', function() {
         eliminarEtiqueta($(this).data('text'), $(this).data('type'));
     });
@@ -771,7 +803,11 @@ function renderizarEditorVisual() {
         var antes = htmlOriginal.substring(0, ent.start);
         var despues = htmlOriginal.substring(ent.end);
 
-        var span = '<span class="entity-original entity-' + ent.type + '">' +
+        var textoOriginalEscapadoIzq = escapeHtml(ent.text).replace(/"/g, '&quot;');
+        var span = '<span class="entity-original entity-' + ent.type + '" ' +
+                   'data-text="' + textoOriginalEscapadoIzq + '" ' +
+                   'data-type="' + ent.type + '" ' +
+                   'title="Clic derecho para quitar etiqueta">' +
                    escapeHtml(ent.text) +
                    '<sup class="entity-original-label">' + ent.type + '</sup>' +
                    '</span>';
