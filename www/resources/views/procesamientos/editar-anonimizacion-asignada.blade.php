@@ -67,6 +67,9 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         opacity: 0.8;
         transform: scale(1.02);
     }
+    .entity-hover-sync {
+        box-shadow: 0 0 0 2px #000;
+    }
     .entity-cubierta {
         background-color: #343a40;
         color: #fff;
@@ -634,6 +637,16 @@ $(document).ready(function() {
         eliminarEtiqueta(entidadOriginalContextual.text, entidadOriginalContextual.type);
     });
 
+    // Resaltado sincronizado: pasar el mouse sobre una entidad en cualquiera
+    // de los dos paneles resalta esa misma entidad (todas sus repeticiones)
+    // en ambos paneles. Eventos de mouse, no interfieren con clic/clic-derecho.
+    $(document).on('mouseenter', '#texto-original-marcado .entity-original, #editor-visual .entity-clickable', function() {
+        marcarResaltadoSincronizado(String($(this).data('text')), $(this).data('type'), true);
+    });
+    $(document).on('mouseleave', '#texto-original-marcado .entity-original, #editor-visual .entity-clickable', function() {
+        marcarResaltadoSincronizado(String($(this).data('text')), $(this).data('type'), false);
+    });
+
     // "Eliminar etiqueta" tambien esta disponible en la tarjeta "Etiquetas asignadas"
     // (delegado porque la lista se re-renderiza dinamicamente, ver eliminarEtiqueta()).
     $('#resumen-entidades').on('click', '.btn-eliminar-etiqueta', function() {
@@ -886,6 +899,13 @@ function actualizarBotonesCobertura() {
     var ningunaCubierta = estadoEntidades.length > 0 && estadoEntidades.every(function(e) { return !e.cubierta; });
     $('#btn-cubrir-todas').toggleClass('active', todasCubiertas);
     $('#btn-descubrir-todas').toggleClass('active', ningunaCubierta);
+}
+
+function marcarResaltadoSincronizado(texto, tipo, activar) {
+    if (!texto) return;
+    $('#texto-original-marcado .entity-original, #editor-visual .entity-clickable').filter(function() {
+        return String($(this).data('text')) === texto && $(this).data('type') === tipo;
+    }).toggleClass('entity-hover-sync', activar);
 }
 
 function eliminarEtiqueta(texto, tipo) {
