@@ -494,6 +494,7 @@ var seleccionActual = null;
 // Para menu contextual y scroll sincronizado
 var entidadContextual = null;
 var entidadOriginalContextual = null;
+var menuEtiquetarRecienAbierto = false;
 var syncingScroll = false;
 
 $(document).ready(function() {
@@ -587,13 +588,19 @@ $(document).ready(function() {
                     top: posY,
                     left: posX
                 }).addClass('show');
+                // El mismo gesto de seleccion dispara un "click" justo despues del
+                // mouseup: se absorbe una sola vez para que no cierre el menu que
+                // acaba de abrirse, sin bloquear clics posteriores para cerrarlo.
+                menuEtiquetarRecienAbierto = true;
             }
         }
     });
 
     // Ocultar menus al hacer clic fuera
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('#entity-menu').length && !$(e.target).closest('#texto-original-marcado').length) {
+        if (menuEtiquetarRecienAbierto) {
+            menuEtiquetarRecienAbierto = false;
+        } else if (!$(e.target).closest('#entity-menu').length) {
             $('#entity-menu').removeClass('show');
             seleccionActual = null;
         }
