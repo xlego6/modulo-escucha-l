@@ -19,6 +19,13 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         border-radius: 4px;
         margin: 0 2px;
     }
+    .entity-original-label {
+        font-size: 9px;
+        font-weight: bold;
+        vertical-align: super;
+        margin-left: 2px;
+        opacity: 0.8;
+    }
     .entity-NUMERO { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
     .entity-PERSONA { background-color: #cce5ff; border: 1px solid #b8daff; color: #004085; }
     .entity-ORGANIZACION { background-color: #e2d9f3; border: 1px solid #d4c5ec; color: #4a2a7a; }
@@ -223,20 +230,6 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
 
                     {{-- Vista Visual con comparacion (entidades clicables) --}}
                     <div id="vista-visual" class="p-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="leyenda-entidades">
-                                <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PERSONA]</span> Cubierta</span>
-                                <span class="leyenda-item"><span class="entity-descubierta entity-PERSONA" style="font-size:11px">Juan</span> Visible</span>
-                            </div>
-                            <div>
-                                <button type="button" class="btn btn-sm btn-outline-dark mr-1 btn-cobertura" id="btn-cubrir-todas" onclick="cubrirTodas()" title="Cubrir todas las entidades">
-                                    <i class="fas fa-eye-slash"></i> Todas
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary btn-cobertura" id="btn-descubrir-todas" onclick="descubrirTodas()" title="Descubrir todas las entidades">
-                                    <i class="fas fa-eye"></i> Ninguna
-                                </button>
-                            </div>
-                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <h6 class="text-muted mb-2">
@@ -298,19 +291,33 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                         </div>
 
                             <div class="col-md-6">
-                                <h6 class="text-muted mb-2">
-                                    <i class="fas fa-user-secret mr-1"></i>Anonimizado
-                                    <small class="text-secondary">(clic para editar)</small>
-                                </h6>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="text-muted mb-0">
+                                        <i class="fas fa-user-secret mr-1"></i>Anonimizado
+                                        <small class="text-secondary">(clic para editar)</small>
+                                    </h6>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-dark mr-1 btn-cobertura" id="btn-cubrir-todas" onclick="cubrirTodas()" title="Cubrir todas las entidades">
+                                            <i class="fas fa-eye-slash"></i> Todas
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-cobertura" id="btn-descubrir-todas" onclick="descubrirTodas()" title="Descubrir todas las entidades">
+                                            <i class="fas fa-eye"></i> Ninguna
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="editor-visual-container" id="editor-visual">
                                     {{-- Se llena dinamicamente con entidades clicables --}}
                                 </div>
+                                <div class="mt-2">
+                                    <div class="leyenda-entidades mb-1">
+                                        <span class="leyenda-item"><span class="entity-cubierta" style="font-size:11px">[PERSONA]</span> Cubierta</span>
+                                        <span class="leyenda-item"><span class="entity-descubierta entity-PERSONA" style="font-size:11px">Juan</span> Visible</span>
+                                    </div>
+                                    <span class="badge badge-dark" id="contador-cubiertas">0</span> cubiertas
+                                    <span class="badge badge-secondary ml-2" id="contador-descubiertas">0</span> visibles
+                                    <span class="text-muted small ml-3" id="sync-status"></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="mt-2">
-                            <span class="badge badge-dark" id="contador-cubiertas">0</span> cubiertas
-                            <span class="badge badge-secondary ml-2" id="contador-descubiertas">0</span> visibles
-                            <span class="text-muted small ml-3" id="sync-status"></span>
                         </div>
                     </div>
                 </div>
@@ -768,6 +775,7 @@ function renderizarEditorVisual() {
 
         var span = '<span class="entity-original entity-' + ent.type + '">' +
                    escapeHtml(ent.text) +
+                   '<sup class="entity-original-label">' + ent.type + '</sup>' +
                    '</span>';
 
         htmlOriginal = antes + span + despues;
