@@ -148,16 +148,34 @@ $(document).ready(function() {
     if (entidades && entidades.length > 0) {
         var texto = $('#transcripcion-marcada').text();
 
-        // Ordenar por posición descendente para reemplazar de atrás hacia adelante
-        entidades.sort((a, b) => (b.start || 0) - (a.start || 0));
+        // Solo entidades con posicion valida dentro del texto
+        var entidadesValidas = entidades.filter(function(ent) {
+            return ent.text && typeof ent.start === 'number' && typeof ent.end === 'number'
+                && ent.start >= 0 && ent.end > ent.start && ent.end <= texto.length;
+        });
 
-        entidades.forEach(function(ent) {
-            if (ent.text) {
-                var regex = new RegExp('(' + escapeRegex(ent.text) + ')', 'gi');
-                texto = texto.replace(regex,
-                    '<span class="entity entity-' + ent.type + '">' +
-                    '$1<span class="entity-label">' + ent.type + '</span></span>');
+        // Quitar solapamientos (misma logica que el editor de anonimizacion):
+        // ascendente primero para detectarlos, luego descendente para reemplazar
+        // por indice sin invalidar las posiciones ya calculadas.
+        entidadesValidas.sort(function(a, b) { return a.start - b.start; });
+        var entidadesUnicas = [];
+        var finAnterior = -1;
+        entidadesValidas.forEach(function(ent) {
+            if (ent.start >= finAnterior) {
+                entidadesUnicas.push(ent);
+                finAnterior = ent.end;
             }
+        });
+        entidadesUnicas.sort(function(a, b) { return b.start - a.start; });
+
+        entidadesUnicas.forEach(function(ent) {
+            var antes = texto.substring(0, ent.start);
+            var textoEntidad = texto.substring(ent.start, ent.end);
+            var despues = texto.substring(ent.end);
+            var span = '<span class="entity entity-' + ent.type + '">' +
+                       escapeHtmlVE(textoEntidad) +
+                       '<span class="entity-label">' + ent.type + '</span></span>';
+            texto = antes + span + despues;
         });
 
         $('#transcripcion-marcada').html(texto);
@@ -204,8 +222,10 @@ $(document).ready(function() {
     @endif
 });
 
-function escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function escapeHtmlVE(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 @endsection
