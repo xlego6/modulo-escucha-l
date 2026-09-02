@@ -213,7 +213,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                         <div class="row">
                             <div class="col-md-6">
                                 <h6 class="text-muted mb-2">
-                                    <i class="fas fa-file-alt mr-1"></i>Texto Original
+                                    <i class="fas fa-file-alt mr-1"></i>Texto Etiquetado
                                     <small class="text-secondary">(seleccione texto para etiquetar)</small>
                                 </h6>
                                 <div class="editor-visual-container texto-seleccionable" id="texto-original-marcado" style="background: #fffbea;">
@@ -281,7 +281,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6 class="text-muted mb-0">
-                                        <i class="fas fa-user-secret mr-1"></i>Anonimizado
+                                        <i class="fas fa-user-secret mr-1"></i>Texto Anonimizado
                                         <small class="text-secondary">(clic para editar)</small>
                                     </h6>
                                     <div>
@@ -494,6 +494,7 @@ var seleccionActual = null;
 // Para menu contextual y scroll sincronizado
 var entidadContextual = null;
 var entidadOriginalContextual = null;
+var menuEtiquetarRecienAbierto = false;
 var syncingScroll = false;
 
 $(document).ready(function() {
@@ -587,13 +588,19 @@ $(document).ready(function() {
                     top: posY,
                     left: posX
                 }).addClass('show');
+                // El mismo gesto de seleccion dispara un "click" justo despues del
+                // mouseup: se absorbe una sola vez para que no cierre el menu que
+                // acaba de abrirse, sin bloquear clics posteriores para cerrarlo.
+                menuEtiquetarRecienAbierto = true;
             }
         }
     });
 
     // Ocultar menus al hacer clic fuera
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('#entity-menu').length && !$(e.target).closest('#texto-original-marcado').length) {
+        if (menuEtiquetarRecienAbierto) {
+            menuEtiquetarRecienAbierto = false;
+        } else if (!$(e.target).closest('#entity-menu').length) {
             $('#entity-menu').removeClass('show');
             seleccionActual = null;
         }
