@@ -35,6 +35,9 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         opacity: 0.8;
         transform: scale(1.02);
     }
+    .entity-hover-sync {
+        box-shadow: 0 0 0 2px #000;
+    }
     .entity-cubierta {
         background-color: #343a40;
         color: #fff;
@@ -82,7 +85,11 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         font-size: 12px;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
+        padding: 3px 8px;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        background: #f8f9fa;
     }
     .entity-original {
         padding: 2px 6px;
@@ -201,6 +208,14 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                 <input type="hidden" name="entidades_manuales" id="input_entidades_manuales">
                 <input type="hidden" name="estado_entidades" id="input_estado_entidades">
                 <input type="hidden" name="entidades_eliminadas" id="input_entidades_eliminadas">
+
+                <div class="alert alert-warning mb-0 py-2 px-3" id="aviso-edicion-manual" style="display:none; border-radius:0;">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    El texto fue editado manualmente en "Editar texto" y ya no coincide con lo que generan las etiquetas.
+                    Si entras al Editor visual y guardas desde ahi, <strong>se perdera esa edicion manual</strong>
+                    (el editor visual reconstruye el texto desde las etiquetas, no desde el texto libre).
+                </div>
+
                 <div class="card-body p-2">
                     {{-- Vista Edicion (texto liquido) --}}
                     <div id="vista-editar" style="display: none;">
@@ -282,7 +297,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6 class="text-muted mb-0">
                                         <i class="fas fa-user-secret mr-1"></i>Texto Anonimizado
-                                        <small class="text-secondary">(clic para editar)</small>
+                                        <small class="text-secondary">(clic para anonimizar)</small>
                                     </h6>
                                     <div>
                                         <button type="button" class="btn btn-sm btn-outline-dark mr-1 btn-cobertura" id="btn-cubrir-todas" onclick="cubrirTodas()" title="Cubrir todas las entidades">
@@ -386,8 +401,13 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Etiquetas asignadas</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" id="btn-expandir-etiquetas" title="Expandir/contraer">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                </div>
             </div>
-            <div class="card-body p-0" style="max-height: 260px; overflow-y: auto;">
+            <div class="card-body p-0" id="card-body-etiquetas" style="max-height: 260px; overflow-y: auto;">
                 <div id="resumen-entidades">
                     <!-- Se llena dinamicamente -->
                 </div>
@@ -475,15 +495,14 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
 @section('js')
 @php
     $textoParaProcesar = $entrevista->getTextoParaProcesamiento() ?? '';
-    $tiposAnonimizar = $asignacion->tipos_anonimizar ?? implode(',', \App\Models\EntidadDetectada::tiposPorDefecto());
-    $formatoReemplazo = $asignacion->formato_reemplazo ?? 'numbered';
 @endphp
 <script>
 var entidades = @json($entidades);
 var textoOriginal = @json($textoParaProcesar);
 var textoAnonimizadoGuardado = @json($asignacion->texto_anonimizado ?? '');
-var tiposActivos = @json(explode(',', $tiposAnonimizar));
-var formatoActivo = @json($formatoReemplazo);
+// Formato de reemplazo unico [TIPO_N] para todas las entidades (sin
+// seleccion de tipos ni formato configurable, ver editar-anonimizacion-asignada).
+var formatoActivo = 'numbered';
 
 // Estado de las entidades en el editor visual
 var estadoEntidades = [];
@@ -496,10 +515,21 @@ var entidadContextual = null;
 var entidadOriginalContextual = null;
 var menuEtiquetarRecienAbierto = false;
 var syncingScroll = false;
+// Si el texto guardado ya no coincide con lo que las etiquetas actuales
+// generarian: entrar al editor visual y guardar desde ahi lo sobreescribiria.
+var hayEdicionManualDivergente = false;
 
 $(document).ready(function() {
     // Inicializar editor visual
     inicializarEditorVisual();
+
+    // Detectar si el texto guardado ya diverge de lo que generarian las
+    // etiquetas actuales (edicion manual previa en "Editar texto").
+    var textoGuardadoInicial = $('#texto_anonimizado').val();
+    if (textoGuardadoInicial.trim() !== '' && textoGuardadoInicial !== calcularTextoDesdeEntidades()) {
+        hayEdicionManualDivergente = true;
+        $('#aviso-edicion-manual').show();
+    }
 
     // Actualizar contador de caracteres
     $('#texto_anonimizado').on('input', function() {
@@ -683,10 +713,34 @@ $(document).ready(function() {
         eliminarEtiqueta(entidadOriginalContextual.text, entidadOriginalContextual.type);
     });
 
+    // Resaltado sincronizado: pasar el mouse sobre una entidad en cualquiera
+    // de los dos paneles resalta esa misma entidad (todas sus repeticiones)
+    // en ambos paneles. Eventos de mouse, no interfieren con clic/clic-derecho.
+    $(document).on('mouseenter', '#texto-original-marcado .entity-original, #editor-visual .entity-clickable', function() {
+        marcarResaltadoSincronizado(String($(this).data('text')), $(this).data('type'), true);
+    });
+    $(document).on('mouseleave', '#texto-original-marcado .entity-original, #editor-visual .entity-clickable', function() {
+        marcarResaltadoSincronizado(String($(this).data('text')), $(this).data('type'), false);
+    });
+
     // "Eliminar etiqueta" tambien esta disponible en la tarjeta "Etiquetas asignadas"
     // (delegado porque la lista se re-renderiza dinamicamente, ver eliminarEtiqueta()).
     $('#resumen-entidades').on('click', '.btn-eliminar-etiqueta', function() {
         eliminarEtiqueta($(this).data('text'), $(this).data('type'));
+    });
+
+    // Expandir/contraer la tarjeta "Etiquetas asignadas"
+    $('#btn-expandir-etiquetas').on('click', function() {
+        var $body = $('#card-body-etiquetas');
+        var $icon = $(this).find('i');
+        var expandido = $body.data('expandido') === true;
+        if (expandido) {
+            $body.css({ 'max-height': '260px', 'overflow-y': 'auto' }).data('expandido', false);
+            $icon.removeClass('fa-compress-alt').addClass('fa-expand-alt');
+        } else {
+            $body.css({ 'max-height': 'none', 'overflow-y': 'visible' }).data('expandido', true);
+            $icon.removeClass('fa-expand-alt').addClass('fa-compress-alt');
+        }
     });
 });
 
@@ -886,6 +940,13 @@ function actualizarBotonesCobertura() {
     $('#btn-descubrir-todas').toggleClass('active', ningunaCubierta);
 }
 
+function marcarResaltadoSincronizado(texto, tipo, activar) {
+    if (!texto) return;
+    $('#texto-original-marcado .entity-original, #editor-visual .entity-clickable').filter(function() {
+        return String($(this).data('text')) === texto && $(this).data('type') === tipo;
+    }).toggleClass('entity-hover-sync', activar);
+}
+
 function eliminarEtiqueta(texto, tipo) {
     if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
     estadoEntidades = estadoEntidades.filter(function(ent) {
@@ -1036,6 +1097,13 @@ function obtenerNumeroParaPalabra(tipo, texto) {
 }
 
 // Buscar todas las instancias de un texto en el documento
+// Un caracter "de palabra" incluye letras acentuadas/eñes (\p{L} es Unicode,
+// a diferencia de \w de JS que solo reconoce ASCII) para que el chequeo de
+// limite de palabra funcione bien en español.
+function esCaracterDePalabra(c) {
+    return c !== undefined && /[\p{L}\p{N}_]/u.test(c);
+}
+
 function encontrarTodasInstancias(texto, buscar) {
     var instancias = [];
     var pos = 0;
@@ -1044,10 +1112,16 @@ function encontrarTodasInstancias(texto, buscar) {
         var idx = texto.indexOf(buscar, pos);
         if (idx === -1) break;
 
-        instancias.push({
-            start: idx,
-            end: idx + buscar.length
-        });
+        // Solo contar coincidencias de palabra completa: evita que "Flor"
+        // marque tambien dentro de "Floreciendo" o "Florero".
+        var charAntes = idx > 0 ? texto[idx - 1] : undefined;
+        var charDespues = idx + buscar.length < texto.length ? texto[idx + buscar.length] : undefined;
+        if (!esCaracterDePalabra(charAntes) && !esCaracterDePalabra(charDespues)) {
+            instancias.push({
+                start: idx,
+                end: idx + buscar.length
+            });
+        }
 
         pos = idx + 1;
     }
@@ -1072,7 +1146,10 @@ function actualizarContadores() {
     actualizarResumen();
 }
 
-function sincronizarConTextarea() {
+// Texto que generarian las etiquetas actuales (sin tocar el DOM). Se usa
+// tanto para llenar el textarea como para detectar si el texto guardado fue
+// editado a mano y ya diverge de lo que las etiquetas reconstruirian.
+function calcularTextoDesdeEntidades() {
     var texto = textoOriginal;
 
     var posicionesUsadas = new Set();
@@ -1096,6 +1173,11 @@ function sincronizarConTextarea() {
         }
     });
 
+    return texto;
+}
+
+function sincronizarConTextarea() {
+    var texto = calcularTextoDesdeEntidades();
     $('#texto_anonimizado').val(texto);
     $('#charCount').text(texto.length);
 }
@@ -1152,10 +1234,21 @@ function formatearInlineAnonimizado(linea) {
 
 function mostrarVista(vista) {
     if (vista === 'editar') {
-        sincronizarConTextarea();
+        // Si el texto ya tiene una edicion manual divergente, no la
+        // sobreescribas al mostrar esta pestaña -- es justo lo que hay que ver.
+        if (!hayEdicionManualDivergente) {
+            sincronizarConTextarea();
+        }
         $('#vista-visual').hide();
         $('#vista-editar').show();
     } else if (vista === 'visual') {
+        if (hayEdicionManualDivergente) {
+            if (!confirm('El texto en "Editar texto" fue editado manualmente y difiere de lo que generan las etiquetas.\nSi entras al editor visual y luego guardas desde ahi, se perdera esa edicion manual.\n¿Continuar de todas formas?')) {
+                return;
+            }
+            hayEdicionManualDivergente = false;
+            $('#aviso-edicion-manual').hide();
+        }
         renderizarEditorVisual();
         $('#vista-editar').hide();
         $('#vista-visual').show();

@@ -67,6 +67,9 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         opacity: 0.8;
         transform: scale(1.02);
     }
+    .entity-hover-sync {
+        box-shadow: 0 0 0 2px #000;
+    }
     .entity-cubierta {
         background-color: #343a40;
         color: #fff;
@@ -114,7 +117,11 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         font-size: 12px;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
+        padding: 3px 8px;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        background: #f8f9fa;
     }
     .contador-entidades {
         font-size: 11px;
@@ -200,6 +207,9 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Texto Anonimizado (Editable)</h3>
                 <div class="card-tools">
+                    <button type="button" class="btn btn-outline-secondary btn-sm mr-1" onclick="confirmarGenerarAnonimizacion()" title="Cubrir todas las entidades detectadas y regenerar el texto">
+                        <i class="fas fa-magic mr-1"></i>Generar Automatico
+                    </button>
                     <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-default active" onclick="mostrarVista('visual')">
                             <i class="fas fa-mouse-pointer"></i> Editor visual
@@ -213,11 +223,16 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
             <form action="{{ route('procesamientos.guardar-anonimizacion-asignada', $asignacion->id_asignacion) }}"
                   method="POST" id="formAnonimizacion">
                 @csrf
-                <input type="hidden" name="tipos_anonimizar" id="input_tipos">
-                <input type="hidden" name="formato_reemplazo" id="input_formato">
                 <input type="hidden" name="entidades_manuales" id="input_entidades_manuales">
                 <input type="hidden" name="estado_entidades" id="input_estado_entidades">
                 <input type="hidden" name="entidades_eliminadas" id="input_entidades_eliminadas">
+
+                <div class="alert alert-warning mb-0 py-2 px-3" id="aviso-edicion-manual" style="display:none; border-radius:0;">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    El texto fue editado manualmente en "Editar texto" y ya no coincide con lo que generan las etiquetas.
+                    Si entras al Editor visual y guardas desde ahi, <strong>se perdera esa edicion manual</strong>
+                    (el editor visual reconstruye el texto desde las etiquetas, no desde el texto libre).
+                </div>
 
                 <div class="card-body p-2">
                     {{-- Vista Edicion (texto liquido) --}}
@@ -303,7 +318,7 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6 class="text-muted mb-0">
                                         <i class="fas fa-user-secret mr-1"></i>Texto Anonimizado
-                                        <small class="text-secondary">(clic para editar)</small>
+                                        <small class="text-secondary">(clic para anonimizar)</small>
                                     </h6>
                                     <div>
                                         <button type="button" class="btn btn-sm btn-outline-dark mr-1 btn-cobertura" id="btn-cubrir-todas" onclick="cubrirTodas()" title="Cubrir todas las entidades">
@@ -400,55 +415,18 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         </div>
     </div>
 
-    <div class="col-md-4">
-        {{-- Configuracion de tipos --}}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Configuracion</h3>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Tipos a anonimizar:</p>
-                @php
-                    $tiposActivos = explode(',', $asignacion->tipos_anonimizar ?? implode(',', \App\Models\EntidadDetectada::tiposPorDefecto()));
-                @endphp
-                @foreach(\App\Models\EntidadDetectada::tipos() as $tipoKey => $tipoLabel)
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input tipo-check" id="check-{{ $tipoKey }}" value="{{ $tipoKey }}"
-                               {{ in_array($tipoKey, $tiposActivos) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="check-{{ $tipoKey }}">
-                            <span class="badge entity-{{ $tipoKey }}">{{ $tipoKey }}</span> {{ $tipoLabel }}
-                        </label>
-                    </div>
-                </div>
-                @endforeach
-
-                <hr>
-
-                <div class="form-group">
-                    <label class="small">Formato:</label>
-                    <select class="form-control form-control-sm" id="formato">
-                        <option value="brackets" {{ $asignacion->formato_reemplazo == 'brackets' ? 'selected' : '' }}>[TIPO]</option>
-                        <option value="numbered" {{ $asignacion->formato_reemplazo == 'numbered' ? 'selected' : '' }}>[TIPO_1]</option>
-                        <option value="redacted" {{ $asignacion->formato_reemplazo == 'redacted' ? 'selected' : '' }}>[REDACTADO]</option>
-                        <option value="asterisks" {{ $asignacion->formato_reemplazo == 'asterisks' ? 'selected' : '' }}>***</option>
-                    </select>
-                </div>
-
-                <button class="btn btn-outline-secondary btn-sm btn-block" onclick="generarAnonimizacion()">
-                    <i class="fas fa-magic mr-1"></i>Generar Automatico
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
+    <div class="col-md-8">
         {{-- Etiquetas asignadas (con opcion de eliminar) --}}
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Etiquetas asignadas</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" id="btn-expandir-etiquetas" title="Expandir/contraer">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                </div>
             </div>
-            <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+            <div class="card-body p-0" id="card-body-etiquetas" style="max-height: 300px; overflow-y: auto;">
                 <div id="resumen-entidades">
                     <!-- Se llena dinamicamente -->
                 </div>
@@ -479,11 +457,13 @@ var seleccionActual = null;
 var entidadContextual = null;
 var entidadOriginalContextual = null;
 var menuEtiquetarRecienAbierto = false;
+// Si el texto guardado ya no coincide con lo que las etiquetas actuales
+// generarian: entrar al editor visual y guardar desde ahi lo sobreescribiria.
+var hayEdicionManualDivergente = false;
 var syncingScroll = false;
 
 $(document).ready(function() {
     actualizarResumen();
-    actualizarInputs();
 
     // Si no hay texto anonimizado, generar automaticamente
     if ($('#texto_anonimizado').val().trim() === '') {
@@ -493,16 +473,18 @@ $(document).ready(function() {
     // Inicializar editor visual
     inicializarEditorVisual();
 
+    // Detectar si el texto guardado ya diverge de lo que generarian las
+    // etiquetas actuales (edicion manual previa en "Editar texto").
+    var textoGuardadoInicial = $('#texto_anonimizado').val();
+    if (textoGuardadoInicial.trim() !== '' && textoGuardadoInicial !== calcularTextoDesdeEntidades()) {
+        hayEdicionManualDivergente = true;
+        $('#aviso-edicion-manual').show();
+    }
+
     // Actualizar contador
     $('#texto_anonimizado').on('input', function() {
         $('#charCount').text($(this).val().length);
         $('#texto-preview').text($(this).val());
-    });
-
-    // Actualizar inputs al cambiar opciones
-    $('.tipo-check, #formato').on('change', function() {
-        actualizarInputs();
-        inicializarEditorVisual();
     });
 
     // Detectar seleccion de texto en el panel original
@@ -634,10 +616,34 @@ $(document).ready(function() {
         eliminarEtiqueta(entidadOriginalContextual.text, entidadOriginalContextual.type);
     });
 
+    // Resaltado sincronizado: pasar el mouse sobre una entidad en cualquiera
+    // de los dos paneles resalta esa misma entidad (todas sus repeticiones)
+    // en ambos paneles. Eventos de mouse, no interfieren con clic/clic-derecho.
+    $(document).on('mouseenter', '#texto-original-marcado .entity-original, #editor-visual .entity-clickable', function() {
+        marcarResaltadoSincronizado(String($(this).data('text')), $(this).data('type'), true);
+    });
+    $(document).on('mouseleave', '#texto-original-marcado .entity-original, #editor-visual .entity-clickable', function() {
+        marcarResaltadoSincronizado(String($(this).data('text')), $(this).data('type'), false);
+    });
+
     // "Eliminar etiqueta" tambien esta disponible en la tarjeta "Etiquetas asignadas"
     // (delegado porque la lista se re-renderiza dinamicamente, ver eliminarEtiqueta()).
     $('#resumen-entidades').on('click', '.btn-eliminar-etiqueta', function() {
         eliminarEtiqueta($(this).data('text'), $(this).data('type'));
+    });
+
+    // Expandir/contraer la tarjeta "Etiquetas asignadas"
+    $('#btn-expandir-etiquetas').on('click', function() {
+        var $body = $('#card-body-etiquetas');
+        var $icon = $(this).find('i');
+        var expandido = $body.data('expandido') === true;
+        if (expandido) {
+            $body.css({ 'max-height': '300px', 'overflow-y': 'auto' }).data('expandido', false);
+            $icon.removeClass('fa-compress-alt').addClass('fa-expand-alt');
+        } else {
+            $body.css({ 'max-height': 'none', 'overflow-y': 'visible' }).data('expandido', true);
+            $icon.removeClass('fa-expand-alt').addClass('fa-compress-alt');
+        }
     });
 
     // Antes de enviar el formulario, guardar las entidades manuales y el estado de todas
@@ -677,28 +683,14 @@ $(document).ready(function() {
     });
 });
 
-function actualizarInputs() {
-    var tipos = [];
-    $('.tipo-check:checked').each(function() {
-        tipos.push($(this).val());
-    });
-    $('#input_tipos').val(tipos.join(','));
-    $('#input_formato').val($('#formato').val());
-}
-
 // =====================================================
 // EDITOR VISUAL - Entidades clicables
 // =====================================================
 
 function inicializarEditorVisual() {
-    var tiposSeleccionados = [];
-    $('.tipo-check:checked').each(function() {
-        tiposSeleccionados.push($(this).val());
-    });
-
-    var formato = $('#formato').val();
-
-    // Preparar TODAS las entidades (no filtrar por tipo)
+    // Todas las entidades detectadas se consideran por igual, sin filtrar por
+    // tipo -- son las mismas que ya se ven en /procesamientos/transcripcion
+    // (pestaña Anonimizacion), no hay una seleccion aparte aqui.
     estadoEntidades = [];
     var contadores = {};
     var idCounter = 0;
@@ -709,32 +701,13 @@ function inicializarEditorVisual() {
         .sort((a, b) => (a.start || 0) - (b.start || 0));
 
     entidadesOrdenadas.forEach(function(ent) {
-        // Contador por tipo
+        // Contador por tipo (formato de reemplazo unico: [TIPO_N])
         if (!contadores[ent.type]) contadores[ent.type] = 0;
         contadores[ent.type]++;
+        var reemplazo = '[' + ent.type + '_' + contadores[ent.type] + ']';
 
-        // Generar reemplazo segun formato
-        var reemplazo = '';
-        switch(formato) {
-            case 'brackets':
-                reemplazo = '[' + ent.type + ']';
-                break;
-            case 'numbered':
-                reemplazo = '[' + ent.type + '_' + contadores[ent.type] + ']';
-                break;
-            case 'redacted':
-                reemplazo = '[REDACTADO]';
-                break;
-            case 'asterisks':
-                reemplazo = '*'.repeat(ent.text.length);
-                break;
-        }
-
-        // Determinar si esta cubierta o descubierta
-        // - Si el tipo NO esta seleccionado: siempre descubierta (no anonimizar)
-        // - Si el tipo esta seleccionado: segun el estado guardado (excluir)
-        var tipoSeleccionado = tiposSeleccionados.includes(ent.type);
-        var estaCubierta = tipoSeleccionado ? !ent.excluir : false;
+        // Cubierta segun el estado guardado por entidad (excluir_anonimizacion)
+        var estaCubierta = !ent.excluir;
 
         estadoEntidades.push({
             id: idCounter++,
@@ -888,6 +861,13 @@ function actualizarBotonesCobertura() {
     $('#btn-descubrir-todas').toggleClass('active', ningunaCubierta);
 }
 
+function marcarResaltadoSincronizado(texto, tipo, activar) {
+    if (!texto) return;
+    $('#texto-original-marcado .entity-original, #editor-visual .entity-clickable').filter(function() {
+        return String($(this).data('text')) === texto && $(this).data('type') === tipo;
+    }).toggleClass('entity-hover-sync', activar);
+}
+
 function eliminarEtiqueta(texto, tipo) {
     if (!confirm('¿Eliminar todas las instancias de "' + texto + '" (' + tipo + ')?\nEsta accion no se puede deshacer.')) return;
     estadoEntidades = estadoEntidades.filter(function(ent) {
@@ -901,7 +881,6 @@ function eliminarEtiqueta(texto, tipo) {
 function agregarEntidad(tipo) {
     if (!seleccionActual) return;
 
-    var formato = $('#formato').val();
     var textoABuscar = seleccionActual.text;
     var entidadesAgregadas = 0;
 
@@ -926,22 +905,8 @@ function agregarEntidad(tipo) {
     // Todas las instancias del mismo texto comparten el mismo numero
     var numeroParaEstaPalabra = obtenerNumeroParaPalabra(tipo, textoABuscar);
 
-    // Generar reemplazo segun formato (mismo para todas las instancias)
-    var reemplazo = '';
-    switch(formato) {
-        case 'brackets':
-            reemplazo = '[' + tipo + ']';
-            break;
-        case 'numbered':
-            reemplazo = '[' + tipo + '_' + numeroParaEstaPalabra + ']';
-            break;
-        case 'redacted':
-            reemplazo = '[REDACTADO]';
-            break;
-        case 'asterisks':
-            reemplazo = '*'.repeat(textoABuscar.length);
-            break;
-    }
+    // Reemplazo con el formato unico [TIPO_N] (mismo para todas las instancias)
+    var reemplazo = '[' + tipo + '_' + numeroParaEstaPalabra + ']';
 
     // Agregar cada instancia como entidad (todas con el mismo reemplazo)
     instancias.forEach(function(inst) {
@@ -1014,6 +979,13 @@ function obtenerNumeroParaPalabra(tipo, texto) {
 }
 
 // Buscar todas las instancias de un texto en el documento
+// Un caracter "de palabra" incluye letras acentuadas/eñes (\p{L} es Unicode,
+// a diferencia de \w de JS que solo reconoce ASCII) para que el chequeo de
+// limite de palabra funcione bien en español.
+function esCaracterDePalabra(c) {
+    return c !== undefined && /[\p{L}\p{N}_]/u.test(c);
+}
+
 function encontrarTodasInstancias(texto, buscar) {
     var instancias = [];
     var pos = 0;
@@ -1022,10 +994,16 @@ function encontrarTodasInstancias(texto, buscar) {
         var idx = texto.indexOf(buscar, pos);
         if (idx === -1) break;
 
-        instancias.push({
-            start: idx,
-            end: idx + buscar.length
-        });
+        // Solo contar coincidencias de palabra completa: evita que "Flor"
+        // marque tambien dentro de "Floreciendo" o "Florero".
+        var charAntes = idx > 0 ? texto[idx - 1] : undefined;
+        var charDespues = idx + buscar.length < texto.length ? texto[idx + buscar.length] : undefined;
+        if (!esCaracterDePalabra(charAntes) && !esCaracterDePalabra(charDespues)) {
+            instancias.push({
+                start: idx,
+                end: idx + buscar.length
+            });
+        }
 
         pos = idx + 1;
     }
@@ -1051,11 +1029,12 @@ function actualizarContadores() {
     actualizarResumen();
 }
 
-function sincronizarConTextarea() {
-    // Generar texto final basado en el estado de las entidades
+// Texto que generarian las etiquetas actuales (sin tocar el DOM). Se usa
+// tanto para llenar el textarea como para detectar si el texto guardado fue
+// editado a mano y ya diverge de lo que las etiquetas reconstruirian.
+function calcularTextoDesdeEntidades() {
     var texto = textoOriginal;
 
-    // Crear mapa de posiciones de entidades (sin duplicados)
     var posicionesUsadas = new Set();
     var entidadesUnicas = [];
 
@@ -1079,7 +1058,11 @@ function sincronizarConTextarea() {
         }
     });
 
-    // Actualizar textarea
+    return texto;
+}
+
+function sincronizarConTextarea() {
+    var texto = calcularTextoDesdeEntidades();
     $('#texto_anonimizado').val(texto);
     $('#charCount').text(texto.length);
 }
@@ -1138,54 +1121,53 @@ function formatearInlineAnonimizado(linea) {
 // FUNCIONES ORIGINALES
 // =====================================================
 
+function confirmarGenerarAnonimizacion() {
+    if (estadoEntidades.length > 0 && !confirm('Esto cubrira todas las entidades detectadas, incluyendo las que hayas descubierto manualmente.\n¿Continuar?')) {
+        return;
+    }
+    generarAnonimizacion();
+}
+
 function generarAnonimizacion() {
-    var tiposSeleccionados = [];
-    $('.tipo-check:checked').each(function() {
-        tiposSeleccionados.push($(this).val());
+    // Cubre todas las entidades detectadas (mismas que en
+    // /procesamientos/transcripcion, pestaña Anonimizacion) y reconstruye el
+    // texto por posicion (start/end), no por busqueda de texto -- una busqueda
+    // por texto puede marcar coincidencias dentro de otras palabras (ej. "Flor"
+    // dentro de "Floreciendo").
+    var entidadesOrdenadas = [...entidades]
+        .filter(e => e.text && typeof e.start === 'number' && typeof e.end === 'number')
+        .sort((a, b) => (a.start || 0) - (b.start || 0));
+
+    // Quitar solapamientos
+    var entidadesUnicas = [];
+    var finAnterior = -1;
+    entidadesOrdenadas.forEach(function(ent) {
+        if (ent.start >= finAnterior) {
+            entidadesUnicas.push(ent);
+            finAnterior = ent.end;
+        }
     });
 
-    var formato = $('#formato').val();
-    var texto = textoOriginal;
+    // Numerar en orden de aparicion
     var contadores = {};
-
-    // Ordenar entidades por posicion descendente para reemplazar de atras hacia adelante
-    var entidadesOrdenadas = [...entidades].sort((a, b) => (b.start || 0) - (a.start || 0));
-
-    // Reemplazar entidades
-    entidadesOrdenadas.forEach(function(ent) {
-        if (!tiposSeleccionados.includes(ent.type)) return;
-
-        // Contador por tipo
+    entidadesUnicas.forEach(function(ent) {
         if (!contadores[ent.type]) contadores[ent.type] = 0;
         contadores[ent.type]++;
+        ent._numero = contadores[ent.type];
+    });
 
-        // Generar reemplazo
-        var reemplazo = '';
-        switch(formato) {
-            case 'brackets':
-                reemplazo = '[' + ent.type + ']';
-                break;
-            case 'numbered':
-                reemplazo = '[' + ent.type + '_' + contadores[ent.type] + ']';
-                break;
-            case 'redacted':
-                reemplazo = '[REDACTADO]';
-                break;
-            case 'asterisks':
-                reemplazo = '*'.repeat(ent.text.length);
-                break;
-        }
-
-        // Reemplazar en texto
-        if (ent.text) {
-            var regex = new RegExp(escapeRegex(ent.text), 'gi');
-            texto = texto.replace(regex, reemplazo);
-        }
+    // Reemplazar de atras hacia adelante para no invalidar posiciones
+    var texto = textoOriginal;
+    entidadesUnicas.slice().sort((a, b) => b.start - a.start).forEach(function(ent) {
+        var reemplazo = '[' + ent.type + '_' + ent._numero + ']';
+        var antes = texto.substring(0, ent.start);
+        var despues = texto.substring(ent.end);
+        texto = antes + reemplazo + despues;
     });
 
     $('#texto_anonimizado').val(texto);
     $('#charCount').text(texto.length);
-    $('#texto-preview').text(texto);
+    if ($('#texto-preview').length) $('#texto-preview').text(texto);
 
     actualizarResumen();
 
@@ -1231,10 +1213,21 @@ function actualizarResumen() {
 
 function mostrarVista(vista) {
     if (vista === 'editar') {
-        sincronizarConTextarea();
+        // Si el texto ya tiene una edicion manual divergente, no la
+        // sobreescribas al mostrar esta pestaña -- es justo lo que hay que ver.
+        if (!hayEdicionManualDivergente) {
+            sincronizarConTextarea();
+        }
         $('#vista-visual').hide();
         $('#vista-editar').show();
     } else if (vista === 'visual') {
+        if (hayEdicionManualDivergente) {
+            if (!confirm('El texto en "Editar texto" fue editado manualmente y difiere de lo que generan las etiquetas.\nSi entras al editor visual y luego guardas desde ahi, se perdera esa edicion manual.\n¿Continuar de todas formas?')) {
+                return;
+            }
+            hayEdicionManualDivergente = false;
+            $('#aviso-edicion-manual').hide();
+        }
         renderizarEditorVisual();
         $('#vista-editar').hide();
         $('#vista-visual').show();
@@ -1242,10 +1235,6 @@ function mostrarVista(vista) {
 
     $('.card-tools .btn').removeClass('active');
     $('.card-tools .btn[onclick*="' + vista + '"]').addClass('active');
-}
-
-function escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 </script>
 @endsection
