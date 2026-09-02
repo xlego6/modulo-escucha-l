@@ -375,6 +375,19 @@ class ProcesamientoController extends Controller
                 $q2->whereNull('texto_extraido')->orWhere('texto_extraido', '');
             });
         };
+        // Transcripcion "agregada": el adjunto combinado (automatizada) o la final,
+        // con texto. Puede existir con texto aunque ningun audio individual tenga
+        // su propio texto_extraido poblado (ej. se guardo la transcripcion completa
+        // sin ligarla a un adjunto especifico) — sin esto, esas entrevistas quedaban
+        // marcadas "Pendiente" pese a tener transcripcion real y utilizable.
+        $tieneTextoAgregado = function($q) {
+            $q->whereIn('id_tipo', [
+                    Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA,
+                    Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL,
+                ])
+                ->whereNotNull('texto_extraido')
+                ->where('texto_extraido', '!=', '');
+        };
 
         $query = Entrevista::where('id_activo', 1)
             ->whereHas('rel_adjuntos', $audioFilter);
@@ -391,15 +404,18 @@ class ProcesamientoController extends Controller
         }
 
         if ($estado === 'transcrita') {
-            $query->whereDoesntHave('rel_adjuntos', function($q) use ($audioFilter, $sinTexto) {
-                $audioFilter($q);
-                $sinTexto($q);
+            $query->where(function($q) use ($audioFilter, $sinTexto, $tieneTextoAgregado) {
+                $q->whereDoesntHave('rel_adjuntos', function($qq) use ($audioFilter, $sinTexto) {
+                    $audioFilter($qq);
+                    $sinTexto($qq);
+                })
+                ->orWhereHas('rel_adjuntos', $tieneTextoAgregado);
             });
         } elseif ($estado === 'pendiente') {
             $query->whereDoesntHave('rel_adjuntos', function($q) use ($audioFilter, $conTexto) {
                 $audioFilter($q);
                 $conTexto($q);
-            });
+            })->whereDoesntHave('rel_adjuntos', $tieneTextoAgregado);
         } elseif ($estado === 'parcial') {
             $query->whereHas('rel_adjuntos', function($q) use ($audioFilter, $conTexto) {
                 $audioFilter($q);
@@ -412,6 +428,7 @@ class ProcesamientoController extends Controller
 
         $entrevistas = $query
             ->with(['rel_adjuntos' => $audioFilter])
+            ->withExists(['rel_adjuntos as tiene_texto_agregado' => $tieneTextoAgregado])
             ->orderBy('created_at', 'desc')
             ->paginate(20)
             ->appends($request->query());

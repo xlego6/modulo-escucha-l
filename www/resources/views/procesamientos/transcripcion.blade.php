@@ -315,7 +315,7 @@
                                 </a>
                             </td>
                             <td>
-                                @if($audiosTranscritos === $totalAudios && $totalAudios > 0)
+                                @if(($audiosTranscritos === $totalAudios && $totalAudios > 0) || $entrevista->tiene_texto_agregado)
                                     <span class="badge badge-success d-block mb-1">
                                         <i class="fas fa-check mr-1"></i>Transcrita
                                     </span>
