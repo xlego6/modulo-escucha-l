@@ -1417,7 +1417,7 @@ class ProcesamientoController extends Controller
     /**
      * Anonimizacion
      */
-    public function anonimizacion()
+    public function anonimizacion(Request $request)
     {
         $user = Auth::user();
         $nivel = $user->id_nivel;
@@ -1444,8 +1444,7 @@ class ProcesamientoController extends Controller
 
         // Admin/Lider: ve todas las entrevistas y asignaciones
         // Buscar entrevistas con transcripción (adjunto tipo 312 o anotaciones legacy)
-        $pendientes = Entrevista::where('id_activo', 1)
-            ->with('rel_adjuntos')
+        $queryPendientes = Entrevista::where('id_activo', 1)
             ->where(function($q) {
                 $q->whereHas('rel_adjuntos', function($qa) {
                     $qa->where('id_tipo', Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA)
@@ -1456,9 +1455,55 @@ class ProcesamientoController extends Controller
                     $ql->whereNotNull('anotaciones')
                        ->where('anotaciones', '!=', '');
                 });
-            })
+            });
+
+        // Filtro dependencia
+        if ($request->filled('filtro_dependencia')) {
+            $queryPendientes->where('id_dependencia_origen', $request->filtro_dependencia);
+        }
+
+        // Filtro código
+        if ($request->filled('filtro_codigo')) {
+            $queryPendientes->where('entrevista_codigo', 'ilike', '%' . $request->filtro_codigo . '%');
+        }
+
+        // Filtro entrevistador
+        if ($request->filled('filtro_entrevistador')) {
+            $queryPendientes->where('id_entrevistador', $request->filtro_entrevistador);
+        }
+
+        // Filtro entidades detectadas
+        if ($request->filled('filtro_entidades')) {
+            if ($request->filtro_entidades === 'con') {
+                $queryPendientes->whereHas('rel_entidades');
+            } else {
+                $queryPendientes->whereDoesntHave('rel_entidades');
+            }
+        }
+
+        // Filtro estado de asignación
+        if ($request->filled('filtro_asignacion')) {
+            if ($request->filtro_asignacion === 'sin_asignar') {
+                $queryPendientes->whereNotExists(function($q) {
+                    $q->from('esclarecimiento.asignacion_anonimizacion as aa')
+                      ->whereColumn('aa.id_e_ind_fvt', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                      ->whereNotIn('aa.estado', ['aprobada']);
+                });
+            } else {
+                $queryPendientes->whereExists(function($q) use ($request) {
+                    $q->from('esclarecimiento.asignacion_anonimizacion as aa')
+                      ->whereColumn('aa.id_e_ind_fvt', 'esclarecimiento.e_ind_fvt.id_e_ind_fvt')
+                      ->where('aa.estado', $request->filtro_asignacion);
+                });
+            }
+        }
+
+        $pendientes = $queryPendientes
+            ->with('rel_adjuntos')
+            ->withCount('rel_entidades')
             ->orderBy('updated_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->appends($request->query());
 
         // Asignaciones pendientes de revision
         $pendientesRevision = AsignacionAnonimizacion::where('estado', AsignacionAnonimizacion::ESTADO_ENVIADA_REVISION)
@@ -1483,16 +1528,40 @@ class ProcesamientoController extends Controller
             ->get()
             ->keyBy('id_e_ind_fvt');
 
-        $stats = [
-            'pendientes' => $pendientes->total(),
-            'en_revision' => $pendientesRevision->count(),
-            'asignadas' => $asignacionesActivas->whereNotIn('estado', ['aprobada'])->count(),
-            'aprobadas' => AsignacionAnonimizacion::where('estado', AsignacionAnonimizacion::ESTADO_APROBADA)->count(),
+        // Stats globales reutilizando el mismo método del centro de control
+        $stats = $this->calcStatsGlobales('anonimizacion');
+
+        // Mis asignaciones (para Líder nivel 2)
+        $misAsignaciones = collect();
+        if ($nivel == 2) {
+            $misAsignaciones = AsignacionAnonimizacion::where('id_anonimizador', $user->id_entrevistador)
+                ->whereNotIn('estado', [AsignacionAnonimizacion::ESTADO_APROBADA])
+                ->with(['rel_entrevista'])
+                ->orderByRaw("CASE estado
+                    WHEN 'rechazada' THEN 1
+                    WHEN 'asignada' THEN 2
+                    WHEN 'en_edicion' THEN 3
+                    WHEN 'enviada_revision' THEN 4
+                    ELSE 5 END")
+                ->orderBy('fecha_asignacion', 'desc')
+                ->get();
+        }
+
+        // Datos para filtros
+        $dependenciasAnonimizacion = CatItem::where('id_cat', 4)->where('habilitado', 1)->orderBy('orden')->get();
+        $entrevistadoresAnonimizacion = Entrevistador::whereHas('rel_usuario')->with('rel_usuario')->orderBy('id_entrevistador')->get();
+        $estadosAsignacionAnonimizacion = [
+            'sin_asignar'      => 'Sin asignar',
+            'asignada'         => 'Asignada',
+            'en_edicion'       => 'En edición',
+            'enviada_revision'  => 'Enviada a revisión',
+            'rechazada'        => 'Rechazada',
+            'aprobada'         => 'Aprobada',
         ];
 
         return view('procesamientos.anonimizacion', compact(
-            'pendientes', 'pendientesRevision', 'anonimizadores',
-            'asignacionesActivas', 'stats'
+            'pendientes', 'pendientesRevision', 'anonimizadores', 'asignacionesActivas', 'stats', 'misAsignaciones',
+            'dependenciasAnonimizacion', 'entrevistadoresAnonimizacion', 'estadosAsignacionAnonimizacion'
         ));
     }
 
@@ -1638,30 +1707,6 @@ class ProcesamientoController extends Controller
     /**
      * Vista previa de anonimizacion
      */
-    public function previsualizarAnonimizacion($id)
-    {
-        $entrevista = Entrevista::findOrFail($id);
-
-        // Obtener entidades de la BD (todas, incluyendo excluidas)
-        $entidadesDB = EntidadDetectada::where('id_e_ind_fvt', $id)
-            ->orderBy('posicion_inicio')
-            ->get();
-
-        // Convertir a formato esperado
-        $entidades = $entidadesDB->map(function($e) {
-            return [
-                'text' => $e->texto,
-                'type' => $e->tipo,
-                'replacement' => $e->texto_anonimizado,
-                'start' => $e->posicion_inicio,
-                'end' => $e->posicion_fin,
-                'manual' => (bool) $e->manual,
-                'excluir' => (bool) $e->excluir_anonimizacion,
-            ];
-        })->toArray();
-
-        return view('procesamientos.previsualizar-anonimizacion', compact('entrevista', 'entidades'));
-    }
 
     /**
      * Actualizar estado de una entidad (verificar/excluir)

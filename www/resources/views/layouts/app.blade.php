@@ -196,7 +196,7 @@
                             {{-- Anonimización --}}
                             @if(\App\Models\RolModuloPermiso::puedeVer($nivel, 'procesamientos.anonimizacion'))
                             <li class="nav-item">
-                                <a href="{{ route('procesamientos.anonimizacion') }}" class="nav-link {{ request()->routeIs('procesamientos.anonimizacion') || request()->routeIs('procesamientos.previsualizar-anonimizacion') || request()->routeIs('procesamientos.editar-anonimizacion-asignada') ? 'active' : '' }}">
+                                <a href="{{ route('procesamientos.anonimizacion') }}" class="nav-link {{ request()->routeIs('procesamientos.anonimizacion') || request()->routeIs('procesamientos.editar-anonimizacion-asignada') || request()->routeIs('procesamientos.ver-revision-anonimizacion') ? 'active' : '' }}">
                                     <i class="fas fa-user-secret nav-icon"></i>
                                     <p>Anonimizacion</p>
                                 </a>
