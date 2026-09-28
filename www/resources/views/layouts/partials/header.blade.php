@@ -1,4 +1,11 @@
 <header class="w-full bg-[#5e8f9b] relative" style="z-index: 1050;">
+    <div class="relative">
+    <img
+        src="{{ asset('header-footer/bandera-cuadros.png') }}"
+        alt=""
+        aria-hidden="true"
+        class="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 h-16 lg:h-24 w-auto pointer-events-none"
+    />
     <div class="max-w-6xl mx-auto px-4">
         <div class="grid grid-cols-3 items-center py-3">
             <div></div>
@@ -11,6 +18,7 @@
                     />
                 </a>
             </div>
+            <div class="hidden md:block"></div>
             <div class="flex justify-end md:hidden">
                 <button
                     data-collapse-toggle="main-nav"
@@ -26,6 +34,7 @@
                 </button>
             </div>
         </div>
+    </div>
     </div>
 
     <div class="bg-[#8fb3bc]">

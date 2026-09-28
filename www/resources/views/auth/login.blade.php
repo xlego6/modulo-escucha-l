@@ -10,17 +10,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .login-page {
-            background: linear-gradient(135deg, #eef4f5 0%, #ffffff 100%);
+            background: #5e8f9b;
+            padding-bottom: 20px;
         }
         .login-logo-img {
             max-width: 200px;
             margin-bottom: 20px;
+            filter: brightness(0) invert(1);
+        }
+        .login-logo-subtitle {
+            font-family: 'Barlow', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+        .login-bandera {
+            position: fixed;
+            right: 0;
+            top: 40px;
+            height: 200px;
+            width: auto;
+            pointer-events: none;
+        }
+        /* Tamaño según el espacio libre a la derecha del formulario (450px) */
+        @media (max-width: 1699.98px) {
+            .login-bandera { height: 140px; }
+        }
+        @media (max-width: 1299.98px) {
+            .login-bandera { height: 100px; }
+        }
+        @media (max-width: 1059.98px) {
+            .login-bandera { display: none; }
+        }
+        .barra-colores {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 20px;
+            display: flex;
+            background: #f3b933;
+            gap: 14px;
+        }
+        .barra-colores span {
+            flex: 1;
         }
         .login-logo-title {
             font-family: 'Barlow', sans-serif;
             font-weight: 700;
             font-size: 2.6rem;
-            color: #5e8f9b;
+            color: #ffffff;
             line-height: 1.2;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -55,7 +94,7 @@
         <br>
         <span class="login-logo-title">MÓDULO DE ESCUCHA<br>CNMH</span>
         <br>
-        <small class="text-muted" style="font-family: 'Barlow', sans-serif; font-size: 1.1rem; letter-spacing: 1px;">Sistema de escucha CNMH</small>
+        <small class="login-logo-subtitle">Sistema de escucha CNMH</small>
     </div>
     <div class="card">
         <div class="card-body login-card-body">
@@ -101,6 +140,30 @@
             </form>
         </div>
     </div>
+</div>
+
+<img src="{{ asset('header-footer/bandera-cuadros.png') }}" alt="" aria-hidden="true" class="login-bandera">
+<div class="barra-colores" aria-hidden="true">
+    <span style="background:#68babb"></span>
+    <span style="background:#78a4a6"></span>
+    <span style="background:#84b3d6"></span>
+    <span style="background:#5a888d"></span>
+    <span style="background:#8b88ad"></span>
+    <span style="background:#e37fab"></span>
+    <span style="background:#c72928"></span>
+    <span style="background:#e57430"></span>
+    <span style="background:#eb9857"></span>
+    <span style="background:#e0ab49"></span>
+    <span style="background:#96af76"></span>
+    <span style="background:#42a141"></span>
+    <span style="background:#827f6a"></span>
+    <span style="background:#9a8c72"></span>
+    <span style="background:#a78565"></span>
+    <span style="background:#a0685b"></span>
+    <span style="background:#8d6541"></span>
+    <span style="background:#c08f32"></span>
+    <span style="background:#caba9b"></span>
+    <span style="background:#ddd1bd"></span>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
