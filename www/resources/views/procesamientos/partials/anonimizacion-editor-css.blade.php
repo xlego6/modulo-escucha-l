@@ -163,6 +163,10 @@
         padding: 0 4px;
         line-height: 1;
     }
+    .etiqueta-item .etiqueta-ir {
+        cursor: pointer;
+        flex: 1;
+    }
     .etiqueta-variante {
         display: inline-block;
         margin-right: 6px;
@@ -172,5 +176,14 @@
         font-size: 10px;
         line-height: 1;
         vertical-align: baseline;
+    }
+    /* Avisos flotantes del editor */
+    #avisos-anonimizacion {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 1060;
+        max-width: 380px;
+        font-size: 13px;
     }
 </style>

@@ -164,6 +164,11 @@ $(document).ready(function() {
         var $item = $(this).closest('.etiqueta-item');
         abrirModalUnir($item.attr('data-type'), $item.attr('data-grupo'));
     });
+    $('#resumen-entidades').on('click', '.etiqueta-ir', function(e) {
+        if ($(e.target).closest('button').length) return;
+        var $item = $(this).closest('.etiqueta-item');
+        saltarAGrupo($item.attr('data-type'), $item.attr('data-grupo'));
+    });
     $('#resumen-entidades').on('click', '.btn-separar-variante', function() {
         var $item = $(this).closest('.etiqueta-item');
         separarVariante($item.attr('data-type'), $item.attr('data-grupo'), $(this).attr('data-variante'));
@@ -799,7 +804,7 @@ function actualizarResumen() {
         }).join('');
 
         html += '<div class="etiqueta-item" data-type="' + g.type + '" data-grupo="' + escapeHtml(g.clave) + '">' +
-                    '<div>' + badgeGrupo(g) + ' ' + variantes + '</div>' +
+                    '<div class="etiqueta-ir" title="Clic: ir a la primera instancia (clic otra vez: la siguiente)">' + badgeGrupo(g) + ' ' + variantes + '</div>' +
                     '<div class="etiqueta-acciones">' +
                         '<button type="button" class="btn btn-sm btn-link text-primary btn-unir-grupo" title="Unir con otra etiqueta (misma persona, lugar...)"><i class="fas fa-link"></i></button>' +
                         '<button type="button" class="btn btn-sm btn-link text-danger btn-eliminar-grupo" title="Eliminar etiqueta"><i class="fas fa-trash"></i></button>' +
@@ -918,16 +923,42 @@ function restaurarUltimaPosicion() {
         return Math.abs(e.start - pos) < Math.abs(mejor.start - pos) ? e : mejor;
     });
     ultimaPosicion = ent.start;
+    irAEntidad(ent);
+}
 
+// Centra una etiqueta en ambos paneles (y la pagina en el editor) y la
+// resalta un momento.
+var timerResaltado = null;
+function irAEntidad(ent) {
     var $izq = $('#texto-original-marcado [data-id="' + ent.id + '"]');
     var $der = $('#editor-visual [data-id="' + ent.id + '"]');
     suspenderSyncScrollHasta = Date.now() + 500;
     centrarEn($('#texto-original-marcado')[0], $izq[0]);
     centrarEn($('#editor-visual')[0], $der[0]);
-    if ($izq.length) $izq[0].scrollIntoView({ block: 'nearest' });
+    if ($izq.length) $izq[0].scrollIntoView({ block: 'center' });
 
+    clearTimeout(timerResaltado);
+    $('.entity-ultima').removeClass('entity-ultima');
     $izq.add($der).addClass('entity-ultima');
-    setTimeout(function() { $izq.add($der).removeClass('entity-ultima'); }, 3000);
+    timerResaltado = setTimeout(function() { $izq.add($der).removeClass('entity-ultima'); }, 3000);
+}
+
+// Clic en una etiqueta de la tarjeta: salta a su primera instancia; clics
+// seguidos en la misma etiqueta recorren las siguientes (y vuelven al inicio).
+var saltoActual = { clave: null, indice: -1 };
+function saltarAGrupo(tipo, grupo) {
+    var instancias = entidadesVisibles().filter(function(e) {
+        return e.type === tipo && claveGrupo(e) === grupo;
+    });
+    if (instancias.length === 0) return;
+
+    var clave = tipo + '|' + grupo;
+    var indice = saltoActual.clave === clave ? (saltoActual.indice + 1) % instancias.length : 0;
+    saltoActual = { clave: clave, indice: indice };
+    irAEntidad(instancias[indice]);
+    if (instancias.length > 1) {
+        avisar('info', instancias[indice].reemplazo + ': instancia ' + (indice + 1) + ' de ' + instancias.length, 'salto');
+    }
 }
 
 function centrarEn(contenedor, elemento) {
@@ -941,7 +972,19 @@ function sinMarcas(texto) {
     return String(texto).replace(/[*_]/g, '');
 }
 
-function avisar(tipo, mensaje) {
-    if (typeof toastr !== 'undefined') toastr[tipo](mensaje);
+// Aviso flotante breve (la app no carga toastr). tipo: success|info|warning|error.
+// clave (opcional): reemplaza el aviso anterior con la misma clave en vez de apilarlo.
+function avisar(tipo, mensaje, clave) {
+    var $cont = $('#avisos-anonimizacion');
+    if (!$cont.length) $cont = $('<div id="avisos-anonimizacion"></div>').appendTo('body');
+    if (clave) $cont.children().filter(function() { return $(this).attr('data-clave') === clave; }).remove();
+    var clases = { success: 'alert-success', info: 'alert-info', warning: 'alert-warning', error: 'alert-danger' };
+    var $aviso = $('<div class="alert shadow-sm py-2 px-3 mb-2"></div>')
+        .addClass(clases[tipo] || 'alert-info')
+        .attr('data-clave', clave || null)
+        .text(mensaje)
+        .appendTo($cont);
+    $cont.children().slice(0, -3).remove();
+    setTimeout(function() { $aviso.fadeOut(300, function() { $aviso.remove(); }); }, tipo === 'warning' || tipo === 'error' ? 5000 : 2500);
 }
 </script>
