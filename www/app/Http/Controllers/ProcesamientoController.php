@@ -1332,6 +1332,48 @@ class ProcesamientoController extends Controller
     }
 
     /**
+     * Lo que se perderia al volver a detectar entidades en una entrevista:
+     * asignacion de anonimizacion en curso y trabajo hecho sobre las etiquetas
+     * (manuales, descubiertas, unidas). Vacio = se puede detectar sin avisar.
+     */
+    private function advertenciasRedeteccion(Entrevista $entrevista): array
+    {
+        $advertencias = [];
+
+        $asignacion = AsignacionAnonimizacion::with('rel_anonimizador.rel_usuario')
+            ->where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+            ->whereIn('estado', [
+                AsignacionAnonimizacion::ESTADO_ASIGNADA,
+                AsignacionAnonimizacion::ESTADO_EN_EDICION,
+                AsignacionAnonimizacion::ESTADO_ENVIADA_REVISION,
+                AsignacionAnonimizacion::ESTADO_RECHAZADA,
+            ])
+            ->latest('fecha_asignacion')
+            ->first();
+        if ($asignacion) {
+            $nombre = $asignacion->rel_anonimizador->rel_usuario->name ?? 'sin nombre';
+            $advertencias[] = "Tiene una anonimización en curso ({$asignacion->fmt_estado}, anonimizador: {$nombre}).";
+        }
+
+        $trabajo = EntidadDetectada::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
+            ->selectRaw('COUNT(*) FILTER (WHERE manual) AS manuales')
+            ->selectRaw('COUNT(*) FILTER (WHERE excluir_anonimizacion) AS descubiertas')
+            ->selectRaw('COUNT(*) FILTER (WHERE grupo IS NOT NULL) AS unidas')
+            ->first();
+        if ($trabajo->manuales > 0) {
+            $advertencias[] = "Se perderán {$trabajo->manuales} etiqueta(s) agregada(s) a mano.";
+        }
+        if ($trabajo->descubiertas > 0) {
+            $advertencias[] = "{$trabajo->descubiertas} etiqueta(s) marcada(s) como visibles volverán a quedar cubiertas.";
+        }
+        if ($trabajo->unidas > 0) {
+            $advertencias[] = "Se perderán las uniones de {$trabajo->unidas} etiqueta(s) (ej. \"Aleja\" = \"Alejandra\").";
+        }
+
+        return $advertencias;
+    }
+
+    /**
      * Detectar entidades en una entrevista
      */
     public function detectarEntidades(Request $request, $id)
@@ -1341,6 +1383,20 @@ class ProcesamientoController extends Controller
         $textoTranscripcion = $entrevista->getTextoParaProcesamiento();
         if (empty($textoTranscripcion)) {
             return response()->json(['error' => 'La entrevista no tiene transcripcion'], 400);
+        }
+
+        // Volver a detectar borra todas las etiquetas de la entrevista (incluido
+        // el trabajo del anonimizador). Si hay algo que perder, se pide
+        // confirmacion explicita (forzar=1) antes de llamar al NER.
+        if (!$request->boolean('forzar')) {
+            $advertencias = $this->advertenciasRedeteccion($entrevista);
+            if (!empty($advertencias)) {
+                return response()->json([
+                    'success' => false,
+                    'requiere_confirmacion' => true,
+                    'advertencias' => $advertencias,
+                ], 409);
+            }
         }
 
         // El modelo spaCy estandar (es_core_news_lg/sm) solo produce PER/LOC/ORG/MISC.
