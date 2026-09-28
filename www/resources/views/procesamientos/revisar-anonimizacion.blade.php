@@ -231,7 +231,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                                     <i class="fas fa-file-alt mr-1"></i>Texto Etiquetado
                                     <small class="text-secondary">(seleccione texto para etiquetar)</small>
                                 </h6>
-                                <div class="editor-visual-container texto-seleccionable" id="texto-original-marcado" style="background: #fffbea;">
+                                <div class="editor-visual-container texto-seleccionable" id="texto-original-marcado" style="background: #f0f6f7;">
                                     {{-- Texto original con entidades resaltadas --}}
                                 </div>
                             </div>

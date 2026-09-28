@@ -53,14 +53,14 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     .preview-h2 {
         font-size: 1.3em; font-weight: 700;
         color: #1a202c;
-        border-bottom: 2px solid #ebc01a;
+        border-bottom: 2px solid #5e8f9b;
         padding-bottom: 3px;
         margin: 1em 0 0.4em;
     }
     .preview-h3 {
         font-size: 1.1em; font-weight: 700;
         color: #2d3748;
-        border-left: 3px solid #ebc01a;
+        border-left: 3px solid #5e8f9b;
         padding-left: 8px;
         margin: 0.9em 0 0.3em;
     }
@@ -362,9 +362,9 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
             <div class="card-body py-2">
                 <ul class="list-unstyled mb-0 small">
                     <li><kbd>Ctrl</kbd> + <kbd>S</kbd> &mdash; Guardar</li>
-                    <li><kbd>Ctrl</kbd> + <kbd>Space</kbd> &mdash; Play/Pause</li>
-                    <li><kbd>Ctrl</kbd> + <kbd>←</kbd> &mdash; Retroceder 10s</li>
-                    <li><kbd>Ctrl</kbd> + <kbd>→</kbd> &mdash; Avanzar 10s</li>
+                    <li><kbd>Alt</kbd> + <kbd>Space</kbd> &mdash; Play/Pause</li>
+                    <li><kbd>Alt</kbd> + <kbd>←</kbd> &mdash; Retroceder 10s</li>
+                    <li><kbd>Alt</kbd> + <kbd>→</kbd> &mdash; Avanzar 10s</li>
                 </ul>
             </div>
         </div>
@@ -457,17 +457,17 @@ $(document).ready(function() {
             var mediaId = transcripcionActual !== 'completa' ? 'media-' + transcripcionActual : null;
             return mediaId ? document.getElementById(mediaId) : $('audio, video').first()[0];
         };
-        if (e.ctrlKey && e.key === ' ') {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.key === ' ') {
             e.preventDefault();
             var m = getActiveMedia();
             if (m) m.paused ? m.play() : m.pause();
         }
-        if (e.ctrlKey && e.key === 'ArrowLeft') {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.key === 'ArrowLeft') {
             e.preventDefault();
             var m = getActiveMedia();
             if (m) m.currentTime -= 10;
         }
-        if (e.ctrlKey && e.key === 'ArrowRight') {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.key === 'ArrowRight') {
             e.preventDefault();
             var m = getActiveMedia();
             if (m) m.currentTime += 10;

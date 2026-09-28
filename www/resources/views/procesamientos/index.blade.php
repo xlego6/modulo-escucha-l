@@ -25,7 +25,7 @@
 .bg-aprobadas   { background: linear-gradient(135deg,#91bd5e,#6a9440); }
 .bg-totales     { background: linear-gradient(135deg,#595959,#333); }
 
-.detalle-section { border-left: 4px solid #ebc01a; padding-left: 12px; }
+.detalle-section { border-left: 4px solid #5e8f9b; padding-left: 12px; }
 .detalle-block { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px; margin-bottom: 10px; }
 .detalle-block .db-label { font-size: 0.78rem; text-transform: uppercase; color: #7f7f7f; letter-spacing: 0.04em; }
 .detalle-block .db-val { font-size: 1.4rem; font-weight: 700; color: #333; }
