@@ -1367,6 +1367,7 @@ class ProcesamientoController extends Controller
             // Guardar entidades en la base de datos (solo los tipos seleccionados)
             $contador = [];
             $entidadesGuardadas = 0;
+            $excluidos = EntidadDetectada::textosExcluidos();
 
             foreach ($result['entities'] as $entidad) {
                 $tipoSpacy = $entidad['type'] ?? $entidad['label'] ?? null;
@@ -1377,6 +1378,14 @@ class ProcesamientoController extends Controller
                     continue;
                 }
 
+                // Recortar a una sola linea sin puntuacion en los extremos y
+                // descartar pronombres/rotulos de hablante ("Usted", "Edo.")
+                $span = EntidadDetectada::recortarSpan($entidad['text'] ?? '', (int) ($entidad['start'] ?? 0));
+                if ($span === null || in_array(EntidadDetectada::normalizar($span[0]), $excluidos, true)) {
+                    continue;
+                }
+                [$textoEntidad, $inicioEntidad, $finEntidad] = $span;
+
                 // Contador para texto_anonimizado
                 if (!isset($contador[$tipo])) {
                     $contador[$tipo] = 0;
@@ -1386,10 +1395,10 @@ class ProcesamientoController extends Controller
                 EntidadDetectada::create([
                     'id_e_ind_fvt' => $id,
                     'tipo' => $tipo,
-                    'texto' => $entidad['text'] ?? '',
+                    'texto' => $textoEntidad,
                     'texto_anonimizado' => "[{$tipo}_{$contador[$tipo]}]",
-                    'posicion_inicio' => $entidad['start'] ?? null,
-                    'posicion_fin' => $entidad['end'] ?? null,
+                    'posicion_inicio' => $inicioEntidad,
+                    'posicion_fin' => $finEntidad,
                     'confianza' => $entidad['score'] ?? null,
                 ]);
                 $entidadesGuardadas++;
@@ -2387,6 +2396,7 @@ class ProcesamientoController extends Controller
                 'id' => $e->id_entidad,
                 'manual' => (bool) $e->manual,
                 'excluir' => (bool) $e->excluir_anonimizacion,
+                'grupo' => $e->grupo,
             ];
         })->toArray();
 
@@ -2445,6 +2455,8 @@ class ProcesamientoController extends Controller
                             'confianza' => 1.0, // Manual = confianza maxima
                             'verificado' => true,
                             'manual' => true,
+                            'excluir_anonimizacion' => isset($ent['cubierta']) ? !$ent['cubierta'] : false,
+                            'grupo' => $ent['grupo'] ?? null,
                         ]);
                     }
                 }
@@ -2473,6 +2485,19 @@ class ProcesamientoController extends Controller
                     if ($entidadDB) {
                         // excluir_anonimizacion = true significa que NO se cubre (descubierta)
                         $entidadDB->excluir_anonimizacion = !$ent['cubierta'];
+                        // El editor recorta los extremos del span (puntuacion,
+                        // saltos de linea) y numera por grupo: se persiste tal cual.
+                        if (isset($ent['text'], $ent['start'], $ent['end'])) {
+                            $entidadDB->texto = $ent['text'];
+                            $entidadDB->posicion_inicio = $ent['start'];
+                            $entidadDB->posicion_fin = $ent['end'];
+                        }
+                        if (array_key_exists('grupo', $ent)) {
+                            $entidadDB->grupo = $ent['grupo'];
+                        }
+                        if (!empty($ent['reemplazo'])) {
+                            $entidadDB->texto_anonimizado = $ent['reemplazo'];
+                        }
                         $entidadDB->save();
                     }
                 }
@@ -2586,8 +2611,10 @@ class ProcesamientoController extends Controller
                 'replacement' => $e->texto_anonimizado,
                 'start' => $e->posicion_inicio,
                 'end' => $e->posicion_fin,
+                'id' => $e->id_entidad,
                 'manual' => (bool) $e->manual,
                 'excluir' => (bool) $e->excluir_anonimizacion,
+                'grupo' => $e->grupo,
             ];
         })->toArray();
 
