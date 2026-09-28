@@ -263,7 +263,7 @@ function limpiarMarcadores() {
 }
 
 function agregarMarcadores(datos, maxEntrevistas) {
-    var color = coloresTipo[tipoActual] || '#EBC01A';
+    var color = coloresTipo[tipoActual] || '#5e8f9b';
 
     datos.forEach(function(item) {
         // Radio en metros: escala logarítmica para balancear puntos pequeños y grandes

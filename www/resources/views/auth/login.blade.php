@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .login-page {
-            background: linear-gradient(135deg, #fbfaee 0%, #ffffff 100%);
+            background: linear-gradient(135deg, #eef4f5 0%, #ffffff 100%);
         }
         .login-logo-img {
             max-width: 200px;
@@ -20,7 +20,7 @@
             font-family: 'Barlow', sans-serif;
             font-weight: 700;
             font-size: 2.6rem;
-            color: #ebc01a;
+            color: #5e8f9b;
             line-height: 1.2;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -33,15 +33,15 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         .btn-primary {
-            background-color: #ebc01a;
-            border-color: #ebc01a;
-            color: #1a1a2e;
+            background-color: #5e8f9b;
+            border-color: #5e8f9b;
+            color: #ffffff;
             font-weight: 600;
         }
         .btn-primary:hover {
-            background-color: #d4ad17;
-            border-color: #d4ad17;
-            color: #1a1a2e;
+            background-color: #4d7682;
+            border-color: #4d7682;
+            color: #ffffff;
         }
         .login-box-msg {
             font-family: 'Barlow', sans-serif;

@@ -1,4 +1,4 @@
-<footer class="bg-[#e6b823] text-gray-600">
+<footer class="bg-[#5e8f9b] text-gray-900">
     <div class="max-w-full mx-auto px-8 py-10 md:py-14">
         <div class="flex flex-col gap-10 md:flex-row md:items-start">
             <div class="flex-1 flex flex-col gap-5 md:justify-center md:self-stretch">
@@ -6,7 +6,7 @@
                     <img
                         src="{{ asset('header-footer/Logo-CNMH-02.png') }}"
                         alt="Centro Nacional de Memoria Histórica"
-                        class="w-full pr-10"
+                        class="w-full pr-10 brightness-0 invert"
                     />
                 </div>
 
@@ -49,7 +49,7 @@
                 </div>
             </div>
 
-            <div class="hidden md:block w-px bg-gray-600 self-stretch mx-6"></div>
+            <div class="hidden md:block w-px bg-gray-800 self-stretch mx-6"></div>
 
             <div class="flex-1 flex flex-col gap-4">
                 <h2 class="font-semibold text-base">Horarios</h2>
@@ -78,7 +78,7 @@
                 </div>
             </div>
 
-            <div class="hidden md:block w-px bg-gray-600 self-stretch mx-6"></div>
+            <div class="hidden md:block w-px bg-gray-800 self-stretch mx-6"></div>
 
             <div class="flex-1 flex flex-col gap-3">
                 <h2 class="font-semibold text-base">Centro Nacional de Memoria Histórica</h2>
