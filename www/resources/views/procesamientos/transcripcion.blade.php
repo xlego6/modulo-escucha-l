@@ -1486,12 +1486,18 @@ function detectarGPU() {
 $(document).ready(function() {
     var loteEntCancelado = false;
 
-    function detectarEntidadesUna(id) {
+    // forzar: confirma que se puede borrar el trabajo existente (el servidor
+    // responde 409 con requiere_confirmacion si hay algo que perder).
+    function detectarEntidadesUna(id, forzar) {
         return $.ajax({
             url: '{{ url("procesamientos/entidades") }}/' + id + '/detectar',
             method: 'POST',
-            data: { _token: '{{ csrf_token() }}' }
+            data: { _token: '{{ csrf_token() }}', forzar: forzar ? 1 : 0 }
         });
+    }
+
+    function requiereConfirmacion(xhr) {
+        return xhr.status === 409 && xhr.responseJSON && xhr.responseJSON.requiere_confirmacion;
     }
 
     function actualizarBadgeEntidades(id, total) {
@@ -1502,7 +1508,10 @@ $(document).ready(function() {
     }
 
     function logEntEntry(tipo, mensaje) {
-        var icono = tipo === 'success' ? 'fa-check text-success' : (tipo === 'error' ? 'fa-times text-danger' : 'fa-info-circle text-info');
+        var icono = tipo === 'success' ? 'fa-check text-success'
+            : tipo === 'error' ? 'fa-times text-danger'
+            : tipo === 'warning' ? 'fa-exclamation-triangle text-warning'
+            : 'fa-info-circle text-info';
         var hora = new Date().toLocaleTimeString();
         var $log = $('#lote-ent-log');
         $log.append(
@@ -1519,7 +1528,10 @@ $(document).ready(function() {
     });
 
     $('.btn-detectar-entidades').on('click', function() {
-        var btn = $(this);
+        detectarDesdeBoton($(this), false);
+    });
+
+    function detectarDesdeBoton(btn, forzar) {
         var id = btn.data('id');
         var codigo = btn.data('codigo');
 
@@ -1528,7 +1540,7 @@ $(document).ready(function() {
         $('#resultado-ent-exito, #resultado-ent-error').hide();
         $('html, body').animate({ scrollTop: 0 }, 300);
 
-        detectarEntidadesUna(id).done(function(response) {
+        detectarEntidadesUna(id, forzar).done(function(response) {
             if (response.success) {
                 $('#res-ent-codigo').text(codigo);
                 $('#res-ent-total').text(response.total_entidades);
@@ -1540,17 +1552,27 @@ $(document).ready(function() {
                 $('#resultado-ent-error').show();
             }
         }).fail(function(xhr) {
+            if (requiereConfirmacion(xhr)) {
+                $('#panel-resultado-ent').hide();
+                var mensaje = 'Volver a detectar entidades en ' + codigo + ' BORRA todas sus etiquetas actuales y las reemplaza por las del detector:\n\n- ' +
+                    xhr.responseJSON.advertencias.join('\n- ') + '\n\n¿Continuar de todas formas?';
+                // Tras el .always() de esta peticion, para que no reactive el boton
+                // mientras corre la reintentada.
+                setTimeout(function() { if (confirm(mensaje)) detectarDesdeBoton(btn, true); }, 0);
+                return;
+            }
             $('#res-ent-error-mensaje').text(xhr.responseJSON?.error || 'Error de conexion con el servidor');
             $('#resultado-ent-error').show();
         }).always(function() {
             btn.prop('disabled', false).html('<i class="fas fa-play"></i>');
         });
-    });
+    }
 
     function procesarLoteEntSecuencial(ids, idx, contadores) {
         if (idx >= ids.length || loteEntCancelado) {
             $('#lote-ent-status i').removeClass('fa-spinner fa-spin').addClass('fa-check text-success');
-            $('#lote-ent-mensaje').text('Finalizado: ' + contadores.exitosos + ' exitosos, ' + contadores.errores + ' con error.');
+            $('#lote-ent-mensaje').text('Finalizado: ' + contadores.exitosos + ' exitosos, ' + contadores.errores + ' con error' +
+                (contadores.omitidos ? ', ' + contadores.omitidos + ' omitidas por tener trabajo de anonimización' : '') + '.');
             $('.check-item-ent, #btn-procesar-lote-ent').prop('disabled', false);
             $('#count-seleccionadas-ent').text(0);
             $('.check-item-ent').prop('checked', false);
@@ -1570,6 +1592,13 @@ $(document).ready(function() {
                 logEntEntry('error', item.codigo + ': ' + (response.error || 'Error desconocido'));
             }
         }).fail(function(xhr) {
+            // En lote nunca se borra trabajo existente: se omite y se informa.
+            if (requiereConfirmacion(xhr)) {
+                contadores.omitidos++;
+                logEntEntry('warning', item.codigo + ': omitida, ya tiene trabajo de anonimización. ' +
+                    xhr.responseJSON.advertencias.join(' ') + ' Use el botón individual para forzarla.');
+                return;
+            }
             contadores.errores++;
             logEntEntry('error', item.codigo + ': ' + (xhr.responseJSON?.error || 'Error de conexion'));
         }).always(function() {
@@ -1590,7 +1619,7 @@ $(document).ready(function() {
             return { id: $(this).val(), codigo: $(this).closest('tr').find('code').text() };
         }).get();
         if (ids.length === 0) return;
-        if (!confirm('¿Detectar entidades para ' + ids.length + ' entrevista(s)? Se procesan una por una y puede tardar segun la cantidad.')) return;
+        if (!confirm('¿Detectar entidades para ' + ids.length + ' entrevista(s)? Se procesan una por una y puede tardar segun la cantidad.\n\nLas que ya tengan trabajo de anonimización (asignación en curso o etiquetas editadas) se omiten para no borrarlo.')) return;
 
         loteEntCancelado = false;
         $('#panel-lote-ent').slideDown();
@@ -1606,7 +1635,7 @@ $(document).ready(function() {
         $('#lote-ent-status i').removeClass('fa-check text-success').addClass('fa-spinner fa-spin');
         $('.check-item-ent, #btn-procesar-lote-ent').prop('disabled', true);
 
-        procesarLoteEntSecuencial(ids, 0, { exitosos: 0, errores: 0 });
+        procesarLoteEntSecuencial(ids, 0, { exitosos: 0, errores: 0, omitidos: 0 });
     });
 });
 </script>
