@@ -20,6 +20,7 @@ class EntidadDetectada extends Model
         'verificado',
         'excluir_anonimizacion',
         'manual',
+        'grupo',
     ];
 
     protected $casts = [
@@ -92,5 +93,50 @@ class EntidadDetectada extends Model
     public static function tiposPorDefecto()
     {
         return ['PERSONA', 'LUGAR', 'NUMERO', 'ORGANIZACION', 'GRUPO_ARMADO', 'ETNICO'];
+    }
+
+    /**
+     * Textos que el NER marca como PERSONA/LUGAR/... pero no son entidades a
+     * anonimizar: pronombres y rotulos de hablante de la transcripcion
+     * ("Edo.", "Eda.", "Entr."). Se comparan normalizados (ver normalizar()).
+     */
+    public static function textosExcluidos()
+    {
+        return [
+            'yo', 'tu', 'vos', 'usted', 'ustedes', 'el', 'ella', 'ello', 'ellos', 'ellas',
+            'nosotros', 'nosotras', 'vosotros', 'vosotras', 'mi', 'me', 'nos', 'les', 'le',
+            'edo', 'eda', 'entr', 'ent', 'entrevistador', 'entrevistadora',
+            'entrevistado', 'entrevistada', 'don', 'dona', 'senor', 'senora',
+        ];
+    }
+
+    /**
+     * Forma normalizada de un texto para comparar variantes de la misma entidad:
+     * sin acentos, minusculas, sin marcas markdown ni puntuacion, espacios
+     * colapsados ("Carlos Hernández." == "carlos hernandez"). Debe coincidir con
+     * normalizarTexto() del editor (partials/anonimizacion-editor-js).
+     */
+    public static function normalizar(string $texto): string
+    {
+        $texto = \Normalizer::normalize($texto, \Normalizer::FORM_D);
+        $texto = preg_replace('/\p{Mn}+/u', '', $texto);
+        $texto = mb_strtolower(str_replace(['*', '_'], '', $texto));
+        return trim(preg_replace('/[^\p{L}\p{N}]+/u', ' ', $texto));
+    }
+
+    /**
+     * Recorta un span detectado: corta en el primer salto de linea (el NER a
+     * veces une un nombre con el rotulo de hablante del parrafo siguiente, ej.
+     * "Doña Selmira\n\nEdo") y quita puntuacion/espacios de los extremos.
+     * Devuelve [texto, inicio, fin] o null si no queda nada util.
+     */
+    public static function recortarSpan(string $texto, int $inicio): ?array
+    {
+        $texto = preg_split('/\R/u', $texto)[0];
+        if (!preg_match('/^([^\p{L}\p{N}]*)(.*?)[^\p{L}\p{N}]*$/us', $texto, $m) || $m[2] === '') {
+            return null;
+        }
+        $inicio += mb_strlen($m[1]);
+        return [$m[2], $inicio, $inicio + mb_strlen($m[2])];
     }
 }

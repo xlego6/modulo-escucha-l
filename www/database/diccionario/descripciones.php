@@ -187,6 +187,7 @@ return [
     'esclarecimiento.entidad_detectada.verificado' => '`true` = revisada por humano',
     'esclarecimiento.entidad_detectada.excluir_anonimizacion' => '`true` = no se anonimiza',
     'esclarecimiento.entidad_detectada.manual' => '`true` = agregada manualmente',
+    'esclarecimiento.entidad_detectada.grupo' => 'Clave de agrupación (etiquetas unidas como la misma entidad); NULL = por su propio texto',
     'esclarecimiento.entidad_detectada.created_at' => 'Auditoría',
     'esclarecimiento.entidad_detectada.updated_at' => 'Auditoría',
     'esclarecimiento.contenido_testimonio.id_contenido' => 'Identificador',
