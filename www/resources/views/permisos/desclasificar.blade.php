@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Desclasificacion')
-@section('content_header', 'Desclasificacion de Entrevistas')
+@section('title', 'Desclasificación')
+@section('content_header', 'Desclasificación de entrevistas')
 
 @section('content')
 <div class="row">
@@ -9,7 +9,7 @@
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-unlock-alt mr-2"></i>Autorizar Acceso por Desclasificacion
+                    <i class="fas fa-unlock-alt mr-2"></i>Autorizar acceso por desclasificación
                 </h3>
             </div>
             <form action="{{ route('permisos.store_desclasificacion') }}" method="POST" enctype="multipart/form-data">
@@ -26,20 +26,20 @@
                     @endif
 
                     <div class="form-group">
-                        <label for="id_entrevistador">Usuario Autorizado <span class="text-danger">*</span></label>
+                        <label for="id_entrevistador">Usuario autorizado <span class="text-danger">*</span></label>
                         <select class="form-control select2 @error('id_entrevistador') is-invalid @enderror" id="id_entrevistador" name="id_entrevistador" required>
                             @foreach($entrevistadores as $id => $nombre)
                             <option value="{{ $id }}" {{ (old('id_entrevistador') == $id || $id_autorizado_preselect == $id) ? 'selected' : '' }}>{{ $nombre }}</option>
                             @endforeach
                         </select>
-                        <small class="form-text text-muted">Seleccione el usuario que recibira acceso a las entrevistas</small>
+                        <small class="form-text text-muted">Seleccione el usuario que recibirá acceso a las entrevistas</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="codigos_entrevista">Codigos de Entrevista <span class="text-danger">*</span></label>
+                        <label for="codigos_entrevista">Códigos de entrevista <span class="text-danger">*</span></label>
                         <textarea class="form-control @error('codigos_entrevista') is-invalid @enderror" id="codigos_entrevista" name="codigos_entrevista" rows="3" placeholder="Ej: VI-001, VI-002, VI-003" required>{{ old('codigos_entrevista') }}</textarea>
                         <small class="form-text text-muted">
-                            Ingrese uno o mas codigos de entrevista separados por coma, espacio o salto de linea.
+                            Ingrese uno o más códigos de entrevista separados por coma, espacio o salto de línea.
                             <br>Ejemplo: <code>VI-001, VI-002</code> o <code>VI-001 VI-002</code>
                         </small>
                     </div>
@@ -47,14 +47,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="fecha_desde">Fecha Desde <span class="text-danger">*</span></label>
+                                <label for="fecha_desde">Fecha desde <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('fecha_desde') is-invalid @enderror" id="fecha_desde" name="fecha_desde" value="{{ old('fecha_desde', date('Y-m-d')) }}" required>
                                 <small class="form-text text-muted">Inicio del periodo de acceso</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="fecha_hasta">Fecha Hasta <span class="text-danger">*</span></label>
+                                <label for="fecha_hasta">Fecha hasta <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('fecha_hasta') is-invalid @enderror" id="fecha_hasta" name="fecha_hasta" value="{{ old('fecha_hasta') }}" required>
                                 <small class="form-text text-muted">Fin del periodo de acceso</small>
                             </div>
@@ -62,25 +62,25 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="justificacion">Justificacion <span class="text-danger">*</span></label>
+                        <label for="justificacion">Justificación <span class="text-danger">*</span></label>
                         <textarea class="form-control @error('justificacion') is-invalid @enderror" id="justificacion" name="justificacion" rows="3" required>{{ old('justificacion') }}</textarea>
-                        <small class="form-text text-muted">Describa el motivo de la desclasificacion</small>
+                        <small class="form-text text-muted">Describa el motivo de la desclasificación</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="archivo_soporte">Documento de Soporte (PDF) <span class="text-danger">*</span></label>
+                        <label for="archivo_soporte">Documento de soporte (PDF) <span class="text-danger">*</span></label>
                         <div class="custom-file">
                             <input type="file" class="custom-file-input @error('archivo_soporte') is-invalid @enderror" id="archivo_soporte" name="archivo_soporte" accept=".pdf" required>
                             <label class="custom-file-label" for="archivo_soporte">Seleccionar archivo PDF...</label>
                         </div>
                         <small class="form-text text-muted">
-                            Adjunte el documento que autoriza la desclasificacion (maximo 10MB)
+                            Adjunte el documento que autoriza la desclasificación (máximo 10MB)
                         </small>
                     </div>
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-unlock mr-1"></i> Autorizar Acceso
+                        <i class="fas fa-unlock mr-1"></i> Autorizar acceso
                     </button>
                     <a href="{{ route('permisos.index') }}" class="btn btn-secondary">
                         <i class="fas fa-times mr-1"></i> Cancelar
@@ -94,7 +94,7 @@
         <div class="card card-info">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-history mr-2"></i>Permisos Otorgados Hoy
+                    <i class="fas fa-history mr-2"></i>Permisos otorgados hoy
                 </h3>
                 <div class="card-tools">
                     <span class="badge badge-light">{{ $historialHoy->count() }}</span>
@@ -152,17 +152,17 @@
         <div class="card card-secondary">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-info-circle mr-2"></i>Informacion
+                    <i class="fas fa-info-circle mr-2"></i>Información
                 </h3>
             </div>
             <div class="card-body">
                 <p class="text-sm">
-                    <strong>Desclasificacion</strong> permite otorgar acceso temporal a entrevistas clasificadas.
+                    <strong>Desclasificación</strong> permite otorgar acceso temporal a entrevistas clasificadas.
                 </p>
                 <ul class="text-sm pl-3">
-                    <li>El acceso es valido solo durante el rango de fechas especificado</li>
-                    <li>Se requiere un documento PDF de soporte que justifique la autorizacion</li>
-                    <li>Puede autorizar multiples entrevistas en una sola operacion</li>
+                    <li>El acceso es válido solo durante el rango de fechas especificado</li>
+                    <li>Se requiere un documento PDF de soporte que justifique la autorización</li>
+                    <li>Puede autorizar multiples entrevistas en una sola operación</li>
                     <li>Los accesos quedan registrados en la traza de actividad</li>
                 </ul>
             </div>

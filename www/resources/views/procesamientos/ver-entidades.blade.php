@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Ver Entidades')
+@section('title', 'Ver entidades')
 @section('content_header')
 Entidades: {{ $entrevista->entrevista_codigo }}
 @endsection
@@ -42,7 +42,7 @@ Entidades: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Transcripcion con Entidades</h3>
+                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Transcripción con entidades</h3>
             </div>
             <div class="card-body">
                 @php $transcripcionTexto = $entrevista->getTextoParaProcesamiento(); @endphp
@@ -52,8 +52,8 @@ Entidades: {{ $entrevista->entrevista_codigo }}
                     @else
                         <p class="text-muted text-center py-5">
                             <i class="fas fa-info-circle fa-2x mb-2"></i><br>
-                            No hay transcripcion disponible.<br>
-                            <small>La deteccion de entidades requiere primero transcribir la entrevista.</small>
+                            No hay transcripción disponible.<br>
+                            <small>La detección de entidades requiere primero transcribir la entrevista.</small>
                         </p>
                     @endif
                 </div>
@@ -65,7 +65,7 @@ Entidades: {{ $entrevista->entrevista_codigo }}
         <!-- Resumen de entidades -->
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Resumen de Entidades</h3>
+                <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Resumen de entidades</h3>
             </div>
             <div class="card-body">
                 @if(count($entidades) > 0)
@@ -79,7 +79,7 @@ Entidades: {{ $entrevista->entrevista_codigo }}
         <!-- Lista de entidades por tipo -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entidades Detectadas</h3>
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entidades detectadas</h3>
             </div>
             <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
                 @if(count($entidades) > 0)
@@ -127,7 +127,7 @@ Entidades: {{ $entrevista->entrevista_codigo }}
             <div class="card-body">
                 <a href="{{ route('procesamientos.anonimizacion') }}"
                    class="btn btn-danger btn-block">
-                    <i class="fas fa-user-secret mr-2"></i>Ir a Anonimizacion
+                    <i class="fas fa-user-secret mr-2"></i>Ir a anonimización
                 </a>
                 <a href="{{ route('procesamientos.transcripcion', ['tipo' => 'anonimizacion']) }}" class="btn btn-secondary btn-block">
                     <i class="fas fa-arrow-left mr-2"></i>Volver

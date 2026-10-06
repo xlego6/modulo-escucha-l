@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Permisos del Usuario')
-@section('content_header', 'Permisos del Usuario')
+@section('title', 'Permisos del usuario')
+@section('content_header', 'Permisos del usuario')
 
 @section('content')
 <div class="card card-primary card-outline">
@@ -22,11 +22,11 @@
     <div class="card-header">
         <div class="row">
             <div class="col-md-6">
-                <h3 class="card-title">Entrevistas con Acceso</h3>
+                <h3 class="card-title">Entrevistas con acceso</h3>
             </div>
             <div class="col-md-6 text-right">
                 <a href="{{ route('permisos.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus mr-1"></i> Otorgar Permiso
+                    <i class="fas fa-plus mr-1"></i> Otorgar permiso
                 </a>
             </div>
         </div>
@@ -63,7 +63,7 @@
                         </span>
                     </td>
                     <td>{{ $permiso->fecha_otorgado ? $permiso->fecha_otorgado->format('d/m/Y') : 'N/A' }}</td>
-                    <td>{{ $permiso->fecha_vencimiento ? $permiso->fecha_vencimiento->format('d/m/Y') : 'Sin limite' }}</td>
+                    <td>{{ $permiso->fecha_vencimiento ? $permiso->fecha_vencimiento->format('d/m/Y') : 'Sin límite' }}</td>
                     <td>
                         @if($permiso->esta_vigente)
                             <span class="badge badge-success">Vigente</span>
@@ -99,6 +99,6 @@
 </div>
 
 <a href="{{ route('usuarios.show', $entrevistador->rel_usuario->id ?? 0) }}" class="btn btn-secondary">
-    <i class="fas fa-arrow-left mr-1"></i> Volver a Usuario
+    <i class="fas fa-arrow-left mr-1"></i> Volver a usuario
 </a>
 @endsection

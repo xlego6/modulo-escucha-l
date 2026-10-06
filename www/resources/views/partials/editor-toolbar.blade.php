@@ -37,7 +37,7 @@
 
     @if($showTimestamp || $showSpeakers)
     {{-- Grupo: Transcripcion --}}
-    <div class="btn-group btn-group-sm mr-2" role="group" title="Transcripcion">
+    <div class="btn-group btn-group-sm mr-2" role="group" title="Transcripción">
         @if($showTimestamp)
         <button type="button" class="btn btn-outline-info" onclick="editorAction('timestamp', '{{ $targetId }}')" title="Insertar marca de tiempo [hh:mm:ss]">
             <i class="fas fa-clock"></i>
@@ -98,7 +98,7 @@
 
     {{-- Grupo: Insertar --}}
     <div class="btn-group btn-group-sm mr-2" role="group" title="Insertar">
-        <button type="button" class="btn btn-outline-secondary" onclick="editorAction('paragraph', '{{ $targetId }}')" title="Salto de parrafo (Enter doble)">
+        <button type="button" class="btn btn-outline-secondary" onclick="editorAction('paragraph', '{{ $targetId }}')" title="Salto de párrafo (Enter doble)">
             <i class="fas fa-paragraph"></i>
         </button>
         <button type="button" class="btn btn-outline-secondary" onclick="editorAction('brackets', '{{ $targetId }}')" title="Insertar corchetes []">
@@ -122,7 +122,7 @@
     {{-- Boton: Vista Previa --}}
     <div class="btn-group btn-group-sm mr-2" role="group">
         <button type="button" class="btn btn-outline-primary" id="btn-preview-{{ $targetId }}" onclick="togglePreview('{{ $targetId }}')" title="Vista previa (Ctrl+P)">
-            <i class="fas fa-eye mr-1"></i><span>Vista Previa</span>
+            <i class="fas fa-eye mr-1"></i><span>Vista previa</span>
         </button>
     </div>
 
@@ -140,7 +140,7 @@
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header py-2">
-                <h6 class="modal-title"><i class="fas fa-search mr-2"></i>Buscar y Reemplazar</h6>
+                <h6 class="modal-title"><i class="fas fa-search mr-2"></i>Buscar y reemplazar</h6>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">

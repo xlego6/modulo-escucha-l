@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Mis Transcripciones Asignadas')
-@section('content_header', 'Mis Transcripciones Asignadas')
+@section('title', 'Mis transcripciones asignadas')
+@section('content_header', 'Mis transcripciones asignadas')
 
 @section('css')
 <style>
@@ -83,14 +83,14 @@
 {{-- Lista de Asignaciones --}}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Transcripciones Asignadas</h3>
+        <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Transcripciones asignadas</h3>
     </div>
     <div class="card-body p-0">
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th>Codigo</th>
-                    <th>Titulo</th>
+                    <th>Código</th>
+                    <th>Título</th>
                     <th>F. Asignación</th>
                     <th>Estado</th>
                     <th>Revisión</th>
@@ -201,7 +201,7 @@
 {{-- Ayuda --}}
 <div class="card card-outline card-info">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Flujo de Trabajo</h3>
+        <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Flujo de trabajo</h3>
     </div>
     <div class="card-body">
         <div class="row text-center">

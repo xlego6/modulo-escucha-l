@@ -1,18 +1,18 @@
 @extends('layouts.app')
 
 @section('title', 'Personas')
-@section('content_header', 'Listado de Personas')
+@section('content_header', 'Listado de personas')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Filtros de busqueda</h3>
+        <h3 class="card-title">Filtros de búsqueda</h3>
     </div>
     <div class="card-body">
         <form method="GET" action="{{ route('personas.index') }}" class="row">
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Nombre / Apellido</label>
+                    <label>Nombre / apellido</label>
                     <input type="text" name="nombre" class="form-control form-control-sm" value="{{ request('nombre') }}" placeholder="Buscar por nombre...">
                 </div>
             </div>
@@ -34,7 +34,7 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Grupo Etnico</label>
+                    <label>Grupo étnico</label>
                     <select name="id_etnia" class="form-control form-control-sm">
                         @foreach($etnias as $id => $nombre)
                             <option value="{{ $id }}" {{ request('id_etnia') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
@@ -74,10 +74,10 @@
         <table class="table table-hover table-striped">
             <thead>
                 <tr>
-                    <th>Nombre Completo</th>
+                    <th>Nombre completo</th>
                     <th style="width: 120px">Documento</th>
                     <th style="width: 100px">Sexo</th>
-                    <th style="width: 150px">Grupo Etnico</th>
+                    <th style="width: 150px">Grupo étnico</th>
                     <th style="width: 120px">Acciones</th>
                 </tr>
             </thead>

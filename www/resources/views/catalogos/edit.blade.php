@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Editar Catalogo')
-@section('content_header', 'Editar Catalogo')
+@section('title', 'Editar catálogo')
+@section('content_header', 'Editar catálogo')
 
 @section('content')
 <div class="row">
     <div class="col-md-6">
         <div class="card card-warning">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Datos del Catalogo</h3>
+                <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Datos del catálogo</h3>
             </div>
             <form action="{{ route('catalogos.update', $catalogo->id_cat) }}" method="POST">
                 @csrf
@@ -23,7 +23,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="descripcion">Descripcion</label>
+                        <label for="descripcion">Descripción</label>
                         <textarea class="form-control @error('descripcion') is-invalid @enderror" id="descripcion" name="descripcion" rows="3" maxlength="255">{{ old('descripcion', $catalogo->descripcion) }}</textarea>
                         @error('descripcion')
                             <span class="invalid-feedback">{{ $message }}</span>

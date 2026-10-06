@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Editar Anonimizacion')
+@section('title', 'Editar anonimización')
 @section('content_header')
 Anonimizar: {{ $entrevista->entrevista_codigo }}
 @endsection
@@ -19,7 +19,7 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h5 class="mb-1">¿Finalizo la anonimizacion?</h5>
+                        <h5 class="mb-1">¿Finalizo la anonimización?</h5>
                         <p class="text-muted mb-0">
                             Una vez enviada, un revisor verificara su trabajo.
                         </p>
@@ -30,7 +30,7 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
                             @csrf
                             <button type="submit" class="btn btn-success"
                                     onclick="return confirm('¿Enviar a revision? No podra editarla hasta que sea revisada.')">
-                                <i class="fas fa-paper-plane mr-1"></i> Enviar a Revision
+                                <i class="fas fa-paper-plane mr-1"></i> Enviar a revisión
                             </button>
                         </form>
                     </div>
@@ -46,7 +46,7 @@ Anonimizar: {{ $entrevista->entrevista_codigo }}
         {{-- Estado de la asignacion --}}
         <div class="card card-danger">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Asignacion</h3>
+                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Asignación</h3>
             </div>
             <div class="card-body">
                 <dl class="row mb-0">

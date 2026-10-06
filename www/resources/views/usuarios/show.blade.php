@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Ver Usuario')
-@section('content_header', 'Detalle de Usuario')
+@section('title', 'Ver usuario')
+@section('content_header', 'Detalle de usuario')
 
 @section('content')
 <div class="row">
     <div class="col-md-6">
         <div class="card card-primary card-outline">
             <div class="card-header">
-                <h3 class="card-title">Datos de Cuenta</h3>
+                <h3 class="card-title">Datos de cuenta</h3>
             </div>
             <div class="card-body">
                 <dl class="row">
@@ -34,12 +34,12 @@
     <div class="col-md-6">
         <div class="card card-info card-outline">
             <div class="card-header">
-                <h3 class="card-title">Perfil y Permisos</h3>
+                <h3 class="card-title">Perfil y permisos</h3>
             </div>
             <div class="card-body">
                 @if($perfil)
                 <dl class="row">
-                    <dt class="col-sm-5">Nivel de Acceso:</dt>
+                    <dt class="col-sm-5">Nivel de acceso:</dt>
                     <dd class="col-sm-7">
                         <span class="badge badge-{{ $perfil->id_nivel == 1 ? 'danger' : ($perfil->id_nivel <= 4 ? 'warning' : 'info') }}">
                             {{ $perfil->fmt_id_nivel }}
@@ -52,7 +52,7 @@
                     <dt class="col-sm-5">Dependencia:</dt>
                     <dd class="col-sm-7">{{ $perfil->fmt_dependencia_origen }}</dd>
 
-                    <dt class="col-sm-5">Solo Lectura:</dt>
+                    <dt class="col-sm-5">Solo lectura:</dt>
                     <dd class="col-sm-7">
                         @if($perfil->solo_lectura)
                             <span class="badge badge-secondary">Si</span>

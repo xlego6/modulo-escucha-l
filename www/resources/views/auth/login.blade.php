@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/estilos.css') }}?v={{ filemtime(public_path('css/estilos.css')) }}">
     <style>
         .login-page {
             background: #5e8f9b;
@@ -98,7 +98,7 @@
     </div>
     <div class="card">
         <div class="card-body login-card-body">
-            <p class="login-box-msg">Inicie sesion para acceder al sistema</p>
+            <p class="login-box-msg">Inicie sesión para acceder al sistema</p>
 
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -111,7 +111,7 @@
             <form id="loginForm" action="{{ route('login') }}" method="post">
                 @csrf
                 <div class="input-group mb-3">
-                    <input type="email" name="email" class="form-control" placeholder="Correo electronico" value="{{ old('email') }}" required autofocus>
+                    <input type="email" name="email" class="form-control" placeholder="Correo electrónico" value="{{ old('email') }}" required autofocus>
                     <div class="input-group-append">
                         <div class="input-group-text">
                             <span class="fas fa-envelope"></span>
@@ -119,7 +119,7 @@
                     </div>
                 </div>
                 <div class="input-group mb-3">
-                    <input type="password" name="password" class="form-control" placeholder="Contrasena" required>
+                    <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
                     <div class="input-group-append">
                         <div class="input-group-text">
                             <span class="fas fa-lock"></span>

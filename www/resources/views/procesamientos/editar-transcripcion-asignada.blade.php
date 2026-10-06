@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Editar Transcripcion')
+@section('title', 'Editar transcripción')
 @section('content_header')
 Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
@@ -226,7 +226,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0"><i class="fas fa-keyboard mr-2"></i>Transcripcion</h3>
+                <h3 class="card-title mb-0"><i class="fas fa-keyboard mr-2"></i>Transcripción</h3>
                 <span class="badge badge-{{ $asignacion->estado == 'aprobada' ? 'success' : ($asignacion->estado == 'rechazada' ? 'danger' : 'info') }}">
                     {{ $asignacion->fmt_estado }} &mdash; {{ $entrevista->entrevista_codigo }}
                     @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
@@ -242,7 +242,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
             @endphp
             @if(count($historialComentarios) > 0)
             <div class="card-body py-2 px-3 border-bottom">
-                <h6 class="mb-2"><i class="fas fa-history mr-1 text-secondary"></i>Historial de revision</h6>
+                <h6 class="mb-2"><i class="fas fa-history mr-1 text-secondary"></i>Historial de revisión</h6>
                 @foreach(array_reverse($historialComentarios) as $entrada)
                 @php
                     $esRechazo = $entrada['accion'] === 'rechazada';
@@ -277,13 +277,13 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <div class="card-body p-2">
                     @include('partials.editor-toolbar', ['targetId' => 'transcripcion'])
                     <textarea name="transcripcion" id="transcripcion" class="form-control"
-                              placeholder="Escriba aqui la transcripcion del audio...">{{ old('transcripcion', $asignacion->transcripcion_editada ?? $entrevista->getTextoParaProcesamiento()) }}</textarea>
+                              placeholder="Escriba aquí la transcripción del audio...">{{ old('transcripcion', $asignacion->transcripcion_editada ?? $entrevista->getTextoParaProcesamiento()) }}</textarea>
                 </div>
                 <div class="card-footer">
                     <div class="row">
                         <div class="col-md-6">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save mr-1"></i> Guardar Borrador
+                                <i class="fas fa-save mr-1"></i> Guardar borrador
                             </button>
                             <a href="{{ route('procesamientos.edicion') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left mr-1"></i> Volver
@@ -292,7 +292,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                         <div class="col-md-6 text-right">
                             @if(in_array($asignacion->estado, ['asignada', 'en_edicion', 'rechazada']))
                             <button type="button" class="btn btn-success" onclick="enviarARevision()">
-                                <i class="fas fa-paper-plane mr-1"></i> Enviar a Revision
+                                <i class="fas fa-paper-plane mr-1"></i> Enviar a revisión
                             </button>
                             @endif
                         </div>
@@ -328,7 +328,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header py-2 bg-{{ $asignacion->estado == 'rechazada' ? 'danger' : 'info' }}">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i>Estado de la Asignacion</h3>
+                <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i>Estado de la asignación</h3>
             </div>
             <div class="card-body py-2">
                 <dl class="row mb-0">
@@ -343,7 +343,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}</dd>
 
                     @if($asignacion->fecha_inicio_edicion)
-                    <dt class="col-sm-5">Inicio Edicion:</dt>
+                    <dt class="col-sm-5">Inicio edición:</dt>
                     <dd class="col-sm-7">{{ $asignacion->fecha_inicio_edicion->format('d/m/Y H:i') }}</dd>
                     @endif
                 </dl>
@@ -355,14 +355,14 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-file-alt mr-1"></i>Datos de la Entrevista</h3>
+                <h3 class="card-title"><i class="fas fa-file-alt mr-1"></i>Datos de la entrevista</h3>
             </div>
             <div class="card-body py-2">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Codigo:</dt>
+                    <dt class="col-sm-4">Código:</dt>
                     <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
 
-                    <dt class="col-sm-4">Titulo:</dt>
+                    <dt class="col-sm-4">Título:</dt>
                     <dd class="col-sm-8">{{ $entrevista->titulo }}</dd>
 
                     <dt class="col-sm-4">Fecha:</dt>
@@ -377,7 +377,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-keyboard mr-1"></i>Atajos de Teclado</h3>
+                <h3 class="card-title"><i class="fas fa-keyboard mr-1"></i>Atajos de teclado</h3>
             </div>
             <div class="card-body py-2">
                 <ul class="list-unstyled mb-0 small">
@@ -427,7 +427,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-12">
         <div class="card card-outline card-secondary collapsed-card">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-robot mr-1"></i>Transcripcion Automatica (Referencia)</h3>
+                <h3 class="card-title"><i class="fas fa-robot mr-1"></i>Transcripción automática (referencia)</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-plus"></i>
@@ -447,7 +447,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-success">
-                <h5 class="modal-title"><i class="fas fa-paper-plane mr-2"></i>Enviar a Revisión</h5>
+                <h5 class="modal-title"><i class="fas fa-paper-plane mr-2"></i>Enviar a revisión</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form action="{{ route('procesamientos.enviar-revision', $asignacion->id_asignacion) }}" method="POST" id="formEnviarRevision">
@@ -482,7 +482,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success" id="btnConfirmarEnvio" disabled>
-                        <i class="fas fa-paper-plane mr-1"></i> Confirmar Envío
+                        <i class="fas fa-paper-plane mr-1"></i> Confirmar envío
                     </button>
                 </div>
             </form>

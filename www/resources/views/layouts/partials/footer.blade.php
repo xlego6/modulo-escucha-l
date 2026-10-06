@@ -97,7 +97,7 @@
                 </div>
                 <div>
                     <p class="font-semibold">Correo radicación electrónica:</p>
-                    <p>radicacion@cnmh.gov.co</p>
+                    <p>radicación@cnmh.gov.co</p>
                 </div>
             </div>
         </div>

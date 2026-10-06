@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Revisar Transcripcion')
+@section('title', 'Revisar transcripción')
 @section('content_header')
 Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
@@ -232,7 +232,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0"><i class="fas fa-edit mr-2"></i>Transcripcion (Editable)</h3>
+                <h3 class="card-title mb-0"><i class="fas fa-edit mr-2"></i>Transcripción (editable)</h3>
                 <span class="badge badge-warning">
                     <i class="fas fa-clipboard-check mr-1"></i>En Revision &mdash; {{ $entrevista->entrevista_codigo }}
                     @if($asignacion->id_adjunto && $asignacion->rel_adjunto)
@@ -245,11 +245,11 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <div class="card-body p-2">
                     @include('partials.editor-toolbar', ['targetId' => 'transcripcion'])
                     <textarea name="transcripcion" id="transcripcion" class="form-control"
-                              placeholder="Edite la transcripcion...">{{ $asignacion->transcripcion_editada }}</textarea>
+                              placeholder="Edite la transcripción...">{{ $asignacion->transcripcion_editada }}</textarea>
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i> Guardar Cambios
+                        <i class="fas fa-save mr-1"></i> Guardar cambios
                     </button>
                 </div>
             </form>
@@ -264,7 +264,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-3">
         <div class="card card-warning h-100">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-clipboard-check mr-1"></i>Revision</h3>
+                <h3 class="card-title"><i class="fas fa-clipboard-check mr-1"></i>Revisión</h3>
             </div>
             <div class="card-body py-2">
                 <dl class="row mb-0">
@@ -274,10 +274,10 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                     <dt class="col-sm-5">Asignada por:</dt>
                     <dd class="col-sm-7">{{ $asignacion->rel_asignado_por->name ?? 'N/A' }}</dd>
 
-                    <dt class="col-sm-5">Fecha Asig.:</dt>
+                    <dt class="col-sm-5">Fecha asig.:</dt>
                     <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}</dd>
 
-                    <dt class="col-sm-5">Fecha Envio:</dt>
+                    <dt class="col-sm-5">Fecha envío:</dt>
                     <dd class="col-sm-7">
                         @if($asignacion->fecha_envio_revision)
                             {{ $asignacion->fecha_envio_revision->format('d/m/Y H:i') }}
@@ -298,10 +298,10 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
             </div>
             <div class="card-body py-2">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Codigo:</dt>
+                    <dt class="col-sm-4">Código:</dt>
                     <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
 
-                    <dt class="col-sm-4">Titulo:</dt>
+                    <dt class="col-sm-4">Título:</dt>
                     <dd class="col-sm-8">{{ $entrevista->titulo }}</dd>
 
                     <dt class="col-sm-4">Fecha:</dt>
@@ -319,7 +319,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-6">
         <div class="card card-outline card-primary h-100">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-gavel mr-1"></i>Decision</h3>
+                <h3 class="card-title"><i class="fas fa-gavel mr-1"></i>Decisión</h3>
             </div>
             <div class="card-body py-2">
                 <div class="row">
@@ -328,7 +328,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                             @csrf
                             <div class="form-group mb-2">
                                 <label class="small mb-1">Comentario (opcional)</label>
-                                <textarea name="comentario" id="comentario-aprobacion" class="form-control form-control-sm" rows="2" placeholder="Comentario de aprobacion..."></textarea>
+                                <textarea name="comentario" id="comentario-aprobacion" class="form-control form-control-sm" rows="2" placeholder="Comentario de aprobación..."></textarea>
                                 <div class="d-flex justify-content-between align-items-center mt-1">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="guardarBorradorComentario('aprobacion')">
                                         <i class="fas fa-save mr-1"></i>Guardar borrador
@@ -339,13 +339,13 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-success btn-block" onclick="return confirm('¿Aprobar esta transcripcion como version final?')">
-                                <i class="fas fa-check mr-1"></i> Aprobar Transcripcion
+                                <i class="fas fa-check mr-1"></i> Aprobar transcripción
                             </button>
                         </form>
                     </div>
                     <div class="col-md-6 d-flex flex-column justify-content-end">
                         <button type="button" class="btn btn-danger btn-block mb-2" data-toggle="modal" data-target="#modalRechazar">
-                            <i class="fas fa-times mr-1"></i> Rechazar y Devolver
+                            <i class="fas fa-times mr-1"></i> Rechazar y devolver
                         </button>
                         <a href="{{ route('procesamientos.edicion') }}" class="btn btn-secondary btn-block">
                             <i class="fas fa-arrow-left mr-1"></i> Volver
@@ -448,7 +448,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-12">
         <div class="card card-outline card-secondary collapsed-card">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-robot mr-1"></i>Transcripcion Automatica Original (Comparar)</h3>
+                <h3 class="card-title"><i class="fas fa-robot mr-1"></i>Transcripción automática original (comparar)</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-plus"></i>
@@ -470,20 +470,20 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger">
-                <h5 class="modal-title"><i class="fas fa-times mr-2"></i>Rechazar Transcripcion</h5>
+                <h5 class="modal-title"><i class="fas fa-times mr-2"></i>Rechazar transcripción</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form action="{{ route('procesamientos.rechazar-asignacion', $asignacion->id_asignacion) }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <p class="text-muted">
-                        Indique el motivo del rechazo. El transcriptor recibira este comentario
-                        y podra corregir la transcripcion.
+                        Indique el motivo del rechazo. El transcriptor recibirá este comentario
+                        y podrá corregir la transcripción.
                     </p>
                     <div class="form-group">
                         <label>Motivo del rechazo <span class="text-danger">*</span></label>
                         <textarea name="comentario" id="comentario-rechazo" class="form-control" rows="4" required
-                                  placeholder="Ej: Hay errores de ortografia en varios parrafos. Revisar la seccion donde habla del evento del 15 de marzo..."></textarea>
+                                  placeholder="Ej: Hay errores de ortografia en varios parrafos. Revisar la sección donde habla del evento del 15 de marzo..."></textarea>
                         <div class="d-flex justify-content-between align-items-center mt-1">
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="guardarBorradorComentario('rechazo')">
                                 <i class="fas fa-save mr-1"></i>Guardar borrador
@@ -497,7 +497,7 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-times mr-1"></i> Rechazar y Devolver
+                        <i class="fas fa-times mr-1"></i> Rechazar y devolver
                     </button>
                 </div>
             </form>
@@ -775,7 +775,7 @@ $(document).ready(function() {
 
     $(window).on('beforeunload', function() {
         if (hasChanges) {
-            return 'Tiene cambios sin guardar. ¿Desea salir de la pagina?';
+            return 'Tiene cambios sin guardar. ¿Desea salir de la página?';
         }
     });
 

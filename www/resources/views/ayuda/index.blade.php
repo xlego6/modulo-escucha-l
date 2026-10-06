@@ -58,13 +58,13 @@
         <div class="card card-secondary card-outline">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-book mr-2"></i>Manual de Usuario
+                    <i class="fas fa-book mr-2"></i>Manual de usuario
                 </h3>
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">Descargue el manual completo del Módulo de Escucha CNMH con instrucciones detalladas para todos los perfiles de usuario.</p>
                 <a href="{{ asset('documentos/manual_modulo_escucha.pdf') }}" target="_blank" class="btn btn-primary btn-sm">
-                    <i class="fas fa-file-pdf mr-2"></i>Descargar Manual de Usuario (PDF)
+                    <i class="fas fa-file-pdf mr-2"></i>Descargar manual de usuario (PDF)
                 </a>
             </div>
         </div>
@@ -77,7 +77,7 @@
         <div class="card card-primary card-outline">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-question-circle mr-2"></i>Preguntas Frecuentes
+                    <i class="fas fa-question-circle mr-2"></i>Preguntas frecuentes
                 </h3>
             </div>
             <div class="card-body">
@@ -262,7 +262,7 @@
         <div class="card card-info card-outline">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-user-shield mr-2"></i>Perfiles de Acceso
+                    <i class="fas fa-user-shield mr-2"></i>Perfiles de acceso
                 </h3>
             </div>
             <div class="card-body">
@@ -314,7 +314,7 @@
         <div class="card card-success card-outline">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-headset mr-2"></i>Soporte Técnico
+                    <i class="fas fa-headset mr-2"></i>Soporte técnico
                 </h3>
             </div>
             <div class="card-body">
@@ -330,7 +330,7 @@
         <div class="card card-warning card-outline">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-lightbulb mr-2"></i>Consejos Rápidos
+                    <i class="fas fa-lightbulb mr-2"></i>Consejos rápidos
                 </h3>
             </div>
             <div class="card-body">

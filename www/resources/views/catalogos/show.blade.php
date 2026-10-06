@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Catalogo: ' . $catalogo->nombre)
-@section('content_header', 'Items del Catalogo')
+@section('title', 'Catálogo: ' . $catalogo->nombre)
+@section('content_header', 'Ítems del catálogo')
 
 @section('css')
 <style>
@@ -18,7 +18,7 @@
     <div class="col-md-4">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Informacion del Catalogo</h3>
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Información del catálogo</h3>
             </div>
             <div class="card-body">
                 <dl>
@@ -28,8 +28,8 @@
                     <dt>Nombre</dt>
                     <dd>{{ $catalogo->nombre }}</dd>
 
-                    <dt>Descripcion</dt>
-                    <dd>{{ $catalogo->descripcion ?? 'Sin descripcion' }}</dd>
+                    <dt>Descripción</dt>
+                    <dd>{{ $catalogo->descripcion ?? 'Sin descripción' }}</dd>
 
                     <dt>Editable</dt>
                     <dd>
@@ -40,7 +40,7 @@
                         @endif
                     </dd>
 
-                    <dt>Total Items</dt>
+                    <dt>Total ítems</dt>
                     <dd><span class="badge badge-info">{{ $items->total() }}</span></dd>
                 </dl>
             </div>
@@ -59,10 +59,10 @@
         <!-- Tarjeta de ayuda para ordenar -->
         <div class="card card-info">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-sort mr-2"></i>Ordenar Items</h3>
+                <h3 class="card-title"><i class="fas fa-sort mr-2"></i>Ordenar ítems</h3>
             </div>
             <div class="card-body">
-                <p class="text-muted small mb-2">Puede cambiar el orden de los items de dos formas:</p>
+                <p class="text-muted small mb-2">Puede cambiar el orden de los ítems de dos formas:</p>
                 <ul class="text-muted small mb-0">
                     <li>Arrastrando las filas en la tabla</li>
                     <li>Usando los botones <i class="fas fa-arrow-up"></i> <i class="fas fa-arrow-down"></i></li>
@@ -74,10 +74,10 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-list-ul mr-2"></i>Items del Catalogo</h3>
+                <h3 class="card-title"><i class="fas fa-list-ul mr-2"></i>Ítems del catálogo</h3>
                 <div class="card-tools">
                     <a href="{{ route('catalogos.items.create', $catalogo->id_cat) }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus mr-1"></i>Agregar Item
+                        <i class="fas fa-plus mr-1"></i>Agregar ítem
                     </a>
                 </div>
             </div>
@@ -86,7 +86,7 @@
                     <thead>
                         <tr>
                             <th style="width: 100px">Orden</th>
-                            <th>Descripcion</th>
+                            <th>Descripción</th>
                             <th style="width: 100px">Abreviado</th>
                             <th style="width: 80px" class="text-center">Estado</th>
                             <th style="width: 120px">Acciones</th>
@@ -138,7 +138,7 @@
                         @empty
                         <tr>
                             <td colspan="5" class="text-center text-muted py-4">
-                                No hay items en este catalogo
+                                No hay ítems en este catálogo
                             </td>
                         </tr>
                         @endforelse

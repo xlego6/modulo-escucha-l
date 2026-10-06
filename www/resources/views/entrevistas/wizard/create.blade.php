@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Nueva Entrevista')
-@section('content_header', 'Registrar Nueva Entrevista')
+@section('title', 'Nueva entrevista')
+@section('content_header', 'Registrar nueva entrevista')
 
 @section('css')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -68,7 +68,7 @@
             </button>
             <div class="ml-auto">
                 <button type="button" class="btn btn-info mr-2" id="btn-guardar-borrador">
-                    <i class="fas fa-save mr-2"></i>Guardar Borrador
+                    <i class="fas fa-save mr-2"></i>Guardar borrador
                 </button>
                 <button type="button" class="btn btn-primary" id="btn-siguiente">
                     Siguiente<i class="fas fa-arrow-right ml-2"></i>
@@ -244,7 +244,7 @@ $(document).ready(function() {
 
                 if (tieneDocVal === '0' && (!observaciones || observaciones.trim() === '')) {
                     card.find('.observaciones-consentimiento').addClass('is-invalid');
-                    alert('Testimoniante #' + (index + 1) + ': Las observaciones del consentimiento son obligatorias cuando no tiene documento de autorizacion.');
+                    alert('Testimoniante #' + (index + 1) + ': Las observaciones del consentimiento son obligatorias cuando no tiene documento de autorización.');
                     valid = false;
                 } else {
                     card.find('.observaciones-consentimiento').removeClass('is-invalid');
@@ -629,7 +629,7 @@ $(document).ready(function() {
     // Construir opciones de departamentos desde PHP
     var departamentosData = {!! json_encode($catalogos['departamentos']) !!};
     function buildDepartamentosOptions() {
-        var html = '<option value="">-- Seleccione Departamento --</option>';
+        var html = '<option value="">-- Seleccione departamento --</option>';
         $.each(departamentosData, function(id, nombre) {
             html += '<option value="' + id + '">' + nombre + '</option>';
         });
@@ -653,7 +653,7 @@ $(document).ready(function() {
                 '</div>' +
                 '<div class="col-md-5">' +
                     '<select class="form-control form-control-sm lugar-muni" name="lugar_muni_' + lugarIndex + '">' +
-                        '<option value="">-- Seleccione Municipio --</option>' +
+                        '<option value="">-- Seleccione municipio --</option>' +
                     '</select>' +
                 '</div>' +
                 '<div class="col-md-2">' +
@@ -693,13 +693,13 @@ $(document).ready(function() {
 
         if (depto) {
             $.get('{{ route("api.municipios") }}', { id_departamento: depto }, function(data) {
-                muniSelect.empty().append('<option value="">-- Seleccione Municipio --</option>');
+                muniSelect.empty().append('<option value="">-- Seleccione municipio --</option>');
                 $.each(data, function(id, nombre) {
                     muniSelect.append('<option value="' + id + '">' + nombre + '</option>');
                 });
             });
         } else {
-            muniSelect.empty().append('<option value="">-- Seleccione Municipio --</option>');
+            muniSelect.empty().append('<option value="">-- Seleccione municipio --</option>');
         }
     });
 

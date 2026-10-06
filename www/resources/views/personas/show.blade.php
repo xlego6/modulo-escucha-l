@@ -1,24 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Ver Persona')
-@section('content_header', 'Detalle de Testimoniante')
+@section('title', 'Ver persona')
+@section('content_header', 'Detalle de testimoniante')
 
 @section('css')
 <style>
-    .info-label {
-        font-weight: 600;
-        color: #6c757d;
-        font-size: 0.85rem;
-    }
-    .info-value {
-        font-size: 1rem;
-        margin-bottom: 0.5rem;
-    }
-    .section-title {
-        border-bottom: 2px solid #007bff;
-        padding-bottom: 0.5rem;
-        margin-bottom: 1rem;
-    }
     .badge-list .badge {
         margin-right: 0.25rem;
         margin-bottom: 0.25rem;
@@ -49,34 +35,34 @@
                 <div class="row">
                     <!-- Columna Izquierda: Identificacion -->
                     <div class="col-md-6">
-                        <h5 class="section-title"><i class="fas fa-id-card text-primary"></i> Identificacion</h5>
+                        <h5 class="seccion-titulo"><i class="fas fa-id-card"></i> Identificación</h5>
 
                         <div class="row">
                             <div class="col-6">
-                                <p class="info-label mb-0">Nombre(s)</p>
-                                <p class="info-value">{{ $persona->nombre ?? '-' }}</p>
+                                <p class="dato-etiqueta mb-0">Nombre(s)</p>
+                                <p class="dato-valor">{{ $persona->nombre ?? '-' }}</p>
                             </div>
                             <div class="col-6">
-                                <p class="info-label mb-0">Apellido(s)</p>
-                                <p class="info-value">{{ $persona->apellido ?? '-' }}</p>
+                                <p class="dato-etiqueta mb-0">Apellido(s)</p>
+                                <p class="dato-valor">{{ $persona->apellido ?? '-' }}</p>
                             </div>
                         </div>
 
                         @if($persona->nombre_identitario)
                         <div class="row">
                             <div class="col-12">
-                                <p class="info-label mb-0">Nombre Identitario</p>
-                                <p class="info-value">{{ $persona->nombre_identitario }}</p>
+                                <p class="dato-etiqueta mb-0">Nombre Identitario</p>
+                                <p class="dato-valor">{{ $persona->nombre_identitario }}</p>
                             </div>
                         </div>
                         @endif
 
-                        <h5 class="section-title mt-4"><i class="fas fa-map-marker-alt text-info"></i> Lugar de Origen</h5>
+                        <h5 class="seccion-titulo"><i class="fas fa-map-marker-alt"></i> Lugar de origen</h5>
 
                         <div class="row">
                             <div class="col-6">
-                                <p class="info-label mb-0">Departamento</p>
-                                <p class="info-value">
+                                <p class="dato-etiqueta mb-0">Departamento</p>
+                                <p class="dato-valor">
                                     @if($departamento_origen)
                                         {{ $departamento_origen->descripcion }}
                                     @else
@@ -85,8 +71,8 @@
                                 </p>
                             </div>
                             <div class="col-6">
-                                <p class="info-label mb-0">Municipio</p>
-                                <p class="info-value">
+                                <p class="dato-etiqueta mb-0">Municipio</p>
+                                <p class="dato-valor">
                                     @if($persona->rel_lugar_nacimiento)
                                         {{ $persona->rel_lugar_nacimiento->descripcion }}
                                     @else
@@ -96,7 +82,7 @@
                             </div>
                         </div>
 
-                        <h5 class="section-title mt-4"><i class="fas fa-users text-success"></i> Poblacion</h5>
+                        <h5 class="seccion-titulo"><i class="fas fa-users"></i> Población</h5>
                         <div class="badge-list">
                             @if($persona->rel_poblaciones && $persona->rel_poblaciones->count() > 0)
                                 @foreach($persona->rel_poblaciones as $poblacion)
@@ -107,7 +93,7 @@
                             @endif
                         </div>
 
-                        <h5 class="section-title mt-4"><i class="fas fa-briefcase text-warning"></i> Ocupacion</h5>
+                        <h5 class="seccion-titulo"><i class="fas fa-briefcase"></i> Ocupación</h5>
                         <div class="badge-list">
                             @if($persona->rel_ocupaciones && $persona->rel_ocupaciones->count() > 0)
                                 @foreach($persona->rel_ocupaciones as $ocupacion)
@@ -121,53 +107,53 @@
 
                     <!-- Columna Derecha: Caracterizacion -->
                     <div class="col-md-6">
-                        <h5 class="section-title"><i class="fas fa-venus-mars text-danger"></i> Caracterizacion</h5>
+                        <h5 class="seccion-titulo"><i class="fas fa-venus-mars"></i> Caracterización</h5>
 
                         <div class="row">
                             <div class="col-6">
-                                <p class="info-label mb-0">Sexo</p>
-                                <p class="info-value">{{ $persona->rel_sexo->descripcion ?? 'Sin especificar' }}</p>
+                                <p class="dato-etiqueta mb-0">Sexo</p>
+                                <p class="dato-valor">{{ $persona->rel_sexo->descripcion ?? 'Sin especificar' }}</p>
                             </div>
                             <div class="col-6">
-                                <p class="info-label mb-0">Identidad de Genero</p>
-                                <p class="info-value">{{ $persona->rel_identidad->descripcion ?? 'Sin especificar' }}</p>
+                                <p class="dato-etiqueta mb-0">Identidad de Género</p>
+                                <p class="dato-valor">{{ $persona->rel_identidad->descripcion ?? 'Sin especificar' }}</p>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-6">
-                                <p class="info-label mb-0">Orientacion Sexual</p>
-                                <p class="info-value">{{ $persona->rel_orientacion->descripcion ?? 'Sin especificar' }}</p>
+                                <p class="dato-etiqueta mb-0">Orientación Sexual</p>
+                                <p class="dato-valor">{{ $persona->rel_orientacion->descripcion ?? 'Sin especificar' }}</p>
                             </div>
                             <div class="col-6">
-                                <p class="info-label mb-0">Grupo Etnico</p>
-                                <p class="info-value">{{ $persona->rel_etnia->descripcion ?? 'Sin especificar' }}</p>
+                                <p class="dato-etiqueta mb-0">Grupo Étnico</p>
+                                <p class="dato-valor">{{ $persona->rel_etnia->descripcion ?? 'Sin especificar' }}</p>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-6">
-                                <p class="info-label mb-0">Rango Etario</p>
-                                <p class="info-value">{{ $persona->rel_rango_etario->descripcion ?? 'Sin especificar' }}</p>
+                                <p class="dato-etiqueta mb-0">Rango Etario</p>
+                                <p class="dato-valor">{{ $persona->rel_rango_etario->descripcion ?? 'Sin especificar' }}</p>
                             </div>
                             <div class="col-6">
-                                <p class="info-label mb-0">Discapacidad</p>
-                                <p class="info-value">{{ $persona->rel_discapacidad->descripcion ?? 'Sin especificar' }}</p>
+                                <p class="dato-etiqueta mb-0">Discapacidad</p>
+                                <p class="dato-valor">{{ $persona->rel_discapacidad->descripcion ?? 'Sin especificar' }}</p>
                             </div>
                         </div>
 
                         @if($persona->num_documento || $persona->telefono || $persona->correo_electronico)
-                        <h5 class="section-title mt-4"><i class="fas fa-address-card text-secondary"></i> Datos Adicionales</h5>
+                        <h5 class="seccion-titulo"><i class="fas fa-address-card"></i> Datos adicionales</h5>
 
                         @if($persona->num_documento)
                         <div class="row">
                             <div class="col-6">
-                                <p class="info-label mb-0">Tipo Documento</p>
-                                <p class="info-value">{{ $persona->rel_tipo_documento->descripcion ?? '-' }}</p>
+                                <p class="dato-etiqueta mb-0">Tipo Documento</p>
+                                <p class="dato-valor">{{ $persona->rel_tipo_documento->descripcion ?? '-' }}</p>
                             </div>
                             <div class="col-6">
-                                <p class="info-label mb-0">Numero Documento</p>
-                                <p class="info-value">{{ $persona->num_documento ?? '-' }}</p>
+                                <p class="dato-etiqueta mb-0">Número Documento</p>
+                                <p class="dato-valor">{{ $persona->num_documento ?? '-' }}</p>
                             </div>
                         </div>
                         @endif
@@ -175,12 +161,12 @@
                         @if($persona->telefono || $persona->correo_electronico)
                         <div class="row">
                             <div class="col-6">
-                                <p class="info-label mb-0">Telefono</p>
-                                <p class="info-value">{{ $persona->telefono ?? '-' }}</p>
+                                <p class="dato-etiqueta mb-0">Teléfono</p>
+                                <p class="dato-valor">{{ $persona->telefono ?? '-' }}</p>
                             </div>
                             <div class="col-6">
-                                <p class="info-label mb-0">Correo Electronico</p>
-                                <p class="info-value">{{ $persona->correo_electronico ?? '-' }}</p>
+                                <p class="dato-etiqueta mb-0">Correo Electrónico</p>
+                                <p class="dato-valor">{{ $persona->correo_electronico ?? '-' }}</p>
                             </div>
                         </div>
                         @endif
@@ -195,7 +181,7 @@
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-microphone"></i>
-                    Entrevistas Vinculadas
+                    Entrevistas vinculadas
                     @if($entrevistas && count($entrevistas) > 0)
                         <span class="badge badge-info ml-2">{{ count($entrevistas) }}</span>
                     @endif
@@ -206,8 +192,8 @@
                 <table class="table table-hover mb-0">
                     <thead class="thead-light">
                         <tr>
-                            <th>Codigo</th>
-                            <th>Titulo</th>
+                            <th>Código</th>
+                            <th>Título</th>
                             <th style="width: 100px">Edad</th>
                             <th style="width: 120px">Fecha</th>
                             <th style="width: 100px">Acciones</th>
@@ -271,14 +257,14 @@
                 </p>
                 @endif
                 <a href="{{ route('personas.index') }}" class="btn btn-secondary btn-block mb-2">
-                    <i class="fas fa-list"></i> Ver Listado
+                    <i class="fas fa-list"></i> Ver listado
                 </a>
                 <hr>
                 <form action="{{ route('personas.destroy', $persona->id_persona) }}" method="POST" onsubmit="return confirm('Esta seguro de eliminar esta persona? Esta accion no se puede deshacer.')">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-outline-danger btn-block">
-                        <i class="fas fa-trash"></i> Eliminar Persona
+                        <i class="fas fa-trash"></i> Eliminar persona
                     </button>
                 </form>
             </div>
@@ -287,7 +273,7 @@
         <!-- Info del Registro -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-info-circle"></i> Informacion del Registro</h3>
+                <h3 class="card-title"><i class="fas fa-info-circle"></i> Información del registro</h3>
             </div>
             <div class="card-body">
                 <table class="table table-sm table-borderless mb-0">

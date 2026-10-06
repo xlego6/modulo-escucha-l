@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Catalogos')
-@section('content_header', 'Gestion de Catalogos')
+@section('title', 'Catálogos')
+@section('content_header', 'Gestión de catálogos')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-list mr-2"></i>Listado de Catalogos</h3>
+        <h3 class="card-title"><i class="fas fa-list mr-2"></i>Listado de catálogos</h3>
         <div class="card-tools">
             <a href="{{ route('catalogos.create') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus mr-1"></i>Nuevo Catalogo
+                <i class="fas fa-plus mr-1"></i>Nuevo catálogo
             </a>
         </div>
     </div>
@@ -19,8 +19,8 @@
                 <tr>
                     <th style="width: 60px">ID</th>
                     <th>Nombre</th>
-                    <th>Descripcion</th>
-                    <th style="width: 100px" class="text-center">Items</th>
+                    <th>Descripción</th>
+                    <th style="width: 100px" class="text-center">Ítems</th>
                     <th style="width: 100px" class="text-center">Editable</th>
                     <th style="width: 150px">Acciones</th>
                 </tr>
@@ -59,7 +59,7 @@
                 @empty
                 <tr>
                     <td colspan="6" class="text-center text-muted py-4">
-                        No hay catalogos registrados
+                        No hay catálogos registrados
                     </td>
                 </tr>
                 @endforelse
@@ -75,15 +75,15 @@
 
 <div class="card card-info">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Informacion</h3>
+        <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Información</h3>
     </div>
     <div class="card-body">
-        <p>Los catalogos contienen las listas cerradas utilizadas en los formularios del sistema, como:</p>
+        <p>Los catálogos contienen las listas cerradas utilizadas en los formularios del sistema, como:</p>
         <ul class="mb-0">
-            <li><strong>Sexo, Etnia, Discapacidad:</strong> Datos demograficos de testimoniantes</li>
-            <li><strong>Dependencias:</strong> Areas del CNMH que realizan entrevistas</li>
-            <li><strong>Tipos de Testimonio:</strong> Clasificacion de entrevistas</li>
-            <li><strong>Hechos Victimizantes:</strong> Categorias de hechos narrados</li>
+            <li><strong>Sexo, Etnia, Discapacidad:</strong> Datos demográficos de testimoniantes</li>
+            <li><strong>Dependencias:</strong> Áreas del CNMH que realizan entrevistas</li>
+            <li><strong>Tipos de Testimonio:</strong> Clasificación de entrevistas</li>
+            <li><strong>Hechos Victimizantes:</strong> Categorías de hechos narrados</li>
             <li><strong>Responsables:</strong> Actores mencionados en testimonios</li>
         </ul>
     </div>

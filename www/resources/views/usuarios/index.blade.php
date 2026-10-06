@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Usuarios')
-@section('content_header', 'Gestion de Usuarios')
+@section('content_header', 'Gestión de usuarios')
 
 @section('content')
 <div class="card">
@@ -34,7 +34,7 @@
             </div>
             <div class="col-md-4 text-right">
                 <a href="{{ route('usuarios.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus mr-1"></i> Nuevo Usuario
+                    <i class="fas fa-plus mr-1"></i> Nuevo usuario
                 </a>
             </div>
         </div>

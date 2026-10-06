@@ -2,14 +2,13 @@
 
 @section('title', 'Importaciones masivas')
 
+@section('content_header', 'Importación masiva de expedientes')
+
 @section('content')
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Importación masiva de expedientes</h1>
-            </div>
-            <div class="col-sm-6 text-right">
+            <div class="col-12 text-right">
                 <a href="{{ asset('plantillas/plantilla_crear.csv') }}" download class="btn btn-outline-success btn-sm mr-1">
                     <i class="fas fa-file-csv mr-1"></i> Plantilla carga
                 </a>

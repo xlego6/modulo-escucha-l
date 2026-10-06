@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Procesamientos')
-@section('content_header', 'Centro de Procesamientos')
+@section('content_header', 'Centro de procesamientos')
 
 @section('css')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -52,7 +52,7 @@ function fmtDur($seg) {
     <div class="col-12">
         <div class="card card-outline card-primary mb-0">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-layer-group mr-2"></i>Vista de Procesamientos</h3>
+                <h3 class="card-title"><i class="fas fa-layer-group mr-2"></i>Vista de procesamientos</h3>
             </div>
             <div class="card-body py-2">
                 <div class="tipo-selector">
@@ -82,7 +82,7 @@ function fmtDur($seg) {
     {{-- Bloques estadísticos globales --}}
     <div class="row mb-1">
         <div class="col-12">
-            <h5 class="text-muted"><i class="fas fa-chart-bar mr-2"></i>Resumen global de transcripciones</h5>
+            <h5 class="seccion-titulo"><i class="fas fa-chart-bar"></i>Resumen global de transcripciones</h5>
         </div>
     </div>
     <div class="row mb-3">
@@ -209,8 +209,8 @@ function fmtDur($seg) {
                                 @php
                                     $opcionesEstado = [
                                         'asignada' => 'Asignada',
-                                        'en_edicion' => 'En edicion',
-                                        'enviada_revision' => 'En revision',
+                                        'en_edicion' => 'En edición',
+                                        'enviada_revision' => 'En revisión',
                                         'rechazada' => 'Rechazada',
                                         'aprobada' => 'Aprobada',
                                     ];
@@ -451,7 +451,7 @@ function fmtDur($seg) {
     {{-- Bloques estadísticos globales --}}
     <div class="row mb-1">
         <div class="col-12">
-            <h5 class="text-muted"><i class="fas fa-chart-bar mr-2"></i>Resumen global de anonimizaciones</h5>
+            <h5 class="seccion-titulo"><i class="fas fa-chart-bar"></i>Resumen global de anonimizaciones</h5>
         </div>
     </div>
     <div class="row mb-3">
@@ -563,8 +563,8 @@ function fmtDur($seg) {
                                 @php
                                     $opcionesEstadoAnon = [
                                         'asignada' => 'Asignada',
-                                        'en_edicion' => 'En edicion',
-                                        'enviada_revision' => 'En revision',
+                                        'en_edicion' => 'En edición',
+                                        'enviada_revision' => 'En revisión',
                                         'rechazada' => 'Rechazada',
                                         'aprobada' => 'Aprobada',
                                     ];

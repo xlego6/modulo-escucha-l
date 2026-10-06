@@ -1,18 +1,18 @@
 @extends('layouts.app')
 
 @section('title', 'Roles')
-@section('content_header', 'Gestion de Roles')
+@section('content_header', 'Gestión de roles')
 
 @section('content')
 <div class="card">
     <div class="card-header">
         <div class="row">
             <div class="col-md-8">
-                <p class="mb-0 text-muted">Administre los roles del sistema y sus permisos por modulo.</p>
+                <p class="mb-0 text-muted">Administre los roles del sistema y sus permisos por módulo.</p>
             </div>
             <div class="col-md-4 text-right">
                 <a href="{{ route('roles.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus mr-1"></i> Nuevo Rol
+                    <i class="fas fa-plus mr-1"></i> Nuevo rol
                 </a>
             </div>
         </div>
@@ -23,7 +23,7 @@
                 <tr>
                     <th width="60">Nivel</th>
                     <th>Nombre</th>
-                    <th>Descripcion</th>
+                    <th>Descripción</th>
                     <th width="120">Tipo</th>
                     <th width="80">Estado</th>
                     <th width="130">Acciones</th>

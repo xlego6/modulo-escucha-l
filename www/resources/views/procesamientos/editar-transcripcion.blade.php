@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Editar Transcripcion')
+@section('title', 'Editar transcripción')
 @section('content_header')
 Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
 @endsection
@@ -255,7 +255,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-12">
         <div class="card card-outline card-info mb-0">
             <div class="card-header py-2">
-                <h3 class="card-title text-sm"><i class="fas fa-list-alt mr-2"></i>Transcripciones por Archivo</h3>
+                <h3 class="card-title text-sm"><i class="fas fa-list-alt mr-2"></i>Transcripciones por archivo</h3>
             </div>
             <div class="card-body p-0">
                 <ul class="nav nav-pills nav-justified" id="tab-transcripciones">
@@ -275,7 +275,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                                 {{ number_format(strlen($medio->texto_extraido)) }}
                             </span>
                             @else
-                            <span class="badge badge-secondary badge-sm ml-1">Sin transcripcion</span>
+                            <span class="badge badge-secondary badge-sm ml-1">Sin transcripción</span>
                             @endif
                         </a>
                     </li>
@@ -298,21 +298,21 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0">
                         <i class="fas fa-file-alt mr-2"></i>
-                        <span id="titulo-editor">Transcripcion Completa</span>
+                        <span id="titulo-editor">Transcripción completa</span>
                     </h3>
                     <span class="badge badge-light" id="char-count">0 caracteres</span>
                 </div>
                 <div class="card-body p-2">
                     @include('partials.editor-toolbar', ['targetId' => 'editor-transcripcion'])
                     <textarea name="transcripcion" id="editor-transcripcion" class="form-control"
-                              placeholder="Escriba o pegue la transcripcion aqui...">{{ $entrevista->getTextoParaProcesamiento() ?? '' }}</textarea>
+                              placeholder="Escriba o pegue la transcripción aquí...">{{ $entrevista->getTextoParaProcesamiento() ?? '' }}</textarea>
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-success">
-                        <i class="fas fa-save mr-2"></i>Guardar Cambios
+                        <i class="fas fa-save mr-2"></i>Guardar cambios
                     </button>
                     <button type="button" class="btn btn-primary" onclick="guardarYAprobar()">
-                        <i class="fas fa-check-double mr-2"></i>Guardar y Aprobar
+                        <i class="fas fa-check-double mr-2"></i>Guardar y aprobar
                     </button>
                     <a href="{{ route('procesamientos.edicion') }}" class="btn btn-secondary float-right">
                         <i class="fas fa-arrow-left mr-2"></i>Volver
@@ -330,15 +330,15 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i>Informacion</h3>
+                <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i>Información</h3>
             </div>
             <div class="card-body py-2">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Codigo:</dt>
+                    <dt class="col-sm-4">Código:</dt>
                     <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
 
-                    <dt class="col-sm-4">Titulo:</dt>
-                    <dd class="col-sm-8">{{ $entrevista->titulo ?: 'Sin titulo' }}</dd>
+                    <dt class="col-sm-4">Título:</dt>
+                    <dd class="col-sm-8">{{ $entrevista->titulo ?: 'Sin título' }}</dd>
 
                     <dt class="col-sm-4">Fecha:</dt>
                     <dd class="col-sm-8">
@@ -357,7 +357,7 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-keyboard mr-1"></i>Atajos de Teclado</h3>
+                <h3 class="card-title"><i class="fas fa-keyboard mr-1"></i>Atajos de teclado</h3>
             </div>
             <div class="card-body py-2">
                 <ul class="list-unstyled mb-0 small">
@@ -413,7 +413,7 @@ $(document).ready(function() {
         if (href === '#tab-completa') {
             transcripcionActual = 'completa';
             $('#input-id-adjunto').val('');
-            $('#titulo-editor').text('Transcripcion Completa');
+            $('#titulo-editor').text('Transcripción Completa');
         } else {
             var idAdjunto = href.replace('#tab-audio-', '');
             transcripcionActual = idAdjunto;
@@ -508,9 +508,9 @@ $(document).ready(function() {
                     $btn.removeClass('btn-info').addClass('btn-success')
                         .html('<i class="fas fa-check"></i> <i class="fas fa-redo"></i>');
 
-                    alert('Transcripcion completada: ' + response.text_length.toLocaleString() + ' caracteres');
+                    alert('Transcripción completada: ' + response.text_length.toLocaleString() + ' caracteres');
 
-                    if (confirm('¿Recargar pagina para ver la transcripcion completa actualizada?')) {
+                    if (confirm('¿Recargar página para ver la transcripción completa actualizada?')) {
                         location.reload();
                     }
                 } else {
@@ -519,7 +519,7 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
-                var errorMsg = xhr.responseJSON?.error || 'Error de conexion. La transcripcion puede estar en proceso.';
+                var errorMsg = xhr.responseJSON?.error || 'Error de conexion. La transcripción puede estar en proceso.';
                 alert('Error: ' + errorMsg);
                 $btn.prop('disabled', false).html(htmlOriginal);
             }
@@ -648,7 +648,7 @@ function changeSpeed(id) {
 }
 
 function guardarYAprobar() {
-    if (confirm('¿Guardar y aprobar esta transcripcion?')) {
+    if (confirm('¿Guardar y aprobar esta transcripción?')) {
         $.ajax({
             url: '{{ route("procesamientos.guardar-transcripcion", $entrevista->id_e_ind_fvt) }}',
             method: 'POST',
@@ -660,7 +660,7 @@ function guardarYAprobar() {
                 window.location.href = '{{ route("procesamientos.aprobar-transcripcion", $entrevista->id_e_ind_fvt) }}';
             },
             error: function() {
-                alert('Error al guardar la transcripcion');
+                alert('Error al guardar la transcripción');
             }
         });
     }

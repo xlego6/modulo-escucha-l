@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Deteccion de Entidades')
-@section('content_header', 'Deteccion de Entidades')
+@section('title', 'Detección de entidades')
+@section('content_header', 'Detección de entidades')
 
 @section('content')
 <div class="row">
     <div class="col-12">
         <div class="callout callout-warning">
-            <h5><i class="fas fa-brain mr-2"></i>spaCy NER - Reconocimiento de Entidades</h5>
+            <h5><i class="fas fa-brain mr-2"></i>spaCy NER - Reconocimiento de entidades</h5>
             <p class="mb-0">
-                Sistema de deteccion de entidades nombradas (NER) basado en spaCy con modelo en español.
+                Sistema de detección de entidades nombradas (NER) basado en spaCy con modelo en español.
                 Identifica personas, lugares, organizaciones, fechas, eventos y otros elementos relevantes.
             </p>
         </div>
@@ -21,7 +21,7 @@
     <div class="col-md-12 mb-3">
         <div class="card card-outline card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Tipos de Entidades a Detectar</h3>
+                <h3 class="card-title"><i class="fas fa-tags mr-2"></i>Tipos de entidades a detectar</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" onclick="seleccionarTodos()" title="Seleccionar todos">
                         <i class="fas fa-check-double"></i>
@@ -66,15 +66,15 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas Pendientes de Analisis</h3>
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas pendientes de análisis</h3>
             </div>
             <div class="card-body p-0">
                 <table class="table table-striped table-hover">
                     <thead>
                         <tr>
                             <th style="width: 40px;"></th>
-                            <th>Codigo</th>
-                            <th>Titulo</th>
+                            <th>Código</th>
+                            <th>Título</th>
                             <th>Archivos</th>
                             <th>Acciones</th>
                         </tr>
@@ -113,7 +113,7 @@
                         <tr>
                             <td colspan="5" class="text-center text-muted py-4">
                                 <i class="fas fa-check-circle fa-2x mb-2"></i><br>
-                                No hay entrevistas pendientes de analisis
+                                No hay entrevistas pendientes de análisis
                             </td>
                         </tr>
                         @endforelse
@@ -132,7 +132,7 @@
         <!-- Acciones en lote -->
         <div class="card card-warning">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Procesamiento en Lote</h3>
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Procesamiento en lote</h3>
             </div>
             <div class="card-body">
                 <p class="text-muted">Seleccione entrevistas para detectar entidades en lote.</p>
@@ -141,7 +141,7 @@
                     <span id="count-seleccionadas" class="badge badge-warning">0</span>
                 </div>
                 <button class="btn btn-warning btn-block" id="btn-procesar-lote" disabled>
-                    <i class="fas fa-search mr-2"></i>Detectar Entidades
+                    <i class="fas fa-search mr-2"></i>Detectar entidades
                 </button>
             </div>
         </div>
@@ -175,7 +175,7 @@ $(document).ready(function() {
             return;
         }
 
-        if (!confirm('¿Iniciar deteccion de entidades?\nTipos: ' + tiposSeleccionados.join(', '))) return;
+        if (!confirm('¿Iniciar detección de entidades?\nTipos: ' + tiposSeleccionados.join(', '))) return;
 
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
@@ -187,7 +187,7 @@ $(document).ready(function() {
                 tipos: tiposSeleccionados.join(',')
             },
             success: function(response) {
-                alert('Deteccion iniciada correctamente');
+                alert('Detección iniciada correctamente');
                 location.reload();
             },
             error: function(xhr) {
@@ -208,7 +208,7 @@ $(document).ready(function() {
 
         if (!confirm('¿Detectar entidades en ' + ids.length + ' entrevista(s)?')) return;
 
-        alert('Funcionalidad de procesamiento en lote pendiente de implementacion');
+        alert('Funcionalidad de procesamiento en lote pendiente de implementación');
     });
 });
 

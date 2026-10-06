@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Permisos de Acceso')
-@section('content_header', 'Permisos de Acceso a Entrevistas')
+@section('title', 'Permisos de acceso')
+@section('content_header', 'Permisos de acceso a entrevistas')
 
 @section('content')
 
@@ -10,7 +10,7 @@
 <div class="card card-warning">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fas fa-bell mr-2"></i>Solicitudes Pendientes ({{ $solicitudesPendientes->count() }})
+            <i class="fas fa-bell mr-2"></i>Solicitudes pendientes ({{ $solicitudesPendientes->count() }})
         </h3>
     </div>
     <div class="card-body table-responsive p-0">
@@ -97,7 +97,7 @@
 @if($misSolicitudes->count() > 0)
 <div class="card card-info card-outline">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-paper-plane mr-2"></i>Mis Solicitudes</h3>
+        <h3 class="card-title"><i class="fas fa-paper-plane mr-2"></i>Mis solicitudes</h3>
     </div>
     <div class="card-body table-responsive p-0">
         <table class="table table-hover">
@@ -106,7 +106,7 @@
                     <th>Entrevista</th>
                     <th>Tipo</th>
                     <th>Estado</th>
-                    <th>Fecha Solicitud</th>
+                    <th>Fecha solicitud</th>
                     <th>Respuesta</th>
                     <th>Vence</th>
                     <th>Motivo</th>
@@ -192,7 +192,7 @@
                         @endforeach
                     </select>
                     @endif
-                    <input type="text" name="codigo" class="form-control form-control-sm mr-2 mb-2" placeholder="Codigo entrevista" value="{{ request('codigo') }}">
+                    <input type="text" name="codigo" class="form-control form-control-sm mr-2 mb-2" placeholder="Código entrevista" value="{{ request('codigo') }}">
                     <select name="estado" class="form-control form-control-sm mr-2 mb-2">
                         <option value="">-- Estado --</option>
                         <option value="1"          {{ request('estado') == '1'          ? 'selected' : '' }}>Vigentes</option>
@@ -230,7 +230,7 @@
                     <th>Usuario</th>
                     <th>Entrevista</th>
                     <th>Tipo</th>
-                    <th>Rango/Vencimiento</th>
+                    <th>Rango/vencimiento</th>
                     <th>Otorgado</th>
                     <th>Soporte</th>
                     <th>Estado</th>
@@ -271,7 +271,7 @@
                         @elseif($permiso->fecha_vencimiento)
                             <small>Hasta {{ $permiso->fecha_vencimiento->format('d/m/Y') }}</small>
                         @else
-                            <small class="text-muted">Sin limite</small>
+                            <small class="text-muted">Sin límite</small>
                         @endif
                     </td>
                     <td>
@@ -339,7 +339,7 @@
                 @csrf
                 <div class="modal-header bg-danger">
                     <h5 class="modal-title text-white" id="modal-rechazar-label">
-                        <i class="fas fa-times-circle mr-2"></i>Rechazar Solicitud
+                        <i class="fas fa-times-circle mr-2"></i>Rechazar solicitud
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal">
                         <span>&times;</span>
@@ -358,7 +358,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-times mr-1"></i> Confirmar Rechazo
+                        <i class="fas fa-times mr-1"></i> Confirmar rechazo
                     </button>
                 </div>
             </form>
@@ -375,7 +375,7 @@
                 @method('DELETE')
                 <div class="modal-header bg-danger">
                     <h5 class="modal-title text-white" id="modal-revocar-label">
-                        <i class="fas fa-ban mr-2"></i>Revocar Permiso
+                        <i class="fas fa-ban mr-2"></i>Revocar permiso
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal">
                         <span>&times;</span>
@@ -394,7 +394,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-ban mr-1"></i> Confirmar Revocación
+                        <i class="fas fa-ban mr-1"></i> Confirmar revocación
                     </button>
                 </div>
             </form>

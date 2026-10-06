@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Permisos: ' . $rol->nombre)
-@section('content_header', 'Configurar Permisos')
+@section('content_header', 'Configurar permisos')
 
 @section('content')
 <div class="card">
@@ -47,7 +47,7 @@
                 <table class="table table-bordered table-sm text-center" id="tabla-permisos">
                     <thead class="thead-light">
                         <tr>
-                            <th class="text-left" style="min-width:180px">Modulo</th>
+                            <th class="text-left" style="min-width:180px">Módulo</th>
                             <th style="min-width:55px">Ver</th>
                             <th style="min-width:65px">Crear</th>
                             <th style="min-width:65px">Editar</th>
@@ -171,16 +171,16 @@
 
             <p class="text-muted small mt-2 mb-0">
                 <i class="fas fa-info-circle mr-1"></i>
-                Al desmarcar <strong>Ver</strong>, los demas permisos de esa fila se deshabilitan automaticamente.
-                Al desmarcar <strong>Ver</strong> de un modulo padre, todos sus submodulos se deshabilitan.
-                El <strong>Alcance</strong> define que registros puede ver el usuario en los modulos donde tiene acceso.
+                Al desmarcar <strong>Ver</strong>, los demás permisos de esa fila se deshabilitan automáticamente.
+                Al desmarcar <strong>Ver</strong> de un módulo padre, todos sus submodulos se deshabilitan.
+                El <strong>Alcance</strong> define que registros puede ver el usuario en los módulos donde tiene acceso.
             </p>
         </div>
 
         <div class="card-footer">
             @if($rol->id_nivel != 1)
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save mr-1"></i> Guardar Permisos
+                <i class="fas fa-save mr-1"></i> Guardar permisos
             </button>
             @endif
             <a href="{{ route('roles.index') }}" class="btn btn-default ml-2">

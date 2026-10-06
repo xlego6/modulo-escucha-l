@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Anonimizacion')
-@section('content_header', 'Anonimizacion de Testimonios')
+@section('title', 'Anonimización')
+@section('content_header', 'Anonimización de testimonios')
 
 @section('css')
 <style>
@@ -162,14 +162,14 @@
 @if($pendientesRevision->count() > 0)
 <div class="card card-warning">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-inbox mr-2"></i>Anonimizaciones Pendientes de Revision ({{ $pendientesRevision->count() }})</h3>
+        <h3 class="card-title"><i class="fas fa-inbox mr-2"></i>Anonimizaciones pendientes de revision ({{ $pendientesRevision->count() }})</h3>
     </div>
     <div class="card-body p-0">
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Codigo</th>
-                    <th>Titulo</th>
+                    <th>Código</th>
+                    <th>Título</th>
                     <th>Anonimizador</th>
                     <th>Enviada</th>
                     <th>Acciones</th>
@@ -254,7 +254,7 @@
                 </div>
                 <div class="col-md-2">
                     <div class="form-group mb-2">
-                        <label class="small mb-1">Estado Asignación</label>
+                        <label class="small mb-1">Estado asignación</label>
                         <select name="filtro_asignacion" class="form-control form-control-sm">
                             <option value="">-- Todos --</option>
                             @foreach($estadosAsignacionAnonimizacion as $val => $label)
@@ -284,16 +284,16 @@
         {{-- Lista de Entrevistas para Asignar --}}
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas con Transcripcion</h3>
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas con transcripción</h3>
             </div>
             <div class="card-body p-0">
                 <table class="table table-striped table-hover">
                     <thead>
                         <tr>
-                            <th>Codigo</th>
-                            <th>Titulo</th>
+                            <th>Código</th>
+                            <th>Título</th>
                             <th>Entidades</th>
-                            <th>Asignacion</th>
+                            <th>Asignación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -393,7 +393,7 @@
                         <tr>
                             <td colspan="5" class="text-center text-muted py-4">
                                 <i class="fas fa-file-alt fa-2x mb-2"></i><br>
-                                No hay entrevistas con transcripcion
+                                No hay entrevistas con transcripción
                             </td>
                         </tr>
                         @endforelse
@@ -415,7 +415,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger">
-                <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Asignar Anonimizador</h5>
+                <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Asignar anonimizador</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form id="formAsignar">
@@ -465,7 +465,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger">
-                <h5 class="modal-title"><i class="fas fa-user-minus mr-2"></i>Desasignar Anonimización</h5>
+                <h5 class="modal-title"><i class="fas fa-user-minus mr-2"></i>Desasignar anonimización</h5>
                 <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
@@ -483,7 +483,7 @@
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-user-minus mr-1"></i> Confirmar Desasignación
+                        <i class="fas fa-user-minus mr-1"></i> Confirmar desasignación
                     </button>
                 </form>
             </div>
@@ -648,7 +648,7 @@ $(document).ready(function() {
         var id = $btn.data('id');
         var codigo = $btn.data('codigo');
 
-        if (!confirm('¿Anonimizar audio/video de ' + codigo + '?\n\nSe creara una copia con voz distorsionada. Este proceso puede tomar varios segundos.')) {
+        if (!confirm('¿Anonimizar audio/video de ' + codigo + '?\n\nSe creará una copia con voz distorsionada. Este proceso puede tomar varios segundos.')) {
             return;
         }
 

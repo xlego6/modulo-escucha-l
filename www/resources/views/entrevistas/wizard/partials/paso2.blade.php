@@ -1,11 +1,11 @@
 <div class="card">
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0"><i class="fas fa-users mr-2"></i>Paso 2: Informacion de Testimoniante(s)</h5>
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users mr-2"></i>Paso 2: Información de testimoniante(s)</h3>
     </div>
     <div class="card-body">
         <div class="alert alert-info">
             <i class="fas fa-info-circle mr-2"></i>
-            Complete la informacion de cada persona que brinda testimonio. El numero de formularios depende del valor indicado en el Paso 1.
+            Complete la información de cada persona que brinda testimonio. El número de formularios depende del valor indicado en el Paso 1.
         </div>
 
         <div id="testimoniantes-container">
@@ -42,7 +42,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Nombre Identitario</label>
+                        <label>Nombre identitario</label>
                         <input type="text" class="form-control" name="nombre_identitario___INDEX__">
                         <small class="form-text text-muted">Nombre con el que la persona elige ser reconocida</small>
                     </div>
@@ -51,7 +51,7 @@
                 <!-- Lugar de origen -->
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Departamento de Origen</label>
+                        <label>Departamento de origen</label>
                         <select class="form-control select2 departamento-select" name="id_lugar_origen_depto___INDEX__">
                             <option value="">-- Seleccione --</option>
                             @foreach($catalogos['departamentos'] as $id => $descripcion)
@@ -62,7 +62,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Municipio de Origen</label>
+                        <label>Municipio de origen</label>
                         <select class="form-control select2 municipio-select" name="id_lugar_origen_muni___INDEX__">
                             <option value="">-- Seleccione --</option>
                         </select>
@@ -72,7 +72,7 @@
                 <!-- Poblacion - Select Multiple -->
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Poblacion</label>
+                        <label>Población</label>
                         <select class="form-control select2-multiple" name="poblaciones___INDEX__[]" multiple>
                             @foreach($catalogos['poblaciones'] as $id => $descripcion)
                             <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -85,7 +85,7 @@
                 <!-- Ocupacion - Select Multiple -->
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Ocupacion</label>
+                        <label>Ocupación</label>
                         <select class="form-control select2-multiple" name="ocupaciones___INDEX__[]" multiple>
                             @foreach($catalogos['ocupaciones'] as $id => $descripcion)
                             <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -109,7 +109,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Identidad de Genero</label>
+                        <label>Identidad de género</label>
                         <select class="form-control" name="id_identidad_genero___INDEX__">
                             <option value="">-- Seleccione --</option>
                             @foreach($catalogos['identidades_genero'] as $id => $descripcion)
@@ -120,7 +120,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Orientacion Sexual</label>
+                        <label>Orientación sexual</label>
                         <select class="form-control" name="id_orientacion_sexual___INDEX__">
                             <option value="">-- Seleccione --</option>
                             @foreach($catalogos['orientaciones_sexuales'] as $id => $descripcion)
@@ -133,7 +133,7 @@
                 <!-- Etnia, Etario, Edad, Discapacidad -->
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Grupo Etnico</label>
+                        <label>Grupo étnico</label>
                         <select class="form-control" name="id_etnia___INDEX__">
                             <option value="">-- Seleccione --</option>
                             @foreach($catalogos['etnias'] as $id => $descripcion)
@@ -144,7 +144,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Rango Etario</label>
+                        <label>Rango etario</label>
                         <select class="form-control" name="id_rango_etario___INDEX__">
                             <option value="">-- Seleccione --</option>
                             @foreach($catalogos['rangos_etarios'] as $id => $descripcion)
@@ -174,11 +174,11 @@
 
             <!-- Consentimiento Informado -->
             <div class="consentimiento-section">
-                <h6><i class="fas fa-file-signature mr-2"></i>Consentimiento Informado</h6>
+                <h6 class="seccion-titulo"><i class="fas fa-file-signature"></i>Consentimiento informado</h6>
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
-                            <label class="required-field">Tiene documento de autorizacion</label>
+                            <label class="required-field">Tiene documento de autorización</label>
                             <div>
                                 <div class="custom-control custom-radio custom-control-inline">
                                     <input type="radio" class="custom-control-input tiene-documento-radio" id="tiene_documento___INDEX___si" name="tiene_documento___INDEX__" value="1">
@@ -261,7 +261,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Permite uso, conservacion y consulta</label>
+                                    <label>Permite uso, conservación y consulta</label>
                                     <div>
                                         <div class="custom-control custom-radio custom-control-inline">
                                             <input type="radio" class="custom-control-input" id="permite_uso___INDEX___si" name="permite_uso___INDEX__" value="1">
@@ -326,13 +326,13 @@
                     <div class="col-md-12 preguntas-consentimiento-otro" style="display: none;">
                         <div class="alert alert-warning py-2 mb-3">
                             <i class="fas fa-info-circle mr-1"></i>
-                            Consentimiento informado diferente al formato DADH. Responda las siguientes preguntas segun el documento disponible.
+                            Consentimiento informado diferente al formato DADH. Responda las siguientes preguntas según el documento disponible.
                         </div>
                         <div class="row">
                             <!-- Pregunta 1: Uso en otras actividades -->
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label>1. La persona autoriza que su testimonio sea utilizado en otras actividades del CNMH (exposiciones, piezas comunicativas, documentales, entre otros) diferentes al proposito original (sentencia, investigacion, iniciativa, etc.)?</label>
+                                    <label>1. La persona autoriza que su testimonio sea utilizado en otras actividades del CNMH (exposiciones, piezas comunicativas, documentales, entre otros) diferentes al propósito original (sentencia, investigación, iniciativa, etc.)?</label>
                                     <div>
                                         <div class="custom-control custom-radio custom-control-inline">
                                             <input type="radio" class="custom-control-input" id="otro_uso___INDEX___si" name="otro_uso___INDEX__" value="1">
@@ -370,7 +370,7 @@
                             <!-- Pregunta 3: Solicita anonimizacion -->
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label>3. Solicita anonimizacion u ocultamiento de informacion del testimonio?</label>
+                                    <label>3. Solicita anonimización u ocultamiento de información del testimonio?</label>
                                     <div>
                                         <div class="custom-control custom-radio custom-control-inline">
                                             <input type="radio" class="custom-control-input" id="otro_anonimizar___INDEX___si" name="otro_anonimizar___INDEX__" value="1">
@@ -390,9 +390,9 @@
                     <!-- Observaciones (siempre visible, obligatorio si no tiene documento) -->
                     <div class="col-md-12">
                         <div class="form-group">
-                            <label class="observaciones-label">Observaciones del Consentimiento</label>
-                            <textarea class="form-control observaciones-consentimiento" name="observaciones_consentimiento___INDEX__" rows="2" placeholder="Indique el motivo por el cual no se cuenta con documento de autorizacion..."></textarea>
-                            <small class="form-text text-muted observaciones-ayuda">Este campo es obligatorio si no tiene documento de autorizacion</small>
+                            <label class="observaciones-label">Observaciones del consentimiento</label>
+                            <textarea class="form-control observaciones-consentimiento" name="observaciones_consentimiento___INDEX__" rows="2" placeholder="Indique el motivo por el cual no se cuenta con documento de autorización..."></textarea>
+                            <small class="form-text text-muted observaciones-ayuda">Este campo es obligatorio si no tiene documento de autorización</small>
                         </div>
                     </div>
                 </div>
