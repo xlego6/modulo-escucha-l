@@ -228,7 +228,7 @@
                         <ol>
                             <li><strong>Líder de procesamiento</strong> inicia la transcripción automática desde <strong>Procesamientos → Transcripción</strong>.</li>
                             <li>El mismo Líder asigna la edición del texto a un <strong>Transcriptor</strong> desde <strong>Procesamientos → Edición</strong>.</li>
-                            <li>El <strong>Transcriptor</strong> edita el texto verificando con el audio. Puede guardar borradores (<kbd>Ctrl+S</kbd>) y navegar el audio con <kbd>Alt+Espacio</kbd>, <kbd>Alt+←</kbd>, <kbd>Alt+→</kbd>. Al terminar, hace clic en <strong>Enviar a Revisión</strong>.</li>
+                            <li>El <strong>Transcriptor</strong> edita el texto verificando con el audio. Puede guardar borradores (<kbd>Alt+G</kbd>) y navegar el audio con <kbd>Alt+X</kbd>, <kbd>Alt+←</kbd>, <kbd>Alt+→</kbd>. Al terminar, hace clic en <strong>Enviar a Revisión</strong>.</li>
                             <li>El <strong>Líder de procesamiento</strong> revisa y decide <strong>Aprobar</strong> (el documento queda guardado como Transcripción Final en el expediente) o <strong>Rechazar y Devolver</strong> con comentarios al Transcriptor.</li>
                         </ol>
                         <p class="mb-0">Para criterios de edición y validación, consulte el documento <em>PCA-GU-010 "Guía de edición y validación de transcripciones CNMH"</em> en la intranet del CNMH.</p>
@@ -335,7 +335,7 @@
             </div>
             <div class="card-body">
                 <ul class="mb-0">
-                    <li>Guarde el avance con frecuencia al editar transcripciones (<kbd>Ctrl+S</kbd>).</li>
+                    <li>Guarde el avance con frecuencia al editar transcripciones (<kbd>Alt+G</kbd>).</li>
                     <li>Use navegadores actualizados: Chrome, Firefox o Edge.</li>
                     <li>Verifique su conexión a internet antes de subir archivos de más de 100 MB.</li>
                     <li>Si trabaja de forma remota, asegúrese de estar conectado a la VPN antes de acceder al sistema.</li>

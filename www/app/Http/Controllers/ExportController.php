@@ -85,6 +85,7 @@ class ExportController extends Controller
             'id_tipo_testimonio' => $request->id_tipo_testimonio,
             'tiene_adjuntos' => $request->tiene_adjuntos,
             'id_tipo_adjunto' => $request->id_tipo_adjunto,
+            'incluir_ruta_servidor' => $request->boolean('incluir_ruta_servidor'),
         ];
 
         // Registrar traza

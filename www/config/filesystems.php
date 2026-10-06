@@ -53,6 +53,8 @@ return [
             'root' => storage_path('app/public'),
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
+            // Ruta de esta carpeta vista desde el host (fuera de Docker), usada en exportaciones
+            'ruta_servidor' => env('RUTA_ADJUNTOS_SERVIDOR'),
         ],
 
         's3' => [
