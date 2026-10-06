@@ -215,6 +215,9 @@ Revisar Transcripcion: {{ $entrevista->entrevista_codigo }}
                         <button class="btn btn-sm btn-outline-secondary" onclick="skipMedia('media-{{ $adjunto->id_adjunto }}', 5)" title="Avanzar 5s">
                             +5s <i class="fas fa-forward"></i>
                         </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="changeSpeed('media-{{ $adjunto->id_adjunto }}')" title="Velocidad de reproducción">
+                            <i class="fas fa-tachometer-alt"></i> <span class="speed-label">1x</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -572,6 +575,18 @@ function skipMedia(id, seconds) {
     if (media) media.currentTime = Math.max(0, media.currentTime + seconds);
 }
 
+var speeds = [1, 1.25, 1.5, 1.75, 2, 0.75];
+var speedIndex = {};
+function changeSpeed(id) {
+    if (!speedIndex[id]) speedIndex[id] = 0;
+    speedIndex[id] = (speedIndex[id] + 1) % speeds.length;
+    var media = document.getElementById(id);
+    if (media) {
+        media.playbackRate = speeds[speedIndex[id]];
+        $(media).closest('.media-item').find('.speed-label').text(speeds[speedIndex[id]] + 'x');
+    }
+}
+
 // ── Resaltador de anotaciones ──────────────────────────────────────────────
 function resaltar(color) {
     var sel = window.getSelection();
@@ -706,7 +721,7 @@ $(document).ready(function() {
     // Atajos de teclado para reproductor
     $(document).on('keydown', function(e) {
         var getMedia = function() { return $('audio, video').first()[0]; };
-        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.key === ' ') {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.code === 'KeyX') {
             e.preventDefault();
             var m = getMedia();
             if (m) m.paused ? m.play() : m.pause();

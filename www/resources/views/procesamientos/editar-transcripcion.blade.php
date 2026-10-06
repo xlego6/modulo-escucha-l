@@ -361,8 +361,8 @@ Editar Transcripcion: {{ $entrevista->entrevista_codigo }}
             </div>
             <div class="card-body py-2">
                 <ul class="list-unstyled mb-0 small">
-                    <li><kbd>Ctrl</kbd> + <kbd>S</kbd> &mdash; Guardar</li>
-                    <li><kbd>Alt</kbd> + <kbd>Space</kbd> &mdash; Play/Pause</li>
+                    <li><kbd>Alt</kbd> + <kbd>G</kbd> &mdash; Guardar</li>
+                    <li><kbd>Alt</kbd> + <kbd>X</kbd> &mdash; Play/Pause</li>
                     <li><kbd>Alt</kbd> + <kbd>←</kbd> &mdash; Retroceder 10s</li>
                     <li><kbd>Alt</kbd> + <kbd>→</kbd> &mdash; Avanzar 10s</li>
                 </ul>
@@ -449,7 +449,7 @@ $(document).ready(function() {
 
     // Atajos de teclado
     $(document).on('keydown', function(e) {
-        if (e.ctrlKey && e.key === 's') {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.code === 'KeyG') {
             e.preventDefault();
             $('#form-transcripcion').submit();
         }
@@ -457,7 +457,7 @@ $(document).ready(function() {
             var mediaId = transcripcionActual !== 'completa' ? 'media-' + transcripcionActual : null;
             return mediaId ? document.getElementById(mediaId) : $('audio, video').first()[0];
         };
-        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.key === ' ') {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey && e.code === 'KeyX') {
             e.preventDefault();
             var m = getActiveMedia();
             if (m) m.paused ? m.play() : m.pause();

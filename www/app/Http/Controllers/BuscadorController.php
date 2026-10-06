@@ -11,11 +11,15 @@ use App\Models\TrazaActividad;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class BuscadorController extends Controller
 {
+    /** Minutos que se conserva el índice de resultados de una búsqueda para paginar sin recalcularla */
+    const MINUTOS_CACHE_RESULTADOS = 10;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -55,13 +59,25 @@ class BuscadorController extends Controller
         ];
 
         if ($tiene_busqueda) {
-            $todasEntrevistas = $this->buscarEntrevistas($termino, $request, $limiteTotal);
-            $todasPersonas    = $tiene_texto ? $this->buscarPersonas($termino, $request, $limiteTotal) : collect();
-            $todosDocumentos  = $tiene_texto ? $this->buscarDocumentos($termino, $request, $limiteTotal) : collect();
+            // La búsqueda completa (cara: recorre transcripciones) se calcula una vez y se guarda
+            // como índice de IDs ordenados. Al cambiar de página solo se cargan los 25 registros
+            // de esa página. Un envío nuevo del formulario (sin page_*) siempre recalcula.
+            $paginando = $request->hasAny(['page_e', 'page_p', 'page_d']);
+            $cacheKey  = 'buscador:' . md5(json_encode([
+                trim($termino),
+                $request->only(['id_departamento', 'id_municipio', 'id_hecho_victimizante', 'id_resistencia', 'id_dependencia']),
+                $limiteTotal,
+            ]));
 
-            $totalE = $todasEntrevistas->count();
-            $totalP = $todasPersonas->count();
-            $totalD = $todosDocumentos->count();
+            $indice = $paginando ? Cache::get($cacheKey) : null;
+            if (!$indice) {
+                $indice = $this->calcularIndice($termino, $tiene_texto, $request, $limiteTotal);
+                Cache::put($cacheKey, $indice, now()->addMinutes(self::MINUTOS_CACHE_RESULTADOS));
+            }
+
+            $totalE = count($indice['entrevistas']);
+            $totalP = count($indice['personas']);
+            $totalD = count($indice['documentos']);
 
             $resultados['total_e']   = $totalE;
             $resultados['total_p']   = $totalP;
@@ -72,7 +88,7 @@ class BuscadorController extends Controller
             $resultados['cap_hit_d'] = $totalD >= $limiteTotal;
 
             $resultados['entrevistas'] = (new LengthAwarePaginator(
-                $todasEntrevistas->forPage($pageE, $perPage),
+                $this->cargarEntrevistas(array_slice($indice['entrevistas'], ($pageE - 1) * $perPage, $perPage)),
                 $totalE,
                 $perPage,
                 $pageE,
@@ -80,7 +96,7 @@ class BuscadorController extends Controller
             ))->appends($request->except('page_e'));
 
             $resultados['personas'] = (new LengthAwarePaginator(
-                $todasPersonas->forPage($pageP, $perPage),
+                $this->cargarPersonas(array_slice($indice['personas'], ($pageP - 1) * $perPage, $perPage)),
                 $totalP,
                 $perPage,
                 $pageP,
@@ -88,32 +104,34 @@ class BuscadorController extends Controller
             ))->appends($request->except('page_p'));
 
             $resultados['documentos'] = (new LengthAwarePaginator(
-                $todosDocumentos->forPage($pageD, $perPage),
+                $this->cargarDocumentos(array_slice($indice['documentos'], ($pageD - 1) * $perPage, $perPage)),
                 $totalD,
                 $perPage,
                 $pageD,
                 ['path' => $request->url(), 'pageName' => 'page_d']
             ))->appends($request->except('page_d'));
 
-            // Registrar búsqueda en traza (con texto y/o solo con filtros)
-            if ($tiene_texto) {
-                $referencia = 'Búsqueda: "' . $termino . '" — ' . $resultados['total'] . ' resultado(s)';
-            } else {
-                $filtros = http_build_query($request->only([
-                    'id_departamento', 'id_municipio', 'id_hecho_victimizante', 'id_resistencia', 'id_dependencia',
-                ]));
-                $referencia = 'Búsqueda por filtros (' . $filtros . ') — ' . $resultados['total'] . ' resultado(s)';
-            }
+            // Registrar búsqueda en traza (con texto y/o solo con filtros); cambiar de página no es una búsqueda nueva
+            if (!$paginando) {
+                if ($tiene_texto) {
+                    $referencia = 'Búsqueda: "' . $termino . '" — ' . $resultados['total'] . ' resultado(s)';
+                } else {
+                    $filtros = http_build_query($request->only([
+                        'id_departamento', 'id_municipio', 'id_hecho_victimizante', 'id_resistencia', 'id_dependencia',
+                    ]));
+                    $referencia = 'Búsqueda por filtros (' . $filtros . ') — ' . $resultados['total'] . ' resultado(s)';
+                }
 
-            TrazaActividad::create([
-                'fecha_hora'  => now(),
-                'id_usuario'  => Auth::id(),
-                'accion'      => 'buscar',
-                'objeto'      => 'buscador',
-                'codigo'      => $tiene_texto ? mb_substr($termino, 0, 100) : null,
-                'referencia'  => $referencia,
-                'ip'          => $request->ip(),
-            ]);
+                TrazaActividad::create([
+                    'fecha_hora'  => now(),
+                    'id_usuario'  => Auth::id(),
+                    'accion'      => 'buscar',
+                    'objeto'      => 'buscador',
+                    'codigo'      => $tiene_texto ? mb_substr($termino, 0, 100) : null,
+                    'referencia'  => $referencia,
+                    'ip'          => $request->ip(),
+                ]);
+            }
         }
 
         // Catalogos para filtros
@@ -187,6 +205,106 @@ class BuscadorController extends Controller
             'entrevistadorActual',
             'permisosAprobados'
         ));
+    }
+
+    /**
+     * Ejecuta la búsqueda completa y la reduce a un índice serializable:
+     * IDs en orden de relevancia con sus coincidencias.
+     */
+    private function calcularIndice($termino, $tiene_texto, Request $request, $limite): array
+    {
+        return DB::transaction(function () use ($termino, $tiene_texto, $request, $limite) {
+            // Los textos de adjunto viven en TOAST y el planificador no cuenta el costo de
+            // descomprimirlos: como la tabla "parece" pequeña elige recorrerla entera en vez
+            // de usar los índices trigram (~1 s contra ~60 ms por consulta). SET LOCAL solo
+            // afecta esta transacción; sin índices aplicables Postgres igual hace seq scan.
+            DB::statement('SET LOCAL enable_seqscan = off');
+            return $this->construirIndice($termino, $tiene_texto, $request, $limite);
+        });
+    }
+
+    private function construirIndice($termino, $tiene_texto, Request $request, $limite): array
+    {
+        $entrevistas = $this->buscarEntrevistas($termino, $request, $limite);
+        $personas    = $tiene_texto ? $this->buscarPersonas($termino, $request, $limite) : collect();
+        $documentos  = $tiene_texto ? $this->buscarDocumentos($termino, $request, $limite) : collect();
+
+        return [
+            'entrevistas' => $entrevistas->map(fn($e) => [
+                'id'                  => $e->id_e_ind_fvt,
+                'fuente_coincidencia' => $e->fuente_coincidencia,
+                'coincidencias'       => $e->coincidencias,
+            ])->all(),
+            'personas' => $personas->map(fn($p) => [
+                'id'            => $p->id_persona,
+                'coincidencias' => $p->coincidencias,
+            ])->all(),
+            'documentos' => $documentos->map(fn($d) => [
+                'id'                 => $d->id_adjunto,
+                'coincidencia_texto' => $d->coincidencia_texto,
+                'coincidencias'      => $d->coincidencias,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * Carga los registros de una página del índice conservando su orden.
+     * Los que ya no existan (borrados desde que se calculó el índice) se omiten.
+     */
+    private function hidratar($query, string $llave, array $items)
+    {
+        if (empty($items)) {
+            return collect();
+        }
+        $modelos = $query->whereIn($llave, array_column($items, 'id'))->get()->keyBy($llave);
+
+        return collect($items)->map(function ($item) use ($modelos) {
+            $modelo = $modelos->get($item['id']);
+            if (!$modelo) {
+                return null;
+            }
+            foreach ($item as $atributo => $valor) {
+                if ($atributo !== 'id') {
+                    $modelo->setAttribute($atributo, $valor);
+                }
+            }
+            return $modelo;
+        })->filter()->values();
+    }
+
+    private function cargarEntrevistas(array $items)
+    {
+        return $this->hidratar(Entrevista::where('id_activo', 1)->with([
+            'rel_entrevistador', 'rel_entrevistador.rel_usuario',
+            'rel_lugar_entrevista', 'rel_dependencia_origen', 'rel_equipo_estrategia',
+        ]), 'id_e_ind_fvt', $items);
+    }
+
+    private function cargarPersonas(array $items)
+    {
+        return $this->hidratar(Persona::with(['rel_sexo', 'rel_etnia', 'rel_tipo_documento'])
+            ->withCount('rel_persona_entrevistada as num_entrevistas'), 'id_persona', $items);
+    }
+
+    private function cargarDocumentos(array $items)
+    {
+        return $this->hidratar(Adjunto::select(self::COLUMNAS_ADJUNTO)
+            ->with(['rel_entrevista', 'rel_tipo']), 'id_adjunto', $items);
+    }
+
+    /** Columnas de adjunto para listados: todo menos texto_extraido, que puede pesar cientos de KB */
+    const COLUMNAS_ADJUNTO = [
+        'id_adjunto', 'id_e_ind_fvt', 'ubicacion', 'nombre_original', 'tipo_mime', 'id_tipo',
+        'tamano', 'duracion', 'existe_archivo', 'created_at', 'updated_at',
+    ];
+
+    /**
+     * Expresión SQL booleana: el texto contiene el término (sin distinguir mayúsculas).
+     * Usa position() y no ILIKE para no interpretar % y _ del término como comodines.
+     */
+    private function sqlContiene(string $columna): string
+    {
+        return "position(lower(?) in lower(coalesce({$columna}, ''))) > 0";
     }
 
     /**
@@ -289,11 +407,26 @@ class BuscadorController extends Controller
             $query->where('id_dependencia_origen', (int) $request->id_dependencia);
         }
 
-        $entrevistasDirectas = $query->with([
-            'rel_entrevistador', 'rel_entrevistador.rel_usuario',
-            'rel_lugar_entrevista', 'rel_dependencia_origen',
-            'rel_equipo_estrategia', 'rel_contenido'
-        ])->limit($limite)->get();
+        // Solo lo necesario para calcular coincidencias y relevancia; las relaciones
+        // que muestra la vista se cargan después, únicamente para la página visible.
+        $query->select('esclarecimiento.e_ind_fvt.*')->with('rel_contenido');
+        if ($tiene_texto) {
+            // Mismo texto que getTextoParaProcesamiento(): final más reciente, si no la
+            // automatizada más reciente, si no anotaciones. Se evalúa en la BD para no
+            // traer transcripciones completas a PHP.
+            $ultimoTexto = fn($tipo) => "nullif((select a.texto_extraido from esclarecimiento.adjunto a
+                where a.id_e_ind_fvt = esclarecimiento.e_ind_fvt.id_e_ind_fvt and a.id_tipo = {$tipo}
+                order by a.created_at desc limit 1), '')";
+            $query->selectRaw(
+                $this->sqlContiene('coalesce(' . $ultimoTexto(Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_FINAL) . ', '
+                    . $ultimoTexto(Entrevista::TIPO_ADJUNTO_TRANSCRIPCION_AUTOMATIZADA) . ', esclarecimiento.e_ind_fvt.anotaciones)')
+                . ' as coincide_transcripcion',
+                [$termino]
+            );
+        }
+        // Orden por ID descendente (más recientes primero): desempate estable para la relevancia
+        // y define qué filas entran cuando se alcanza el tope
+        $entrevistasDirectas = $query->orderByDesc('esclarecimiento.e_ind_fvt.id_e_ind_fvt')->limit($limite)->get();
 
         // Atributos de coincidencia (solo con texto)
         foreach ($entrevistasDirectas as $e) {
@@ -302,8 +435,7 @@ class BuscadorController extends Controller
             if ($tiene_texto) {
                 if (stripos($e->entrevista_codigo, $termino) !== false) $coincidencias[] = 'Codigo';
                 if (stripos($e->titulo, $termino) !== false) $coincidencias[] = 'Titulo';
-                $transcripcion = $e->getTextoParaProcesamiento();
-                if (stripos($transcripcion ?? '', $termino) !== false) $coincidencias[] = 'Transcripcion';
+                if ($e->coincide_transcripcion) $coincidencias[] = 'Transcripcion';
                 if (stripos($e->nombre_proyecto ?? '', $termino) !== false) $coincidencias[] = 'Proyecto';
                 if ($e->rel_contenido) {
                     $camposContenido = [
@@ -337,7 +469,12 @@ class BuscadorController extends Controller
                       });
                 })
                 ->whereNotIn('id_e_ind_fvt', $entrevistasDirectas->pluck('id_e_ind_fvt'))
-                ->with(['rel_entrevistador', 'rel_entrevistador.rel_usuario', 'rel_lugar_entrevista', 'rel_adjuntos'])
+                ->with(['rel_adjuntos' => function ($q) use ($termino) {
+                    $q->select('id_adjunto', 'id_e_ind_fvt', 'nombre_original')
+                      ->selectRaw($this->sqlContiene('texto_extraido') . ' as coincide_texto', [$termino])
+                      ->orderBy('id_adjunto');
+                }])
+                ->orderByDesc('id_e_ind_fvt')
                 ->limit(max(0, $limite - $entrevistasDirectas->count()))
                 ->get();
 
@@ -345,8 +482,7 @@ class BuscadorController extends Controller
                 $e->setAttribute('fuente_coincidencia', 'documento');
                 $coincidencias = [];
                 $documentosCoincidentes = $e->rel_adjuntos->filter(function($adj) use ($termino) {
-                    return (stripos($adj->nombre_original, $termino) !== false) ||
-                           (stripos($adj->texto_extraido ?? '', $termino) !== false);
+                    return (stripos($adj->nombre_original, $termino) !== false) || $adj->coincide_texto;
                 });
                 foreach ($documentosCoincidentes as $doc) {
                     $coincidencias[] = ['nombre' => $doc->nombre_original];
@@ -368,7 +504,7 @@ class BuscadorController extends Controller
      */
     private function buscarPersonas($termino, Request $request, $limite = 100)
     {
-        $personas = Persona::with(['rel_sexo', 'rel_etnia', 'rel_tipo_documento'])
+        $personas = Persona::select('id_persona', 'nombre', 'apellido', 'alias', 'nombre_identitario', 'num_documento')
             ->where(function($q) use ($termino) {
                 $q->where('nombre', 'ILIKE', '%' . $termino . '%')
                   ->orWhere('apellido', 'ILIKE', '%' . $termino . '%')
@@ -376,6 +512,7 @@ class BuscadorController extends Controller
                   ->orWhere('nombre_identitario', 'ILIKE', '%' . $termino . '%')
                   ->orWhere('num_documento', 'ILIKE', '%' . $termino . '%');
             })
+            ->orderByDesc('id_persona')
             ->limit($limite)
             ->get();
 
@@ -399,11 +536,6 @@ class BuscadorController extends Controller
                 $coincidencias[] = 'Documento';
             }
             $p->setAttribute('coincidencias', $coincidencias);
-
-            // Contar entrevistas vinculadas
-            $p->setAttribute('num_entrevistas', DB::table('fichas.persona_entrevistada')
-                ->where('id_persona', $p->id_persona)
-                ->count());
         }
 
         return $personas->sortByDesc(fn($p) => $this->calcularRelevanciaPersona($p))->values();
@@ -414,7 +546,8 @@ class BuscadorController extends Controller
      */
     private function buscarDocumentos($termino, Request $request, $limite = 100)
     {
-        $documentos = Adjunto::with(['rel_entrevista', 'rel_tipo'])
+        $documentos = Adjunto::select('id_adjunto', 'nombre_original')
+            ->selectRaw($this->sqlContiene('texto_extraido') . ' as coincide_texto', [$termino])
             ->where('existe_archivo', 1)
             ->whereHas('rel_entrevista', function($q) {
                 $q->where('id_activo', 1);
@@ -426,6 +559,7 @@ class BuscadorController extends Controller
             // Ordenar por relevancia: primero los que tienen coincidencia en texto_extraido
             ->orderByRaw("CASE WHEN texto_extraido ILIKE ? THEN 0 ELSE 1 END", ['%' . $termino . '%'])
             ->orderBy('created_at', 'desc')
+            ->orderByDesc('id_adjunto')
             ->limit($limite)
             ->get();
 
@@ -438,7 +572,7 @@ class BuscadorController extends Controller
                 $coincidencias[] = 'Nombre del archivo';
             }
 
-            if ($doc->texto_extraido && stripos($doc->texto_extraido, $termino) !== false) {
+            if ($doc->coincide_texto) {
                 $coincidencia_texto = true;
                 $coincidencias[] = 'Contenido';
             }

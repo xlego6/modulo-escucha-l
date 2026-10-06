@@ -157,6 +157,10 @@
 
                 </div>
                 <div class="card-footer">
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="incluir_ruta_servidor" name="incluir_ruta_servidor" value="1">
+                        <label class="custom-control-label" for="incluir_ruta_servidor">Incluir ruta de las carpetas en el servidor</label>
+                    </div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-file-excel mr-1"></i>Descargar Excel de entrevistas
                     </button>

@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
@@ -120,7 +121,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
 
     public function headings(): array
     {
-        return [
+        $headings = [
             // DATOS TECNICOS
             'ID',
             'Codigo',
@@ -217,6 +218,12 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             'Adjuntos Documento',
             'Duracion Total',
         ];
+
+        if (!empty($this->filtros['incluir_ruta_servidor'])) {
+            $headings[] = 'Ruta Carpeta Servidor';
+        }
+
+        return $headings;
     }
 
     public function map($entrevista): array
@@ -414,7 +421,7 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             $duracionFormato = sprintf('%02d:%02d:%02d', $h, $m, $s);
         }
 
-        return [
+        $fila = [
             // DATOS TECNICOS
             $entrevista->id_e_ind_fvt,
             $entrevista->entrevista_codigo,
@@ -516,11 +523,35 @@ class EntrevistasExport implements FromQuery, WithHeadings, WithMapping, WithSty
             $adjuntosDocumento,
             $duracionFormato,
         ];
+
+        if (!empty($this->filtros['incluir_ruta_servidor'])) {
+            $fila[] = $this->rutasCarpetas($adjuntos);
+        }
+
+        return $fila;
     }
 
     // -------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------
+
+    /**
+     * Carpetas del servidor donde están los adjuntos de la entrevista.
+     * Se toman de la ubicación real de cada adjunto porque la carga manual
+     * usa el código en slug y la importación masiva el código tal cual.
+     */
+    private function rutasCarpetas($adjuntos): string
+    {
+        $base = config('filesystems.disks.public.ruta_servidor') ?: Storage::disk('public')->path('');
+        $base = rtrim($base, '/');
+
+        return $adjuntos->pluck('ubicacion')
+            ->filter()
+            ->map(fn($ubicacion) => $base . '/' . dirname($ubicacion))
+            ->unique()
+            ->sort()
+            ->implode(' | ');
+    }
 
     private function formatBool($value): string
     {
