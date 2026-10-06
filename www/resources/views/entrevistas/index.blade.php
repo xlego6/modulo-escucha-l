@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
 @section('title', 'Entrevistas')
-@section('content_header', 'Listado de Entrevistas')
+@section('content_header', 'Listado de entrevistas')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Filtros de busqueda</h3>
+        <h3 class="card-title">Filtros de búsqueda</h3>
         <div class="card-tools">
             <a href="{{ route('entrevistas.wizard.create') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Nueva Entrevista
+                <i class="fas fa-plus"></i> Nueva entrevista
             </a>
         </div>
     </div>
@@ -17,14 +17,14 @@
         <form method="GET" action="{{ route('entrevistas.index') }}" class="row">
             <div class="col-md-2">
                 <div class="form-group">
-                    <label>Codigo</label>
+                    <label>Código</label>
                     <input type="text" name="codigo" class="form-control form-control-sm" value="{{ request('codigo') }}" placeholder="VI-0001-001">
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Titulo</label>
-                    <input type="text" name="titulo" class="form-control form-control-sm" value="{{ request('titulo') }}" placeholder="Buscar en titulo...">
+                    <label>Título</label>
+                    <input type="text" name="titulo" class="form-control form-control-sm" value="{{ request('titulo') }}" placeholder="Buscar en título...">
                 </div>
             </div>
             <div class="col-md-2">
@@ -107,12 +107,12 @@
         <table class="table table-hover table-striped">
             <thead>
                 <tr>
-                    <th style="width: 120px">{!! $sortLink('entrevista_codigo', 'Codigo') !!}</th>
-                    <th>{!! $sortLink('titulo', 'Titulo') !!}</th>
+                    <th style="width: 120px">{!! $sortLink('entrevista_codigo', 'Código') !!}</th>
+                    <th>{!! $sortLink('titulo', 'Título') !!}</th>
                     <th style="width: 100px">{!! $sortLink('entrevista_fecha', 'Fecha de toma') !!}</th>
                     <th style="width: 130px">{!! $sortLink('created_at', 'Fecha de carga') !!}</th>
                     <th style="width: 180px">{!! $sortLink('nombre_entrevistador', 'Entrevistador / Carga') !!}</th>
-                    <th style="width: 80px">{!! $sortLink('tiempo_entrevista', 'Duracion') !!}</th>
+                    <th style="width: 80px">{!! $sortLink('tiempo_entrevista', 'Duración') !!}</th>
                     <th style="width: 120px">Acciones</th>
                 </tr>
             </thead>

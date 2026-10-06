@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Gestionar Adjuntos')
-@section('content_header', 'Gestionar Archivos Adjuntos')
+@section('title', 'Gestionar adjuntos')
+@section('content_header', 'Gestionar archivos adjuntos')
 
 @section('css')
 <style>
@@ -236,12 +236,12 @@
                 </h3>
                 <div class="card-tools">
                     <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Volver a Entrevista
+                        <i class="fas fa-arrow-left"></i> Volver a entrevista
                     </a>
                 </div>
             </div>
             <div class="card-body">
-                <p><strong>Titulo:</strong> {{ $entrevista->titulo }}</p>
+                <p><strong>Título:</strong> {{ $entrevista->titulo }}</p>
                 <p><strong>Fecha:</strong> {{ $entrevista->fmt_fecha }}</p>
             </div>
         </div>
@@ -271,7 +271,7 @@
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-paperclip"></i>
-                    Archivos Adjuntos ({{ $entrevista->rel_adjuntos->count() }})
+                    Archivos adjuntos ({{ $entrevista->rel_adjuntos->count() }})
                 </h3>
             </div>
             <div class="card-body table-responsive p-0">
@@ -281,8 +281,8 @@
                             <th style="width: 40px"></th>
                             <th>Nombre</th>
                             <th style="width: 150px">Tipo</th>
-                            <th style="width: 100px">Tamano</th>
-                            <th style="width: 100px">Duracion</th>
+                            <th style="width: 100px">Tamaño</th>
+                            <th style="width: 100px">Duración</th>
                             <th style="width: 150px">Acciones</th>
                         </tr>
                     </thead>
@@ -298,11 +298,11 @@
                         <tr id="fila-{{ $adjunto->id_adjunto }}">
                             <td class="text-center">
                                 @if($esTranscripcionFinal)
-                                    <i class="fas fa-file-signature fa-lg text-success" title="Transcripcion Final"></i>
+                                    <i class="fas fa-file-signature fa-lg text-success" title="Transcripción Final"></i>
                                 @elseif($esTranscripcionAuto)
-                                    <i class="fas fa-robot fa-lg text-primary" title="Transcripcion Automatizada"></i>
+                                    <i class="fas fa-robot fa-lg text-primary" title="Transcripción Automatizada"></i>
                                 @elseif($esTranscripcionAnonimizada)
-                                    <i class="fas fa-user-secret fa-lg text-danger" title="Transcripcion Anonimizada (publica)"></i>
+                                    <i class="fas fa-user-secret fa-lg text-danger" title="Transcripción Anonimizada (pública)"></i>
                                 @elseif($adjunto->es_audio)
                                     <i class="fas fa-file-audio fa-lg text-info"></i>
                                 @elseif($adjunto->es_video)
@@ -353,7 +353,7 @@
                                             data-es-video="{{ $adjunto->es_video ? '1' : '0' }}"
                                             data-es-transcripcion="{{ $esTranscripcion ? '1' : '0' }}"
                                             data-tiene-texto="{{ $tieneTextoExtraido ? '1' : '0' }}"
-                                            title="{{ $esTranscripcion ? 'Ver Transcripcion' : ($tieneTextoExtraido ? 'Ver Documento' : 'Ver/Reproducir') }}">
+                                            title="{{ $esTranscripcion ? 'Ver Transcripción' : ($tieneTextoExtraido ? 'Ver Documento' : 'Ver/Reproducir') }}">
                                         <i class="fas {{ $esTranscripcion ? 'fa-eye' : ($tieneTextoExtraido ? 'fa-eye' : 'fa-play') }}"></i>
                                     </button>
                                     @elseif($puedeReproducirAdj && !$puedeVer)
@@ -417,13 +417,13 @@
         <!-- Formulario de subida -->
         <div class="card card-success">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-upload"></i> Subir Archivo</h3>
+                <h3 class="card-title"><i class="fas fa-upload"></i> Subir archivo</h3>
             </div>
             <form id="form-subir-archivo" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
                     <div class="form-group">
-                        <label for="id_tipo">Tipo de Archivo <span class="text-danger">*</span></label>
+                        <label for="id_tipo">Tipo de archivo <span class="text-danger">*</span></label>
                         <select name="id_tipo" id="id_tipo" class="form-control" required>
                             <option value="">-- Seleccione --</option>
                             @foreach($tipos as $id => $nombre)
@@ -438,7 +438,7 @@
                             <input type="file" class="custom-file-input" id="archivo" name="archivo" required multiple>
                             <label class="custom-file-label" for="archivo" data-browse="Buscar">Seleccionar archivo(s)...</label>
                         </div>
-                        <small class="text-muted">Maximo 500MB por archivo. Archivos de audio/video mayores se convertiran automaticamente a .m4a (hasta 2GB). Para varios archivos del mismo tipo, seleccionelos todos a la vez (Ctrl+clic o Shift+clic).</small>
+                        <small class="text-muted">Máximo 500MB por archivo. Archivos de audio/video mayores se convertiran automáticamente a .m4a (hasta 2GB). Para varios archivos del mismo tipo, seleccionelos todos a la vez (Ctrl+clic o Shift+clic).</small>
                     </div>
 
                     <!-- Aviso de conversion automatica -->
@@ -461,7 +461,7 @@
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-success btn-block" id="btn-subir">
-                        <i class="fas fa-upload"></i> Subir Archivo
+                        <i class="fas fa-upload"></i> Subir archivo
                     </button>
                     <button type="button" class="btn btn-warning btn-block mt-2" id="btn-convertir" style="display:none;">
                         <i class="fas fa-exchange-alt"></i> Convertir a .m4a y subir
@@ -522,7 +522,7 @@
                         <td class="text-right"><strong>{{ $total }}</strong></td>
                     </tr>
                     <tr>
-                        <td>Tamano total</td>
+                        <td>Tamaño total</td>
                         <td class="text-right">
                             @if($tamano_total >= 1073741824)
                                 {{ number_format($tamano_total / 1073741824, 2) }} GB
@@ -798,12 +798,12 @@ $(document).ready(function() {
         if (_esMediaFile && !_supera500mb) {
             $('#btn-convertir').show();
             $('#conversion-info').show();
-            $('#conversion-info-text').text('Archivo de audio/video detectado. Puede subirlo directamente o convertirlo a .m4a (mas liviano).');
+            $('#conversion-info-text').text('Archivo de audio/video detectado. Puede subirlo directamente o convertirlo a .m4a (más liviano).');
         } else if (_supera500mb && _esMediaFile) {
             $('#btn-convertir').show();
             $('#btn-subir').hide();
             $('#conversion-info').show().removeClass('alert-info').addClass('alert-warning');
-            $('#conversion-info-text').text('El archivo supera 500MB (' + formatBytes(file.size) + '). Se convertira automaticamente a .m4a antes de guardarse.');
+            $('#conversion-info-text').text('El archivo supera 500MB (' + formatBytes(file.size) + '). Se convertirá automáticamente a .m4a antes de guardarse.');
         } else if (_supera500mb && !_esMediaFile) {
             $('#conversion-info').show().removeClass('alert-info').addClass('alert-danger');
             $('#conversion-info-text').text('El archivo supera 500MB y no es audio/video. No se puede subir.');
@@ -1155,7 +1155,7 @@ $(document).ready(function() {
             let esFinal = tipoTrans === 'final';
             let esAnonimizada = tipoTrans === 'anonimizada';
             let icono = esAnonimizada ? 'fa-user-secret' : (esFinal ? 'fa-file-signature' : 'fa-robot');
-            let titulo = esAnonimizada ? 'Transcripcion Anonimizada (publica)' : (esFinal ? 'Transcripcion Final' : 'Transcripcion Automatizada');
+            let titulo = esAnonimizada ? 'Transcripción Anonimizada (pública)' : (esFinal ? 'Transcripción Final' : 'Transcripción Automatizada');
             let colorHeader = esAnonimizada ? '#a71d2a' : (esFinal ? '#2e7d32' : '#333');
             necesitaMarca = true;
 
@@ -1180,7 +1180,7 @@ $(document).ready(function() {
                     <h5 class="text-white mb-3">${nombre}</h5>
                     <audio ${audioControls} class="w-100">
                         <source src="${url}" type="${tipo}">
-                        Su navegador no soporta la reproduccion de audio.
+                        Su navegador no soporta la reproducción de audio.
                     </audio>
                 </div>
             `;
@@ -1198,7 +1198,7 @@ $(document).ready(function() {
                 contenido = `
                     <video ${videoControls}>
                         <source src="${url}" type="${tipo}">
-                        Su navegador no soporta la reproduccion de video.
+                        Su navegador no soporta la reproducción de video.
                     </video>
                 `;
             }

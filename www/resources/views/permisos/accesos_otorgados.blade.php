@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Accesos Otorgados')
-@section('content_header', 'Accesos Otorgados')
+@section('title', 'Accesos otorgados')
+@section('content_header', 'Accesos otorgados')
 
 @section('content')
 {{-- Estadisticas --}}
@@ -63,7 +63,7 @@
                         <option value="{{ $id }}" {{ request('id_entrevistador') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
                         @endforeach
                     </select>
-                    <input type="text" name="codigo" class="form-control form-control-sm mr-2 mb-2" placeholder="Codigo entrevista" value="{{ request('codigo') }}">
+                    <input type="text" name="codigo" class="form-control form-control-sm mr-2 mb-2" placeholder="Código entrevista" value="{{ request('codigo') }}">
                     <select name="vigencia" class="form-control form-control-sm mr-2 mb-2">
                         <option value="">-- Vigencia --</option>
                         <option value="vigente" {{ request('vigencia') == 'vigente' ? 'selected' : '' }}>Vigentes ahora</option>
@@ -96,7 +96,7 @@
                     <th>Usuario</th>
                     <th>Entrevista</th>
                     <th>Tipo</th>
-                    <th>Rango Acceso</th>
+                    <th>Rango acceso</th>
                     <th>Otorgado por</th>
                     <th>Fecha</th>
                     <th>Soporte</th>
@@ -137,7 +137,7 @@
                         @elseif($permiso->fecha_vencimiento)
                             <small>Hasta {{ $permiso->fecha_vencimiento->format('d/m/Y') }}</small>
                         @else
-                            <small class="text-muted">Sin limite</small>
+                            <small class="text-muted">Sin límite</small>
                         @endif
                     </td>
                     <td>

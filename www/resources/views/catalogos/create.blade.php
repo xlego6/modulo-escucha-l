@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Nuevo Catalogo')
-@section('content_header', 'Crear Nuevo Catalogo')
+@section('title', 'Nuevo catálogo')
+@section('content_header', 'Crear nuevo catálogo')
 
 @section('content')
 <div class="row">
     <div class="col-md-6">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Datos del Catalogo</h3>
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Datos del catálogo</h3>
             </div>
             <form action="{{ route('catalogos.store') }}" method="POST">
                 @csrf
@@ -19,16 +19,16 @@
                         @error('nombre')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
-                        <small class="form-text text-muted">Identificador unico del catalogo (ej: sexo, etnia, dependencias)</small>
+                        <small class="form-text text-muted">Identificador único del catálogo (ej: sexo, etnia, dependencias)</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="descripcion">Descripcion</label>
+                        <label for="descripcion">Descripción</label>
                         <textarea class="form-control @error('descripcion') is-invalid @enderror" id="descripcion" name="descripcion" rows="3" maxlength="255">{{ old('descripcion') }}</textarea>
                         @error('descripcion')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
-                        <small class="form-text text-muted">Descripcion del proposito del catalogo</small>
+                        <small class="form-text text-muted">Descripción del propósito del catálogo</small>
                     </div>
                 </div>
                 <div class="card-footer">

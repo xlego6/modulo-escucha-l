@@ -6,11 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Testimonios')</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/estilos.css') }}?v={{ filemtime(public_path('css/estilos.css')) }}">
     <script>tailwind = { config: { corePlugins: { preflight: false } } }</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js" defer></script>
@@ -37,13 +36,13 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a href="{{ route('perfil') }}" class="dropdown-item">
-                        <i class="fas fa-user mr-2"></i> Mi Perfil
+                        <i class="fas fa-user mr-2"></i> Mi perfil
                     </a>
                     <div class="dropdown-divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesion
+                            <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
                         </button>
                     </form>
                 </div>
@@ -117,7 +116,7 @@
                     <li class="nav-item">
                         <a href="{{ route('estadisticas.index') }}" class="nav-link {{ request()->routeIs('estadisticas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-chart-bar"></i>
-                            <p>Estadisticas</p>
+                            <p>Estadísticas</p>
                         </a>
                     </li>
                     @endif
@@ -168,7 +167,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.index') }}" class="nav-link {{ request()->routeIs('procesamientos.index') ? 'active' : '' }}">
                                     <i class="fas fa-tachometer-alt nav-icon"></i>
-                                    <p>Centro de Control</p>
+                                    <p>Centro de control</p>
                                 </a>
                             </li>
                             @endif
@@ -188,7 +187,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.edicion') }}" class="nav-link {{ request()->routeIs('procesamientos.edicion') || request()->routeIs('procesamientos.editar-transcripcion') ? 'active' : '' }}">
                                     <i class="fas fa-edit nav-icon"></i>
-                                    <p>Edicion</p>
+                                    <p>Edición</p>
                                 </a>
                             </li>
                             @endif
@@ -198,7 +197,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('procesamientos.anonimizacion') }}" class="nav-link {{ request()->routeIs('procesamientos.anonimizacion') || request()->routeIs('procesamientos.editar-anonimizacion-asignada') || request()->routeIs('procesamientos.ver-revision-anonimizacion') ? 'active' : '' }}">
                                     <i class="fas fa-user-secret nav-icon"></i>
-                                    <p>Anonimizacion</p>
+                                    <p>Anonimización</p>
                                 </a>
                             </li>
                             @endif
@@ -222,7 +221,7 @@
                         <a href="#" class="nav-link {{ $enAdmin ? 'active' : '' }}">
                             <i class="nav-icon fas fa-tools"></i>
                             <p>
-                                Administracion
+                                Administración
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
@@ -291,7 +290,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('catalogos.index') }}" class="nav-link {{ request()->routeIs('catalogos.*') ? 'active' : '' }}">
                                     <i class="fas fa-list-alt nav-icon"></i>
-                                    <p>Catalogos</p>
+                                    <p>Catálogos</p>
                                 </a>
                             </li>
                             @endif
@@ -301,7 +300,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('traza.index') }}" class="nav-link {{ request()->routeIs('traza.*') ? 'active' : '' }}">
                                     <i class="fas fa-history nav-icon"></i>
-                                    <p>Traza de Actividad</p>
+                                    <p>Traza de actividad</p>
                                 </a>
                             </li>
                             @endif

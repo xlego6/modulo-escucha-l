@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Editar Item')
-@section('content_header', 'Editar Item del Catalogo: ' . $catalogo->nombre)
+@section('title', 'Editar ítem')
+@section('content_header', 'Editar ítem del catálogo: ' . $catalogo->nombre)
 
 @section('content')
 <div class="row">
     <div class="col-md-6">
         <div class="card card-warning">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Datos del Item</h3>
+                <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Datos del ítem</h3>
             </div>
             <form action="{{ route('catalogos.items.update', [$catalogo->id_cat, $item->id_item]) }}" method="POST">
                 @csrf
                 @method('PUT')
                 <div class="card-body">
                     <div class="form-group">
-                        <label for="descripcion" class="required-field">Descripcion</label>
+                        <label for="descripcion" class="required-field">Descripción</label>
                         <input type="text" class="form-control @error('descripcion') is-invalid @enderror" id="descripcion" name="descripcion" value="{{ old('descripcion', $item->descripcion) }}" required maxlength="255">
                         @error('descripcion')
                             <span class="invalid-feedback">{{ $message }}</span>
@@ -43,7 +43,7 @@
                             <input type="checkbox" class="custom-control-input" id="habilitado" name="habilitado" value="1" {{ old('habilitado', $item->habilitado) ? 'checked' : '' }}>
                             <label class="custom-control-label" for="habilitado">Habilitado</label>
                         </div>
-                        <small class="form-text text-muted">Los items deshabilitados no aparecen en los selectores</small>
+                        <small class="form-text text-muted">Los ítems deshabilitados no aparecen en los selectores</small>
                     </div>
 
                     <div class="form-group">
@@ -68,13 +68,13 @@
     <div class="col-md-6">
         <div class="card card-info">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Informacion</h3>
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Información</h3>
             </div>
             <div class="card-body">
                 <dl>
-                    <dt>ID del Item</dt>
+                    <dt>ID del ítem</dt>
                     <dd>{{ $item->id_item }}</dd>
-                    <dt>Catalogo</dt>
+                    <dt>Catálogo</dt>
                     <dd>{{ $catalogo->nombre }}</dd>
                     <dt>Estado actual</dt>
                     <dd>
@@ -88,7 +88,7 @@
 
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle mr-2"></i>
-                    <strong>Precaucion:</strong> Modificar o deshabilitar items puede afectar registros existentes que usen este valor.
+                    <strong>Precaución:</strong> Modificar o deshabilitar ítems puede afectar registros existentes que usen este valor.
                 </div>
             </div>
         </div>

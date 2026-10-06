@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Estadisticas')
-@section('content_header', 'Estadisticas Generales')
+@section('title', 'Estadísticas')
+@section('content_header', 'Estadísticas generales')
 
 @section('css')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -68,8 +68,8 @@
 <!-- ============================================================ -->
 <div class="row mt-2">
     <div class="col-12">
-        <h5 class="text-muted border-bottom pb-2">
-            <i class="fas fa-file-alt mr-1"></i> Metadatos de Contenido del Testimonio
+        <h5 class="seccion-titulo">
+            <i class="fas fa-file-alt"></i> Metadatos de contenido del testimonio
         </h5>
     </div>
 </div>
@@ -79,7 +79,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Hechos Victimizantes</h3>
+                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Hechos victimizantes</h3>
             </div>
             <div class="card-body">
                 @if($hechos_victimizantes->count() > 0)
@@ -95,7 +95,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Prácticas de Resistencia</h3>
+                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Prácticas de resistencia</h3>
             </div>
             <div class="card-body">
                 @if($practicas_resistencia->count() > 0)
@@ -113,7 +113,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-line"></i> Testimonios con Hechos Victimizantes por Año</h3>
+                <h3 class="card-title"><i class="fas fa-chart-line"></i> Testimonios con hechos victimizantes por año</h3>
             </div>
             <div class="card-body">
                 @if(!empty($hechos_por_anio))
@@ -133,8 +133,8 @@
 <!-- ============================================================ -->
 <div class="row mt-2">
     <div class="col-12">
-        <h5 class="text-muted border-bottom pb-2">
-            <i class="fas fa-users mr-1"></i> Información del Testimoniante
+        <h5 class="seccion-titulo">
+            <i class="fas fa-users"></i> Información del testimoniante
         </h5>
     </div>
 </div>
@@ -160,7 +160,7 @@
     <div class="col-md-5">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-venus-mars"></i> Personas por Sexo</h3>
+                <h3 class="card-title"><i class="fas fa-venus-mars"></i> Personas por sexo</h3>
             </div>
             <div class="card-body">
                 @if($sexo_testimoniantes->count() > 0)
@@ -178,13 +178,13 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Personas por Grupo Etnico</h3>
+                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Personas por grupo étnico</h3>
             </div>
             <div class="card-body">
                 @if($personas_por_etnia->count() > 0)
                 <canvas id="chartEtnias" height="200"></canvas>
                 @else
-                <p class="text-muted text-center">Sin datos de grupo etnico</p>
+                <p class="text-muted text-center">Sin datos de grupo étnico</p>
                 @endif
             </div>
         </div>
@@ -194,7 +194,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Rango de Edad</h3>
+                <h3 class="card-title"><i class="fas fa-chart-bar"></i> Rango de edad</h3>
             </div>
             <div class="card-body">
                 @if($rangos_etarios->count() > 0)
@@ -212,8 +212,8 @@
 <!-- ============================================================ -->
 <div class="row mt-2">
     <div class="col-12">
-        <h5 class="text-muted border-bottom pb-2">
-            <i class="fas fa-shield-alt mr-1"></i> Clasificación y Dependencia
+        <h5 class="seccion-titulo">
+            <i class="fas fa-shield-alt"></i> Clasificación y dependencia
         </h5>
     </div>
 </div>
@@ -235,7 +235,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Clasificación por Entrevista</h3>
+                <h3 class="card-title"><i class="fas fa-chart-pie"></i> Clasificación por entrevista</h3>
                 <div class="card-tools">
                     <small class="text-muted">Clasificación más restrictiva de cada entrevista</small>
                 </div>
@@ -285,7 +285,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-sitemap"></i> Entrevistas por Dependencia</h3>
+                <h3 class="card-title"><i class="fas fa-sitemap"></i> Entrevistas por dependencia</h3>
             </div>
             <div class="card-body">
                 @if($entrevistas_por_dependencia->count() > 0)

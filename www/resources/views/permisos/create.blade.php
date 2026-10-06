@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Otorgar Permiso')
-@section('content_header', 'Otorgar Permiso de Acceso')
+@section('title', 'Otorgar permiso')
+@section('content_header', 'Otorgar permiso de acceso')
 
 @section('css')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
@@ -74,7 +74,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="id_tipo">Tipo de Permiso <span class="text-danger">*</span></label>
+                        <label for="id_tipo">Tipo de permiso <span class="text-danger">*</span></label>
                         <select class="form-control @error('id_tipo') is-invalid @enderror" id="id_tipo" name="id_tipo" required>
                             @foreach($tipos as $id => $descripcion)
                             <option value="{{ $id }}" {{ old('id_tipo') == $id ? 'selected' : '' }}>{{ $descripcion }}</option>
@@ -91,7 +91,7 @@
 
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="fecha_vencimiento">Fecha de Vencimiento</label>
+                        <label for="fecha_vencimiento">Fecha de vencimiento</label>
                         <input type="date" class="form-control" id="fecha_vencimiento" name="fecha_vencimiento"
                                value="{{ old('fecha_vencimiento') }}">
                         <small class="form-text text-muted">Dejar en blanco para permiso sin fecha de expiración</small>
@@ -111,7 +111,7 @@
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-check mr-1"></i> Otorgar Permiso
+                <i class="fas fa-check mr-1"></i> Otorgar permiso
             </button>
             <a href="{{ route('permisos.index') }}" class="btn btn-secondary">
                 <i class="fas fa-times mr-1"></i> Cancelar

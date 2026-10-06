@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Detalle de Actividad')
-@section('content_header', 'Detalle del Registro de Actividad')
+@section('title', 'Detalle de actividad')
+@section('content_header', 'Detalle del registro de actividad')
 
 @section('content')
 <div class="row">
     <div class="col-md-8">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Informacion del Registro</h3>
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Información del registro</h3>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -17,7 +17,7 @@
                             <dt>ID</dt>
                             <dd>{{ $traza->id_traza_actividad }}</dd>
 
-                            <dt>Fecha y Hora</dt>
+                            <dt>Fecha y hora</dt>
                             <dd>{{ $traza->fmt_fecha_hora }}</dd>
 
                             <dt>Usuario</dt>
@@ -30,13 +30,13 @@
                                 @endif
                             </dd>
 
-                            <dt>Direccion IP</dt>
+                            <dt>Dirección IP</dt>
                             <dd>{{ $traza->ip ?? 'No registrada' }}</dd>
                         </dl>
                     </div>
                     <div class="col-md-6">
                         <dl>
-                            <dt>Accion</dt>
+                            <dt>Acción</dt>
                             <dd>
                                 <span class="badge badge-{{ $traza->badge_class }}">{{ $traza->fmt_accion }}</span>
                             </dd>
@@ -44,7 +44,7 @@
                             <dt>Objeto</dt>
                             <dd>{{ $traza->fmt_objeto ?: '-' }}</dd>
 
-                            <dt>ID Registro</dt>
+                            <dt>ID registro</dt>
                             <dd>{{ $traza->id_registro ?? '-' }}</dd>
                         </dl>
                     </div>
@@ -53,12 +53,12 @@
                 <hr>
 
                 <dl>
-                    <dt>Codigo</dt>
+                    <dt>Código</dt>
                     <dd>
                         @if($traza->codigo)
                             <code class="d-block p-2 bg-light">{{ $traza->codigo }}</code>
                         @else
-                            <span class="text-muted">Sin codigo</span>
+                            <span class="text-muted">Sin código</span>
                         @endif
                     </dd>
 
@@ -83,14 +83,14 @@
     <div class="col-md-4">
         <div class="card card-info">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-clock mr-2"></i>Contexto Temporal</h3>
+                <h3 class="card-title"><i class="fas fa-clock mr-2"></i>Contexto temporal</h3>
             </div>
             <div class="card-body">
                 @php
                     $fecha = \Carbon\Carbon::parse($traza->fecha_hora);
                 @endphp
                 <p><strong>Hace:</strong> {{ $fecha->diffForHumans() }}</p>
-                <p><strong>Dia:</strong> {{ $fecha->isoFormat('dddd') }}</p>
+                <p><strong>Día:</strong> {{ $fecha->isoFormat('dddd') }}</p>
                 <p><strong>Fecha completa:</strong> {{ $fecha->isoFormat('D [de] MMMM [de] YYYY') }}</p>
                 <p class="mb-0"><strong>Hora:</strong> {{ $fecha->format('H:i:s') }}</p>
             </div>
@@ -99,11 +99,11 @@
         @if($traza->id_personificador)
         <div class="card card-warning">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Personificacion</h3>
+                <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Personificación</h3>
             </div>
             <div class="card-body">
                 <p class="text-muted mb-0">
-                    Esta accion fue realizada por un administrador personificando al usuario.
+                    Esta acción fue realizada por un administrador personificando al usuario.
                 </p>
             </div>
         </div>

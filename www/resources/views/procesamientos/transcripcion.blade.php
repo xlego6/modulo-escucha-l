@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $tipo === 'anonimizacion' ? 'Anonimizacion Automatizada' : 'Transcripcion Automatizada')
-@section('content_header', $tipo === 'anonimizacion' ? 'Anonimizacion Automatizada' : 'Transcripcion Automatizada')
+@section('title', $tipo === 'anonimizacion' ? 'Anonimización automatizada' : 'Transcripción automatizada')
+@section('content_header', $tipo === 'anonimizacion' ? 'Anonimización automatizada' : 'Transcripción automatizada')
 
 @section('css')
 <style>
@@ -45,7 +45,7 @@
     <div class="col-12">
         <div class="card" id="card-resultado">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Resultado de Transcripcion</h3>
+                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Resultado de transcripción</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" onclick="$('#panel-resultado').slideUp()">
                         <i class="fas fa-times"></i>
@@ -56,7 +56,7 @@
                 <div id="resultado-loading" class="text-center py-4">
                     <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
                     <h5>Transcribiendo audio en segundo plano...</h5>
-                    <p class="text-muted" id="ind-estado-msg">El servidor esta procesando. Esta pagina consulta el estado automaticamente cada 10 segundos.</p>
+                    <p class="text-muted" id="ind-estado-msg">El servidor esta procesando. Esta página consulta el estado automáticamente cada 10 segundos.</p>
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 100%"></div>
                     </div>
@@ -64,7 +64,7 @@
                 <div id="resultado-exito" style="display: none;">
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle mr-2"></i>
-                        <strong>Transcripcion completada exitosamente</strong>
+                        <strong>Transcripción completada exitosamente</strong>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4">
@@ -85,13 +85,13 @@
                         <textarea class="form-control" id="res-texto" rows="8" readonly></textarea>
                     </div>
                     <a href="#" id="btn-editar-transcripcion" class="btn btn-success">
-                        <i class="fas fa-edit mr-2"></i>Editar Transcripcion
+                        <i class="fas fa-edit mr-2"></i>Editar transcripción
                     </a>
                 </div>
                 <div id="resultado-error" style="display: none;">
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        <strong>Error en la transcripcion</strong>
+                        <strong>Error en la transcripción</strong>
                     </div>
                     <p id="res-error-mensaje" class="text-danger"></p>
                 </div>
@@ -121,7 +121,7 @@
     <div class="col-12">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Procesamiento en Lote</h3>
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Procesamiento en lote</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" id="btn-cancelar-lote" title="Cancelar">
                         <i class="fas fa-stop"></i>
@@ -177,7 +177,7 @@
             </div>
             <div class="card-footer" id="lote-footer" style="display: none;">
                 <button class="btn btn-secondary" onclick="limpiarEstadoLote(); $('#panel-lote').slideUp(); location.reload();">
-                    <i class="fas fa-check mr-2"></i>Cerrar y Actualizar
+                    <i class="fas fa-check mr-2"></i>Cerrar y actualizar
                 </button>
             </div>
         </div>
@@ -187,10 +187,10 @@
 <div class="row">
     <div class="col-12">
         <div class="callout callout-info">
-            <h5><i class="fas fa-info-circle mr-2"></i>WhisperX - Motor de Transcripcion</h5>
+            <h5><i class="fas fa-info-circle mr-2"></i>WhisperX - Motor de transcripción</h5>
             <p class="mb-0">
-                Sistema de transcripcion automatica basado en WhisperX con soporte para diarizacion
-                (identificacion de hablantes) y marcas de tiempo precisas.
+                Sistema de transcripción automática basado en WhisperX con soporte para diarización
+                (identificación de hablantes) y marcas de tiempo precisas.
             </p>
         </div>
     </div>
@@ -201,14 +201,14 @@
     <div class="col-12">
         <div class="card card-warning">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-spinner fa-spin mr-2"></i>En Proceso ({{ $enProceso->count() }})</h3>
+                <h3 class="card-title"><i class="fas fa-spinner fa-spin mr-2"></i>En proceso ({{ $enProceso->count() }})</h3>
             </div>
             <div class="card-body p-0">
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>Codigo</th>
-                            <th>Titulo</th>
+                            <th>Código</th>
+                            <th>Título</th>
                             <th>Archivos</th>
                             <th>Estado</th>
                             <th>Acciones</th>
@@ -249,7 +249,7 @@
             <div class="card-body border-bottom">
                 <form method="GET" action="{{ route('procesamientos.transcripcion') }}" class="row align-items-end">
                     <div class="col-md-4 form-group mb-2 mb-md-0">
-                        <label for="f-codigo" class="mb-1">Codigo</label>
+                        <label for="f-codigo" class="mb-1">Código</label>
                         <input type="text" class="form-control form-control-sm" id="f-codigo" name="codigo"
                                value="{{ $codigo }}" placeholder="Ej: EI-2026-001">
                     </div>
@@ -284,11 +284,11 @@
                     <thead>
                         <tr>
                             <th style="width: 40px;"></th>
-                            <th style="width: 110px;">Codigo</th>
-                            <th>Titulo</th>
+                            <th style="width: 110px;">Código</th>
+                            <th>Título</th>
                             <th style="width: 120px;">Estado</th>
                             <th style="width: 90px;">Audios</th>
-                            <th style="width: 80px;">Duracion</th>
+                            <th style="width: 80px;">Duración</th>
                             <th style="width: 90px;">Acciones</th>
                         </tr>
                     </thead>
@@ -430,7 +430,7 @@
         <!-- Acciones en lote -->
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Acciones en Lote</h3>
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Acciones en lote</h3>
             </div>
             <div class="card-body">
                 <p class="text-muted">Seleccione entrevistas de la lista para procesarlas en lote.</p>
@@ -439,7 +439,7 @@
                     <span id="count-seleccionadas" class="badge badge-primary">0</span>
                 </div>
                 <button class="btn btn-primary btn-block" id="btn-procesar-lote" disabled>
-                    <i class="fas fa-play mr-2"></i>Iniciar Transcripcion
+                    <i class="fas fa-play mr-2"></i>Iniciar transcripción
                 </button>
             </div>
         </div>
@@ -447,31 +447,31 @@
         <!-- Configuración -->
         <div class="card card-secondary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Configuracion</h3>
+                <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Configuración</h3>
             </div>
             <div class="card-body">
                 <div class="form-group">
                     <label>Modelo de Whisper</label>
                     <select class="form-control" id="modelo-whisper">
-                        <option value="large-v3-turbo" selected>large-v3-turbo (Recomendado)</option>
-                        <option value="large-v3">large-v3 (Mas preciso)</option>
+                        <option value="large-v3-turbo" selected>large-v3-turbo (recomendado)</option>
+                        <option value="large-v3">large-v3 (más preciso)</option>
                         <option value="large-v2">large-v2</option>
-                        <option value="medium">medium (Mas rapido)</option>
-                        <option value="small">small (Rapido)</option>
+                        <option value="medium">medium (más rápido)</option>
+                        <option value="small">small (rápido)</option>
                     </select>
-                    <small class="text-muted">Modelos mas grandes son mas precisos pero mas lentos</small>
+                    <small class="text-muted">Modelos más grandes son más precisos pero más lentos</small>
                 </div>
                 <div class="form-group">
                     <label>Idioma</label>
                     <select class="form-control" id="idioma">
                         <option value="es">Español</option>
-                        <option value="auto">Detectar automaticamente</option>
+                        <option value="auto">Detectar automáticamente</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Dispositivo</label>
                     <select class="form-control" id="dispositivo">
-                        <option value="auto">Automatico</option>
+                        <option value="auto">Automático</option>
                         <option value="cuda">GPU (CUDA)</option>
                         <option value="cpu">CPU</option>
                     </select>
@@ -483,7 +483,7 @@
                 </div>
                 <div class="custom-control custom-switch mb-2">
                     <input type="checkbox" class="custom-control-input" id="diarizar" checked>
-                    <label class="custom-control-label" for="diarizar">Diarizacion (identificar hablantes)</label>
+                    <label class="custom-control-label" for="diarizar">Diarización (identificar hablantes)</label>
                 </div>
                 <div id="hf-token-group" class="mt-2">
                     <label class="small">Token de HuggingFace</label>
@@ -498,7 +498,7 @@
                     </div>
                     <small class="text-muted d-block mt-1">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Opcional si ya esta configurado en el servidor. Se usa solo para esta sesion.
+                        Opcional si ya esta configurado en el servidor. Se usa solo para esta sesión.
                     </small>
                 </div>
             </div>
@@ -511,7 +511,7 @@
     <div class="col-12">
         <div class="card" id="card-resultado-ent">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Resultado de Deteccion</h3>
+                <h3 class="card-title"><i class="fas fa-user-secret mr-2"></i>Resultado de detección</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" onclick="$('#panel-resultado-ent').slideUp()">
                         <i class="fas fa-times"></i>
@@ -522,7 +522,7 @@
                 <div id="resultado-ent-exito" style="display: none;">
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle mr-2"></i>
-                        <strong>Deteccion completada exitosamente</strong>
+                        <strong>Detección completada exitosamente</strong>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4">
@@ -543,7 +543,7 @@
                 <div id="resultado-ent-error" style="display: none;">
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        <strong>Error en la deteccion</strong>
+                        <strong>Error en la detección</strong>
                     </div>
                     <p id="res-ent-error-mensaje" class="text-danger"></p>
                 </div>
@@ -557,7 +557,7 @@
     <div class="col-12">
         <div class="card card-danger">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Deteccion en Lote</h3>
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Detección en lote</h3>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -618,7 +618,7 @@
                 <form method="GET" action="{{ route('procesamientos.transcripcion') }}" class="row align-items-end">
                     <input type="hidden" name="tipo" value="anonimizacion">
                     <div class="col-md-4 form-group mb-2 mb-md-0">
-                        <label for="f-codigo-ent" class="mb-1">Codigo</label>
+                        <label for="f-codigo-ent" class="mb-1">Código</label>
                         <input type="text" class="form-control form-control-sm" id="f-codigo-ent" name="codigo"
                                value="{{ $codigo }}" placeholder="Ej: EI-2026-001">
                     </div>
@@ -655,8 +655,8 @@
                     <thead>
                         <tr>
                             <th style="width: 40px;"></th>
-                            <th style="width: 110px;">Codigo</th>
-                            <th>Titulo</th>
+                            <th style="width: 110px;">Código</th>
+                            <th>Título</th>
                             <th style="width: 150px;">Documento base</th>
                             <th style="width: 120px;">Entidades</th>
                             <th style="width: 90px;">Acciones</th>
@@ -734,7 +734,7 @@
         <!-- Acciones en lote -->
         <div class="card card-danger">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Acciones en Lote</h3>
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Acciones en lote</h3>
             </div>
             <div class="card-body">
                 <p class="text-muted">Seleccione entrevistas de la lista para detectar entidades en lote.</p>
@@ -743,7 +743,7 @@
                     <span id="count-seleccionadas-ent" class="badge badge-danger">0</span>
                 </div>
                 <button class="btn btn-danger btn-block" id="btn-procesar-lote-ent" disabled>
-                    <i class="fas fa-play mr-2"></i>Iniciar Detección
+                    <i class="fas fa-play mr-2"></i>Iniciar detección
                 </button>
             </div>
         </div>
@@ -790,7 +790,7 @@ $(document).ready(function() {
         var row = btn.closest('tr');
         var codigo = row.find('code').text();
 
-        if (!confirm('¿Iniciar transcripcion de esta entrevista?\n\nLos trabajos se envian al servidor en segundo plano.')) return;
+        if (!confirm('¿Iniciar transcripción de esta entrevista?\n\nLos trabajos se envian al servidor en segundo plano.')) return;
 
         // Mostrar panel de resultado
         $('#diarization-warning').remove();
@@ -805,7 +805,7 @@ $(document).ready(function() {
         limpiarEstadoInd();
         indLog = [];
         $('#ind-log').empty();
-        indLogEntry('info', 'Iniciando transcripcion de entrevista ' + codigo + '...');
+        indLogEntry('info', 'Iniciando transcripción de entrevista ' + codigo + '...');
 
         $.ajax({
             url: '{{ url("procesamientos/transcripcion") }}/' + id + '/iniciar',
@@ -881,7 +881,7 @@ $(document).ready(function() {
                         if (estadoAnterior !== 'completed') {
                             var label = r.nombre || ctx.nombre || ctx.codigo || '';
                             indLogEntry('success', 'Completado: ' + label + ' (' + (r.text_length || 0).toLocaleString() + ' caracteres, ' + (r.speakers_count || 0) + ' hablante(s))');
-                            if (r.diarization_error) indLogEntry('warning', 'Diarizacion: ' + r.diarization_error);
+                            if (r.diarization_error) indLogEntry('warning', 'Diarización: ' + r.diarization_error);
                         }
                     } else if (r.status === 'failed' || r.status === 'error') {
                         errores.push(r.error || 'Error desconocido');
@@ -912,7 +912,7 @@ $(document).ready(function() {
                 $('#resultado-loading').hide();
 
                 if (algunoExitoso) {
-                    indLogEntry('success', 'Transcripcion completada. ' + totalCaracteres.toLocaleString() + ' caracteres totales.');
+                    indLogEntry('success', 'Transcripción completada. ' + totalCaracteres.toLocaleString() + ' caracteres totales.');
                     $('#card-resultado').removeClass('card-primary card-danger').addClass('card-success');
                     $('#resultado-exito').show();
                     $('#res-codigo').text(ctx.nombre || ctx.codigo || '');
@@ -928,7 +928,7 @@ $(document).ready(function() {
                         $('#resultado-exito').after(
                             '<div class="alert alert-warning mt-2" id="diarization-warning">' +
                             '<i class="fas fa-exclamation-triangle mr-1"></i> ' +
-                            '<strong>Diarizacion:</strong> ' + diarizacionError +
+                            '<strong>Diarización:</strong> ' + diarizacionError +
                             '</div>'
                         );
                     }
@@ -1014,7 +1014,7 @@ $(document).ready(function() {
         var yaTranscrito = $('#audio-row-' + idAdjunto + ' .audio-estado-badge').hasClass('badge-success');
 
         var mensaje = yaTranscrito
-            ? '¿Volver a transcribir "' + nombre + '"?\n\nEsto sobreescribira la transcripcion existente de este audio.'
+            ? '¿Volver a transcribir "' + nombre + '"?\n\nEsto sobreescribirá la transcripción existente de este audio.'
             : '¿Transcribir "' + nombre + '"?\n\nEl trabajo se envia al servidor en segundo plano.';
 
         if (!confirm(mensaje)) return;
@@ -1032,7 +1032,7 @@ $(document).ready(function() {
         limpiarEstadoInd();
         indLog = [];
         $('#ind-log').empty();
-        indLogEntry('info', 'Iniciando transcripcion de: ' + nombre);
+        indLogEntry('info', 'Iniciando transcripción de: ' + nombre);
 
         $.ajax({
             url: '{{ url("procesamientos/transcripcion/adjunto") }}/' + idAdjunto,
@@ -1080,7 +1080,7 @@ $(document).ready(function() {
 
         if (ids.length === 0) return;
 
-        if (!confirm('¿Iniciar transcripcion de ' + ids.length + ' entrevista(s)?\n\nLos trabajos se envian al servidor y puede cerrar esta ventana. El progreso se actualiza automaticamente.')) return;
+        if (!confirm('¿Iniciar transcripción de ' + ids.length + ' entrevista(s)?\n\nLos trabajos se envian al servidor y puede cerrar esta ventana. El progreso se actualiza automáticamente.')) return;
 
         iniciarProcesamientoLote(ids);
     });
@@ -1092,7 +1092,7 @@ $(document).ready(function() {
     // Cancelar lote (detiene el polling local; el servidor sigue procesando)
     $('#btn-cancelar-lote').on('click', function() {
         if (window.lotePollTimer) {
-            if (confirm('¿Detener el seguimiento en esta pantalla?\n\nEl servidor continuara procesando las transcripciones. Las completadas se guardaran automaticamente.')) {
+            if (confirm('¿Detener el seguimiento en esta pantalla?\n\nEl servidor continuara procesando las transcripciones. Las completadas se guardarán automáticamente.')) {
                 clearTimeout(window.lotePollTimer);
                 window.lotePollTimer = null;
                 $('#lote-status').html('<i class="fas fa-pause-circle text-warning mr-2"></i><span>Seguimiento pausado. Los trabajos siguen en el servidor.</span>');
@@ -1133,7 +1133,7 @@ function iniciarProcesamientoLote(ids) {
     $('.btn-transcribir').prop('disabled', true);
 
     $('#lote-mensaje').text('Enviando trabajos al servidor...');
-    addLogEntry('info', 'Enviando ' + ids.length + ' trabajo(s) al servicio de transcripcion...');
+    addLogEntry('info', 'Enviando ' + ids.length + ' trabajo(s) al servicio de transcripción...');
 
     $.ajax({
         url: '{{ route("procesamientos.transcripcion-lote") }}',
@@ -1184,8 +1184,8 @@ function iniciarProcesamientoLote(ids) {
                 return;
             }
 
-            addLogEntry('success', enCola.length + ' trabajo(s) enviado(s). El servidor los procesara en segundo plano.');
-            $('#lote-mensaje').text('Procesando... Los resultados se actualizan automaticamente cada 30 segundos.');
+            addLogEntry('success', enCola.length + ' trabajo(s) enviado(s). El servidor los procesará en segundo plano.');
+            $('#lote-mensaje').text('Procesando... Los resultados se actualizan automáticamente cada 30 segundos.');
 
             // Iniciar polling
             pollLoteEstado();
@@ -1241,7 +1241,7 @@ function pollLoteEstado() {
                     var msg = 'Completado: ' + res.codigo + ' (' + (res.text_length || 0).toLocaleString() + ' caracteres, ' + (res.speakers_count || 0) + ' hablante(s))';
                     addLogEntry('success', msg);
                     if (res.diarization_error) {
-                        addLogEntry('warning', res.codigo + ' - Diarizacion: ' + res.diarization_error);
+                        addLogEntry('warning', res.codigo + ' - Diarización: ' + res.diarization_error);
                     }
                     var $row = $('input[value="' + res.id + '"]').closest('tr');
                     $row.removeClass('table-warning').addClass('table-success');
@@ -1370,7 +1370,7 @@ function restaurarEstadoInd() {
         $('#card-resultado').removeClass('card-success card-danger').addClass('card-primary');
         $('html, body').animate({ scrollTop: 0 }, 300);
 
-        indLogEntry('info', 'Sesion retomada tras recargar la pagina.');
+        indLogEntry('info', 'Sesión retomada tras recargar la página.');
         $('#ind-estado-msg').text('Retomando seguimiento...');
 
         // ctx sin refs DOM — btn/row no disponibles tras recarga, se omiten
@@ -1619,7 +1619,7 @@ $(document).ready(function() {
             return { id: $(this).val(), codigo: $(this).closest('tr').find('code').text() };
         }).get();
         if (ids.length === 0) return;
-        if (!confirm('¿Detectar entidades para ' + ids.length + ' entrevista(s)? Se procesan una por una y puede tardar segun la cantidad.\n\nLas que ya tengan trabajo de anonimización (asignación en curso o etiquetas editadas) se omiten para no borrarlo.')) return;
+        if (!confirm('¿Detectar entidades para ' + ids.length + ' entrevista(s)? Se procesan una por una y puede tardar según la cantidad.\n\nLas que ya tengan trabajo de anonimización (asignación en curso o etiquetas editadas) se omiten para no borrarlo.')) return;
 
         loteEntCancelado = false;
         $('#panel-lote-ent').slideDown();

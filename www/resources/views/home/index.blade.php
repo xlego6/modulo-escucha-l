@@ -55,14 +55,14 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Ultimas Entrevistas</h3>
+                <h3 class="card-title">Últimas entrevistas</h3>
             </div>
             <div class="card-body table-responsive p-0">
                 <table class="table table-hover text-nowrap">
                     <thead>
                         <tr>
-                            <th>Codigo</th>
-                            <th>Titulo</th>
+                            <th>Código</th>
+                            <th>Título</th>
                             <th>Fecha</th>
                             <th>Estado</th>
                         </tr>

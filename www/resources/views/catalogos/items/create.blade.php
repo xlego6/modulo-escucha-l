@@ -1,25 +1,25 @@
 @extends('layouts.app')
 
-@section('title', 'Nuevo Item')
-@section('content_header', 'Agregar Item al Catalogo: ' . $catalogo->nombre)
+@section('title', 'Nuevo ítem')
+@section('content_header', 'Agregar ítem al catálogo: ' . $catalogo->nombre)
 
 @section('content')
 <div class="row">
     <div class="col-md-6">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Datos del Item</h3>
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Datos del ítem</h3>
             </div>
             <form action="{{ route('catalogos.items.store', $catalogo->id_cat) }}" method="POST">
                 @csrf
                 <div class="card-body">
                     <div class="form-group">
-                        <label for="descripcion" class="required-field">Descripcion</label>
+                        <label for="descripcion" class="required-field">Descripción</label>
                         <input type="text" class="form-control @error('descripcion') is-invalid @enderror" id="descripcion" name="descripcion" value="{{ old('descripcion') }}" required maxlength="255">
                         @error('descripcion')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
-                        <small class="form-text text-muted">Texto que se mostrara en los selectores</small>
+                        <small class="form-text text-muted">Texto que se mostrará en los selectores</small>
                     </div>
 
                     <div class="form-group">
@@ -28,7 +28,7 @@
                         @error('abreviado')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
-                        <small class="form-text text-muted">Codigo corto opcional (ej: AB, VS, DF)</small>
+                        <small class="form-text text-muted">Código corto opcional (ej: AB, VS, DF)</small>
                     </div>
 
                     <div class="form-group">
@@ -37,7 +37,7 @@
                         @error('orden')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
-                        <small class="form-text text-muted">Posicion en la lista (menor = primero)</small>
+                        <small class="form-text text-muted">Posición en la lista (menor = primero)</small>
                     </div>
 
                     <div class="form-group">
@@ -45,7 +45,7 @@
                             <input type="checkbox" class="custom-control-input" id="predeterminado" name="predeterminado" value="1" {{ old('predeterminado') ? 'checked' : '' }}>
                             <label class="custom-control-label" for="predeterminado">Valor predeterminado</label>
                         </div>
-                        <small class="form-text text-muted">Si se marca, este valor se seleccionara automaticamente</small>
+                        <small class="form-text text-muted">Si se marca, este valor se seleccionara automáticamente</small>
                     </div>
                 </div>
                 <div class="card-footer">
@@ -63,14 +63,14 @@
     <div class="col-md-6">
         <div class="card card-info">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Catalogo</h3>
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Catálogo</h3>
             </div>
             <div class="card-body">
                 <dl>
                     <dt>Nombre</dt>
                     <dd>{{ $catalogo->nombre }}</dd>
-                    <dt>Descripcion</dt>
-                    <dd>{{ $catalogo->descripcion ?? 'Sin descripcion' }}</dd>
+                    <dt>Descripción</dt>
+                    <dd>{{ $catalogo->descripcion ?? 'Sin descripción' }}</dd>
                 </dl>
             </div>
         </div>

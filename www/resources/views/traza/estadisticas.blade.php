@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Estadisticas de Actividad')
-@section('content_header', 'Estadisticas de Actividad del Sistema')
+@section('title', 'Estadísticas de actividad')
+@section('content_header', 'Estadísticas de actividad del sistema')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Periodo de Analisis</h3>
+        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Periodo de análisis</h3>
     </div>
     <div class="card-body">
         <form action="{{ route('traza.estadisticas') }}" method="GET" class="form-inline">
@@ -22,7 +22,7 @@
                 <i class="fas fa-sync mr-1"></i>Actualizar
             </button>
             <a href="{{ route('traza.index') }}" class="btn btn-default ml-2">
-                <i class="fas fa-list mr-1"></i>Ver Listado
+                <i class="fas fa-list mr-1"></i>Ver listado
             </a>
         </form>
     </div>
@@ -33,7 +33,7 @@
     <div class="col-md-6">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-users mr-2"></i>Top 10 Usuarios mas Activos</h3>
+                <h3 class="card-title"><i class="fas fa-users mr-2"></i>Top 10 usuarios más activos</h3>
             </div>
             <div class="card-body p-0">
                 <table class="table table-striped">
@@ -81,13 +81,13 @@
     <div class="col-md-6">
         <div class="card card-success">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Actividad por Tipo de Accion</h3>
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Actividad por tipo de acción</h3>
             </div>
             <div class="card-body p-0">
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Accion</th>
+                            <th>Acción</th>
                             <th class="text-right">Total</th>
                             <th style="width: 40%">Barra</th>
                         </tr>
@@ -139,7 +139,7 @@
 <!-- Actividad por Dia -->
 <div class="card card-info">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Actividad Diaria</h3>
+        <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Actividad diaria</h3>
     </div>
     <div class="card-body">
         @if($actividadPorDia->count() > 0)

@@ -1,18 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Detalle de Permiso')
-@section('content_header', 'Detalle del Permiso')
+@section('title', 'Detalle de permiso')
+@section('content_header', 'Detalle del permiso')
 
 @section('content')
 <div class="row">
     <div class="col-md-6">
         <div class="card card-primary card-outline">
             <div class="card-header">
-                <h3 class="card-title">Informacion del Permiso</h3>
+                <h3 class="card-title">Información del permiso</h3>
             </div>
             <div class="card-body">
                 <dl class="row">
-                    <dt class="col-sm-4">ID Permiso:</dt>
+                    <dt class="col-sm-4">ID permiso:</dt>
                     <dd class="col-sm-8">{{ $permiso->id_permiso }}</dd>
 
                     <dt class="col-sm-4">Tipo:</dt>
@@ -46,7 +46,7 @@
                     <dd class="col-sm-8">{{ $permiso->fecha_vencimiento->format('d/m/Y') }}</dd>
                     @endif
 
-                    <dt class="col-sm-4">Justificacion:</dt>
+                    <dt class="col-sm-4">Justificación:</dt>
                     <dd class="col-sm-8">{{ $permiso->justificacion ?: 'No especificada' }}</dd>
                 </dl>
             </div>
@@ -55,18 +55,18 @@
         @if($permiso->rel_adjunto)
         <div class="card card-secondary card-outline">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-file-pdf mr-2"></i>Documento de Soporte</h3>
+                <h3 class="card-title"><i class="fas fa-file-pdf mr-2"></i>Documento de soporte</h3>
             </div>
             <div class="card-body">
                 <dl class="row">
                     <dt class="col-sm-4">Archivo:</dt>
                     <dd class="col-sm-8">{{ $permiso->rel_adjunto->nombre_original }}</dd>
 
-                    <dt class="col-sm-4">Tamano:</dt>
+                    <dt class="col-sm-4">Tamaño:</dt>
                     <dd class="col-sm-8">{{ number_format($permiso->rel_adjunto->tamano / 1024, 2) }} KB</dd>
                 </dl>
                 <a href="{{ route('permisos.descargar_soporte', $permiso->id_permiso) }}" class="btn btn-outline-primary">
-                    <i class="fas fa-download mr-1"></i> Descargar Soporte
+                    <i class="fas fa-download mr-1"></i> Descargar soporte
                 </a>
             </div>
         </div>
@@ -76,7 +76,7 @@
     <div class="col-md-6">
         <div class="card card-info card-outline">
             <div class="card-header">
-                <h3 class="card-title">Usuario y Entrevista</h3>
+                <h3 class="card-title">Usuario y entrevista</h3>
             </div>
             <div class="card-body">
                 <dl class="row">
@@ -119,7 +119,7 @@
         @if($permiso->id_estado == 2)
         <div class="card card-danger card-outline">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-ban mr-2"></i>Informacion de Revocacion</h3>
+                <h3 class="card-title"><i class="fas fa-ban mr-2"></i>Información de revocación</h3>
             </div>
             <div class="card-body">
                 <dl class="row">

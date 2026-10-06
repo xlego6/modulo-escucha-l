@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Ver Entrevista')
-@section('content_header', 'Detalle de Entrevista')
+@section('title', 'Ver entrevista')
+@section('content_header', 'Detalle de entrevista')
 
 @section('content')
 <div class="row">
@@ -36,18 +36,18 @@
         <!-- PASO 1: Datos Testimoniales -->
         <div class="card card-primary card-outline">
             <div class="card-header">
-                <h5 class="card-title"><i class="fas fa-file-alt mr-2"></i>Datos Testimoniales</h5>
+                <h5 class="card-title"><i class="fas fa-file-alt mr-2"></i>Datos testimoniales</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
                         <table class="table table-sm table-borderless">
                             <tr>
-                                <th style="width: 45%">Codigo:</th>
+                                <th style="width: 45%">Código:</th>
                                 <td><strong>{{ $entrevista->entrevista_codigo }}</strong></td>
                             </tr>
                             <tr>
-                                <th>Numero:</th>
+                                <th>Número:</th>
                                 <td>{{ $entrevista->entrevista_numero }}</td>
                             </tr>
                             <tr>
@@ -55,19 +55,19 @@
                                 <td>{{ $entrevista->entrevista_correlativo }}</td>
                             </tr>
                             <tr>
-                                <th>Dependencia Origen:</th>
+                                <th>Dependencia origen:</th>
                                 <td>{{ $entrevista->rel_dependencia_origen->descripcion ?? 'No especificado' }}</td>
                             </tr>
                             <tr>
-                                <th>Equipo/Estrategia:</th>
+                                <th>Equipo/estrategia:</th>
                                 <td>{{ $entrevista->rel_equipo_estrategia->descripcion ?? 'No especificado' }}</td>
                             </tr>
                             <tr>
-                                <th>Proyecto/Investigacion:</th>
+                                <th>Proyecto/investigación:</th>
                                 <td>{{ $entrevista->nombre_proyecto ?? 'No especificado' }}</td>
                             </tr>
                             <tr>
-                                <th>Tipo Testimonio:</th>
+                                <th>Tipo testimonio:</th>
                                 <td>{{ $entrevista->rel_tipo_testimonio->descripcion ?? 'No especificado' }}</td>
                             </tr>
                             <tr>
@@ -90,7 +90,7 @@
                             </tr>
                             @if($entrevista->detalle_idiomas)
                             <tr>
-                                <th>Detalle Idiomas:</th>
+                                <th>Detalle idiomas:</th>
                                 <td>{{ $entrevista->detalle_idiomas }}</td>
                             </tr>
                             @endif
@@ -121,7 +121,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th>Tiene Anexos:</th>
+                                <th>Tiene anexos:</th>
                                 <td>
                                     @if($entrevista->tiene_anexos)
                                         <span class="badge badge-info">Si</span>
@@ -132,7 +132,7 @@
                             </tr>
                             @if($entrevista->descripcion_anexos)
                             <tr>
-                                <th>Descripcion Anexos:</th>
+                                <th>Descripción anexos:</th>
                                 <td>{{ $entrevista->descripcion_anexos }}</td>
                             </tr>
                             @endif
@@ -150,16 +150,16 @@
 
                 <!-- Fecha y Lugar de Toma -->
                 <hr>
-                <h6><i class="fas fa-calendar-alt mr-2"></i>Fecha y Lugar de la Toma</h6>
+                <h6 class="seccion-titulo"><i class="fas fa-calendar-alt"></i>Fecha y lugar de la toma</h6>
                 <div class="row">
                     <div class="col-md-6">
                         <table class="table table-sm table-borderless">
                             <tr>
-                                <th style="width: 45%">Fecha Inicial:</th>
+                                <th style="width: 45%">Fecha inicial:</th>
                                 <td>{{ $entrevista->fecha_toma_inicial ? \Carbon\Carbon::parse($entrevista->fecha_toma_inicial)->format('d/m/Y') : 'No especificada' }}</td>
                             </tr>
                             <tr>
-                                <th>Fecha Final:</th>
+                                <th>Fecha final:</th>
                                 <td>{{ $entrevista->fecha_toma_final ? \Carbon\Carbon::parse($entrevista->fecha_toma_final)->format('d/m/Y') : 'No especificada' }}</td>
                             </tr>
                             <tr>
@@ -185,7 +185,7 @@
                                 <td>{{ $muni_toma->descripcion ?? 'No especificado' }}</td>
                             </tr>
                             <tr>
-                                <th>Duracion:</th>
+                                <th>Duración:</th>
                                 <td>
                                     @if($entrevista->tiempo_entrevista)
                                         {{ $entrevista->tiempo_entrevista }} minutos
@@ -202,7 +202,7 @@
                 <hr>
                 <div class="row">
                     <div class="col-md-6">
-                        <h6><i class="fas fa-file-video mr-2"></i>Formato(s) del Testimonio</h6>
+                        <h6 class="seccion-titulo"><i class="fas fa-file-video"></i>Formato(s) del testimonio</h6>
                         @if($entrevista->rel_formatos && $entrevista->rel_formatos->count() > 0)
                             @foreach($entrevista->rel_formatos as $formato)
                                 <span class="badge badge-info mr-1">{{ $formato->descripcion }}</span>
@@ -212,7 +212,7 @@
                         @endif
                     </div>
                     <div class="col-md-6">
-                        <h6><i class="fas fa-handshake mr-2"></i>Modalidad(es)</h6>
+                        <h6 class="seccion-titulo"><i class="fas fa-handshake"></i>Modalidad(es)</h6>
                         @if($entrevista->rel_modalidades && $entrevista->rel_modalidades->count() > 0)
                             @foreach($entrevista->rel_modalidades as $modalidad)
                                 <span class="badge badge-success mr-1">{{ $modalidad->descripcion }}</span>
@@ -227,7 +227,7 @@
                 <hr>
                 <div class="row">
                     <div class="col-md-6">
-                        <h6><i class="fas fa-building mr-2"></i>Areas Compatibles</h6>
+                        <h6 class="seccion-titulo"><i class="fas fa-building"></i>Áreas compatibles</h6>
                         @if($areas_compatibles && $areas_compatibles->count() > 0)
                             @foreach($areas_compatibles as $area)
                                 <span class="badge badge-primary mr-1">{{ $area }}</span>
@@ -237,7 +237,7 @@
                         @endif
                     </div>
                     <div class="col-md-6">
-                        <h6><i class="fas fa-heart mr-2"></i>Necesidades de Reparacion</h6>
+                        <h6 class="seccion-titulo"><i class="fas fa-heart"></i>Necesidades de reparación</h6>
                         @if($entrevista->rel_necesidades_reparacion && $entrevista->rel_necesidades_reparacion->count() > 0)
                             @foreach($entrevista->rel_necesidades_reparacion as $necesidad)
                                 <span class="badge badge-warning mr-1">{{ $necesidad->descripcion }}</span>
@@ -250,7 +250,7 @@
 
                 @if($entrevista->observaciones_toma)
                 <hr>
-                <h6><i class="fas fa-sticky-note mr-2"></i>Observaciones de la Toma</h6>
+                <h6 class="seccion-titulo"><i class="fas fa-sticky-note"></i>Observaciones de la toma</h6>
                 <div class="callout callout-info">
                     {!! nl2br(e($entrevista->observaciones_toma)) !!}
                 </div>
@@ -295,15 +295,15 @@
                                             <td>{{ $pe->rel_persona->rel_sexo->descripcion ?? 'No especificado' }}</td>
                                         </tr>
                                         <tr>
-                                            <th>Identidad de Genero:</th>
+                                            <th>Identidad de género:</th>
                                             <td>{{ $pe->rel_persona->rel_identidad->descripcion ?? 'No especificado' }}</td>
                                         </tr>
                                         <tr>
-                                            <th>Orientacion Sexual:</th>
+                                            <th>Orientación sexual:</th>
                                             <td>{{ $pe->rel_persona->rel_orientacion->descripcion ?? 'No especificado' }}</td>
                                         </tr>
                                         <tr>
-                                            <th>Grupo Etnico:</th>
+                                            <th>Grupo étnico:</th>
                                             <td>{{ $pe->rel_persona->rel_etnia->descripcion ?? 'No especificado' }}</td>
                                         </tr>
                                     </table>
@@ -311,7 +311,7 @@
                                 <div class="col-md-6">
                                     <table class="table table-sm table-borderless">
                                         <tr>
-                                            <th style="width: 40%">Rango Etario:</th>
+                                            <th style="width: 40%">Rango etario:</th>
                                             <td>{{ $pe->rel_persona->rel_rango_etario->descripcion ?? 'No especificado' }}</td>
                                         </tr>
                                         <tr>
@@ -323,7 +323,7 @@
                                             <td>{{ $pe->rel_persona->rel_discapacidad->descripcion ?? 'No especificado' }}</td>
                                         </tr>
                                         <tr>
-                                            <th>Lugar Origen:</th>
+                                            <th>Lugar origen:</th>
                                             <td>{{ $pe->rel_persona->rel_lugar_nacimiento->descripcion ?? 'No especificado' }}</td>
                                         </tr>
                                     </table>
@@ -333,7 +333,7 @@
                             <!-- Poblaciones y Ocupaciones -->
                             <div class="row mt-2">
                                 <div class="col-md-6">
-                                    <strong>Poblacion(es):</strong>
+                                    <strong>Población(es):</strong>
                                     @if($pe->rel_persona->rel_poblaciones && $pe->rel_persona->rel_poblaciones->count() > 0)
                                         @foreach($pe->rel_persona->rel_poblaciones as $pob)
                                             <span class="badge badge-info mr-1">{{ $pob->descripcion }}</span>
@@ -343,7 +343,7 @@
                                     @endif
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>Ocupacion(es):</strong>
+                                    <strong>Ocupación(es):</strong>
                                     @if($pe->rel_persona->rel_ocupaciones && $pe->rel_persona->rel_ocupaciones->count() > 0)
                                         @foreach($pe->rel_persona->rel_ocupaciones as $ocu)
                                             <span class="badge badge-secondary mr-1">{{ $ocu->descripcion }}</span>
@@ -361,8 +361,8 @@
                                 $obsConsent = $pe->rel_consentimiento->observaciones ?? '';
                                 $esConsentimientoOtro = str_contains($obsConsent, '[CONSENTIMIENTO_OTRO]');
                             @endphp
-                            <h6>
-                                <i class="fas fa-file-signature mr-2"></i>Consentimiento Informado
+                            <h6 class="seccion-titulo">
+                                <i class="fas fa-file-signature"></i>Consentimiento informado
                                 @if($esConsentimientoOtro)
                                     <span class="badge badge-warning ml-2">Otro</span>
                                 @endif
@@ -417,7 +417,7 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Solicita anonimizacion u ocultamiento:</strong></td>
+                                            <td><strong>Solicita anonimización u ocultamiento:</strong></td>
                                             <td>
                                                 @if(isset($anonM[1]))
                                                     {!! $anonM[1] === 'Si' ? '<span class="badge badge-warning">Si</span>' : '<span class="badge badge-secondary">No</span>' !!}
@@ -430,7 +430,7 @@
                                             </td>
                                         </tr>
                                         <tr class="table-light">
-                                            <td colspan="2"><small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Campos DADH mapeados automaticamente</small></td>
+                                            <td colspan="2"><small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Campos DADH mapeados automáticamente</small></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Autoriza ser entrevistado:</strong></td>
@@ -454,7 +454,7 @@
                                     <table class="table table-sm table-bordered">
                                         <tr>
                                             <td style="width: 50%">
-                                                <strong>Tiene documento de autorizacion:</strong>
+                                                <strong>Tiene documento de autorización:</strong>
                                             </td>
                                             <td>
                                                 @if($pe->rel_consentimiento->tiene_documento_autorizacion)
@@ -474,7 +474,7 @@
                                             <td>{!! $pe->rel_consentimiento->autoriza_ser_entrevistado ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Permite grabacion:</strong></td>
+                                            <td><strong>Permite grabación:</strong></td>
                                             <td>{!! $pe->rel_consentimiento->permite_grabacion ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}</td>
                                         </tr>
                                         <tr>
@@ -482,7 +482,7 @@
                                             <td>{!! $pe->rel_consentimiento->permite_procesamiento_misional ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Permite uso, conservacion y consulta:</strong></td>
+                                            <td><strong>Permite uso, conservación y consulta:</strong></td>
                                             <td>{!! $pe->rel_consentimiento->permite_uso_conservacion_consulta ? '<span class="badge badge-success">Si</span>' : '<span class="badge badge-danger">No</span>' !!}</td>
                                         </tr>
                                         <tr>
@@ -526,7 +526,7 @@
                                     $clasifDano = 'Inteligencia y Contrainteligencia';
                                     $clasifColor = 'danger';
                                 } elseif ($esNS($dPriv) && $esNS($dPub) && $esNS($dIntel) && $esNS($dNna)) {
-                                    $clasifDano = 'Pendiente de Calificacion';
+                                    $clasifDano = 'Pendiente de Calificación';
                                     $clasifColor = 'warning';
                                 } elseif ($dPriv == 1 && ($dPub == 1 || $dNna == 1)) {
                                     $clasifDano = 'Publica-Clasificada y Publica-Reservada';
@@ -549,7 +549,7 @@
                                     return '<span class="badge badge-warning">No sabe</span>';
                                 };
                             @endphp
-                            <h6><i class="fas fa-exclamation-triangle mr-2 text-danger"></i>Prueba de Dano</h6>
+                            <h6 class="seccion-titulo"><i class="fas fa-exclamation-triangle"></i>Prueba de daño</h6>
                             <div class="row">
                                 <div class="col-md-12">
                                     <table class="table table-sm table-bordered">
@@ -558,19 +558,19 @@
                                             <td>{!! $badgeDano($dPriv) !!}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>2. Afecta intereses publicos (Art. 19 Ley 1712 de 2014):</strong></td>
+                                            <td><strong>2. Afecta intereses públicos (Art. 19 Ley 1712 de 2014):</strong></td>
                                             <td>{!! $badgeDano($dPub) !!}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>3. Informacion de inteligencia y contrainteligencia (Ley 1621 de 2013):</strong></td>
+                                            <td><strong>3. Información de inteligencia y contrainteligencia (Ley 1621 de 2013):</strong></td>
                                             <td>{!! $badgeDano($dIntel) !!}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>4. Realizado a Ninos, Ninas y Adolescentes (NNA):</strong></td>
+                                            <td><strong>4. Realizado a Niños, Niñas y Adolescentes (NNA):</strong></td>
                                             <td>{!! $badgeDano($dNna) !!}</td>
                                         </tr>
                                         <tr class="table-{{ $clasifColor }}">
-                                            <td><strong>Clasificacion:</strong></td>
+                                            <td><strong>Clasificación:</strong></td>
                                             <td><strong>{{ $clasifDano }}</strong></td>
                                         </tr>
                                     </table>
@@ -593,7 +593,7 @@
         <!-- PASO 3: Contenido del Testimonio -->
         <div class="card card-info card-outline">
             <div class="card-header">
-                <h5 class="card-title"><i class="fas fa-book mr-2"></i>Contenido del Testimonio</h5>
+                <h5 class="card-title"><i class="fas fa-book mr-2"></i>Contenido del testimonio</h5>
             </div>
             <div class="card-body">
                 @if($entrevista->rel_contenido)
@@ -610,12 +610,12 @@
                     </div>
 
                     <hr>
-                    <h6>Caracteristicas Mencionadas en el Testimonio</h6>
+                    <h6 class="seccion-titulo">Características mencionadas en el testimonio</h6>
 
                     <!-- Poblaciones y Ocupaciones -->
                     <div class="row mb-2">
                         <div class="col-md-6">
-                            <strong>Poblacion(es):</strong><br>
+                            <strong>Población(es):</strong><br>
                             @if($entrevista->rel_contenido->rel_poblaciones && $entrevista->rel_contenido->rel_poblaciones->count() > 0)
                                 @foreach($entrevista->rel_contenido->rel_poblaciones as $item)
                                     <span class="badge badge-info mr-1 mb-1">{{ $item->descripcion }}</span>
@@ -625,7 +625,7 @@
                             @endif
                         </div>
                         <div class="col-md-6">
-                            <strong>Ocupacion(es):</strong><br>
+                            <strong>Ocupación(es):</strong><br>
                             @if($entrevista->rel_contenido->rel_ocupaciones && $entrevista->rel_contenido->rel_ocupaciones->count() > 0)
                                 @foreach($entrevista->rel_contenido->rel_ocupaciones as $item)
                                     <span class="badge badge-secondary mr-1 mb-1">{{ $item->descripcion }}</span>
@@ -640,13 +640,13 @@
                     <div class="row mb-2">
                         @if($entrevista->rel_contenido->otras_poblaciones_mencionadas)
                         <div class="col-md-6">
-                            <strong>Otra(s) Poblacion(es):</strong><br>
+                            <strong>Otra(s) Población(es):</strong><br>
                             <span class="text-muted">{{ $entrevista->rel_contenido->otras_poblaciones_mencionadas }}</span>
                         </div>
                         @endif
                         @if($entrevista->rel_contenido->otras_ocupaciones_mencionadas)
                         <div class="col-md-6">
-                            <strong>Otra(s) Ocupacion(es):</strong><br>
+                            <strong>Otra(s) Ocupación(es):</strong><br>
                             <span class="text-muted">{{ $entrevista->rel_contenido->otras_ocupaciones_mencionadas }}</span>
                         </div>
                         @endif
@@ -666,7 +666,7 @@
                             @endif
                         </div>
                         <div class="col-md-4">
-                            <strong>Identidad(es) de Genero:</strong><br>
+                            <strong>Identidad(es) de Género:</strong><br>
                             @if($entrevista->rel_contenido->rel_identidades_genero && $entrevista->rel_contenido->rel_identidades_genero->count() > 0)
                                 @foreach($entrevista->rel_contenido->rel_identidades_genero as $item)
                                     <span class="badge badge-success mr-1 mb-1">{{ $item->descripcion }}</span>
@@ -676,7 +676,7 @@
                             @endif
                         </div>
                         <div class="col-md-4">
-                            <strong>Orientacion(es) Sexual(es):</strong><br>
+                            <strong>Orientación(es) Sexual(es):</strong><br>
                             @if($entrevista->rel_contenido->rel_orientaciones_sexuales && $entrevista->rel_contenido->rel_orientaciones_sexuales->count() > 0)
                                 @foreach($entrevista->rel_contenido->rel_orientaciones_sexuales as $item)
                                     <span class="badge badge-warning mr-1 mb-1">{{ $item->descripcion }}</span>
@@ -690,7 +690,7 @@
                     <!-- Etnias, Rangos, Discapacidades -->
                     <div class="row mb-2">
                         <div class="col-md-4">
-                            <strong>Grupo(s) Etnico(s):</strong><br>
+                            <strong>Grupo(s) Étnico(s):</strong><br>
                             @if($entrevista->rel_contenido->rel_etnias && $entrevista->rel_contenido->rel_etnias->count() > 0)
                                 @foreach($entrevista->rel_contenido->rel_etnias as $item)
                                     <span class="badge badge-info mr-1 mb-1">{{ $item->descripcion }}</span>
@@ -724,7 +724,7 @@
                     @if($entrevista->rel_contenido->detalle_grupos_etnicos)
                     <div class="row mb-2">
                         <div class="col-md-12">
-                            <strong>Detalle Grupo(s) Etnico(s):</strong><br>
+                            <strong>Detalle Grupo(s) Étnico(s):</strong><br>
                             <span class="text-muted">{{ $entrevista->rel_contenido->detalle_grupos_etnicos }}</span>
                         </div>
                     </div>
@@ -758,7 +758,7 @@
                     <!-- Practicas de Resistencia -->
                     <div class="row mb-2">
                         <div class="col-md-12">
-                            <strong>Practica(s) de Resistencia:</strong><br>
+                            <strong>Práctica(s) de Resistencia:</strong><br>
                             @if($entrevista->rel_contenido->rel_practicas_resistencia && $entrevista->rel_contenido->rel_practicas_resistencia->count() > 0)
                                 @foreach($entrevista->rel_contenido->rel_practicas_resistencia as $item)
                                     <span class="badge badge-success mr-1 mb-1">{{ $item->descripcion }}</span>
@@ -795,7 +795,7 @@
                     <!-- Lugares Geograficos Mencionados -->
                     <div class="row mb-2">
                         <div class="col-md-12">
-                            <strong><i class="fas fa-map-marker-alt mr-1"></i>Lugar(es) Geografico(s) Mencionado(s):</strong><br>
+                            <strong><i class="fas fa-map-marker-alt mr-1"></i>Lugar(es) Geográfico(s) Mencionado(s):</strong><br>
                             @if(isset($lugares_mencionados) && $lugares_mencionados->count() > 0)
                                 <ul class="list-unstyled mt-2">
                                 @foreach($lugares_mencionados as $lugar)
@@ -864,7 +864,7 @@
         @if(\App\Models\RolModuloPermiso::puedeVer(Auth::user()->id_nivel, 'adjuntos'))
         <div class="card card-info card-outline">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-paperclip"></i> Archivos Adjuntos</h3>
+                <h3 class="card-title"><i class="fas fa-paperclip"></i> Archivos adjuntos</h3>
                 <div class="card-tools">
                     <a href="{{ route('adjuntos.gestionar', $entrevista->id_e_ind_fvt) }}" class="btn btn-info btn-sm">
                         <i class="fas fa-cog"></i> Gestionar
@@ -918,18 +918,18 @@
                 {{-- Editar: admin o quien tiene permiso --}}
                 @if($puedeEditar)
                 <a href="{{ route('entrevistas.wizard.edit', $entrevista->id_e_ind_fvt) }}" class="btn btn-warning btn-block mb-2">
-                    <i class="fas fa-edit"></i> Editar Entrevista
+                    <i class="fas fa-edit"></i> Editar entrevista
                 </a>
                 @endif
 
                 {{-- Solicitar edición: Entrevistador (no propietario, sin permiso) o Gestor --}}
                 @if(in_array($nivelActual, [3, 5]) && !$puedeEditar && !$solicitudEdicionPendiente)
                 <button type="button" class="btn btn-outline-warning btn-block mb-2" data-toggle="modal" data-target="#modalSolicitarEdicion">
-                    <i class="fas fa-edit"></i> Solicitar Permiso de Edición
+                    <i class="fas fa-edit"></i> Solicitar permiso de edición
                 </button>
                 @elseif(in_array($nivelActual, [3, 5]) && $solicitudEdicionPendiente)
                 <button class="btn btn-outline-secondary btn-block mb-2" disabled>
-                    <i class="fas fa-clock"></i> Solicitud de Edición Pendiente
+                    <i class="fas fa-clock"></i> Solicitud de edición pendiente
                 </button>
                 @endif
 
@@ -937,11 +937,11 @@
                 @if(($nivelActual == 3 && $esPropietario) || $nivelActual == 5)
                     @if(!$solicitudEliminacionPendiente)
                     <button type="button" class="btn btn-outline-danger btn-block mb-2" data-toggle="modal" data-target="#modalSolicitarEliminacion">
-                        <i class="fas fa-trash"></i> Solicitar Eliminación
+                        <i class="fas fa-trash"></i> Solicitar eliminación
                     </button>
                     @else
                     <button class="btn btn-outline-secondary btn-block mb-2" disabled>
-                        <i class="fas fa-clock"></i> Solicitud de Eliminación Pendiente
+                        <i class="fas fa-clock"></i> Solicitud de eliminación pendiente
                     </button>
                     @endif
                 @endif
@@ -952,7 +952,7 @@
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger btn-block">
-                        <i class="fas fa-trash"></i> Eliminar Entrevista
+                        <i class="fas fa-trash"></i> Eliminar entrevista
                     </button>
                 </form>
                 @endif
@@ -967,7 +967,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-warning">
-                <h5 class="modal-title"><i class="fas fa-edit mr-2"></i>Solicitar Permiso de Edición</h5>
+                <h5 class="modal-title"><i class="fas fa-edit mr-2"></i>Solicitar permiso de edición</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form action="{{ route('permisos.solicitar') }}" method="POST">
@@ -983,7 +983,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning"><i class="fas fa-paper-plane mr-1"></i>Enviar Solicitud</button>
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-paper-plane mr-1"></i>Enviar solicitud</button>
                 </div>
             </form>
         </div>
@@ -998,7 +998,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-trash mr-2"></i>Solicitar Eliminación</h5>
+                <h5 class="modal-title"><i class="fas fa-trash mr-2"></i>Solicitar eliminación</h5>
                 <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form action="{{ route('permisos.solicitar') }}" method="POST">
@@ -1017,7 +1017,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane mr-1"></i>Enviar Solicitud</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane mr-1"></i>Enviar solicitud</button>
                 </div>
             </form>
         </div>

@@ -32,7 +32,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <h6 class="text-muted mb-2">
-                            <i class="fas fa-file-alt mr-1"></i>Texto Etiquetado
+                            <i class="fas fa-file-alt mr-1"></i>Texto etiquetado
                             <small class="text-secondary">(seleccione texto para etiquetar)</small>
                         </h6>
                         <div class="editor-visual-container texto-seleccionable" id="texto-original-marcado" style="background: #f0f6f7;">
@@ -43,7 +43,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="text-muted mb-0">
-                                <i class="fas fa-user-secret mr-1"></i>Texto Anonimizado
+                                <i class="fas fa-user-secret mr-1"></i>Texto anonimizado
                                 <small class="text-secondary">(clic para anonimizar)</small>
                             </h6>
                             <div>
@@ -73,7 +73,7 @@
 
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save mr-1"></i> Guardar Cambios
+                <i class="fas fa-save mr-1"></i> Guardar cambios
             </button>
             <span class="text-muted ml-3">
                 <i class="fas fa-info-circle mr-1"></i>

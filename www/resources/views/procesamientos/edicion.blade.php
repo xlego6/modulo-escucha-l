@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Edicion de Transcripciones')
-@section('content_header', 'Edicion de Transcripciones')
+@section('title', 'Edición de transcripciones')
+@section('content_header', 'Edición de transcripciones')
 
 @section('css')
 <style>
@@ -181,14 +181,14 @@
 @if($pendientesRevision->count() > 0)
 <div class="card card-warning">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-inbox mr-2"></i>Transcripciones Pendientes de Revision ({{ $pendientesRevision->count() }})</h3>
+        <h3 class="card-title"><i class="fas fa-inbox mr-2"></i>Transcripciones pendientes de revision ({{ $pendientesRevision->count() }})</h3>
     </div>
     <div class="card-body p-0">
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Codigo</th>
-                    <th>Titulo / Audio</th>
+                    <th>Código</th>
+                    <th>Título / audio</th>
                     <th>Transcriptor</th>
                     <th>Enviada</th>
                     <th>Acciones</th>
@@ -268,7 +268,7 @@
                 </div>
                 <div class="col-md-2">
                     <div class="form-group mb-2">
-                        <label class="small mb-1">Transcripción Auto</label>
+                        <label class="small mb-1">Transcripción auto</label>
                         <select name="filtro_trans_auto" class="form-control form-control-sm">
                             <option value="">-- Todas --</option>
                             <option value="con" {{ request('filtro_trans_auto') === 'con' ? 'selected' : '' }}>Con transcripción</option>
@@ -278,7 +278,7 @@
                 </div>
                 <div class="col-md-2">
                     <div class="form-group mb-2">
-                        <label class="small mb-1">Estado Asignación</label>
+                        <label class="small mb-1">Estado asignación</label>
                         <select name="filtro_asignacion" class="form-control form-control-sm">
                             <option value="">-- Todos --</option>
                             @foreach($estadosAsignacionEdicion as $val => $label)
@@ -306,18 +306,18 @@
 {{-- Lista de Entrevistas para Asignar --}}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas con Audio/Video</h3>
+        <h3 class="card-title"><i class="fas fa-list mr-2"></i>Entrevistas con audio/video</h3>
     </div>
     <div class="card-body p-0">
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th>Codigo</th>
-                    <th>Titulo</th>
+                    <th>Código</th>
+                    <th>Título</th>
                     <th>Audios</th>
                     <th>Duración</th>
                     <th>Trans. Auto</th>
-                    <th>Nombre audio/Estado/Asignado a</th>
+                    <th>Nombre audio/estado/asignado a</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -462,7 +462,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger">
-                <h5 class="modal-title"><i class="fas fa-user-minus mr-2"></i>Desasignar Transcripción</h5>
+                <h5 class="modal-title"><i class="fas fa-user-minus mr-2"></i>Desasignar transcripción</h5>
                 <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
@@ -488,7 +488,7 @@
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger" id="btnConfirmarDesasignar" disabled>
-                        <i class="fas fa-user-minus mr-1"></i> Confirmar Desasignación
+                        <i class="fas fa-user-minus mr-1"></i> Confirmar desasignación
                     </button>
                 </form>
             </div>
@@ -501,7 +501,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-info">
-                <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Asignar Transcriptor</h5>
+                <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Asignar transcriptor</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form id="formAsignar">
@@ -521,7 +521,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="id_transcriptor">Transcriptor / Líder <span class="text-danger">*</span></label>
+                        <label for="id_transcriptor">Transcriptor / líder <span class="text-danger">*</span></label>
                         <select class="form-control" id="id_transcriptor" name="id_transcriptor" required>
                             <option value="">-- Seleccione --</option>
                             @foreach($transcriptores as $t)

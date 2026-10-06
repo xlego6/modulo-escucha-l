@@ -235,7 +235,7 @@ $(document).ready(function() {
 
     $(window).on('beforeunload', function() {
         if (hayCambiosSinGuardar) {
-            return 'Tiene cambios sin guardar. ¿Desea salir de la pagina?';
+            return 'Tiene cambios sin guardar. ¿Desea salir de la página?';
         }
     });
 });

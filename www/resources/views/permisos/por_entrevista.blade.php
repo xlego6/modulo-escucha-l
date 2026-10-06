@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Permisos de Entrevista')
-@section('content_header', 'Permisos de Acceso')
+@section('title', 'Permisos de entrevista')
+@section('content_header', 'Permisos de acceso')
 
 @section('content')
 <div class="card card-primary card-outline">
@@ -12,7 +12,7 @@
         </h3>
     </div>
     <div class="card-body">
-        <p><strong>Titulo:</strong> {{ $entrevista->titulo }}</p>
+        <p><strong>Título:</strong> {{ $entrevista->titulo }}</p>
         <p><strong>Fecha:</strong> {{ $entrevista->entrevista_fecha }}</p>
     </div>
 </div>
@@ -21,11 +21,11 @@
     <div class="card-header">
         <div class="row">
             <div class="col-md-6">
-                <h3 class="card-title">Usuarios con Acceso</h3>
+                <h3 class="card-title">Usuarios con acceso</h3>
             </div>
             <div class="col-md-6 text-right">
                 <a href="{{ route('permisos.create', ['entrevista' => $entrevista->id_e_ind_fvt]) }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus mr-1"></i> Otorgar Permiso
+                    <i class="fas fa-plus mr-1"></i> Otorgar permiso
                 </a>
             </div>
         </div>
@@ -59,7 +59,7 @@
                         </span>
                     </td>
                     <td>{{ $permiso->fecha_otorgado ? $permiso->fecha_otorgado->format('d/m/Y') : 'N/A' }}</td>
-                    <td>{{ $permiso->fecha_vencimiento ? $permiso->fecha_vencimiento->format('d/m/Y') : 'Sin limite' }}</td>
+                    <td>{{ $permiso->fecha_vencimiento ? $permiso->fecha_vencimiento->format('d/m/Y') : 'Sin límite' }}</td>
                     <td>
                         @if($permiso->esta_vigente)
                             <span class="badge badge-success">Vigente</span>
@@ -95,6 +95,6 @@
 </div>
 
 <a href="{{ route('entrevistas.show', $entrevista->id_e_ind_fvt) }}" class="btn btn-secondary">
-    <i class="fas fa-arrow-left mr-1"></i> Volver a Entrevista
+    <i class="fas fa-arrow-left mr-1"></i> Volver a entrevista
 </a>
 @endsection

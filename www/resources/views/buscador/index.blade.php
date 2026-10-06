@@ -136,7 +136,7 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group mb-0">
-                                <label class="small text-muted mb-1"><i class="fas fa-exclamation-triangle"></i> Hecho Victimizante</label>
+                                <label class="small text-muted mb-1"><i class="fas fa-exclamation-triangle"></i> Hecho victimizante</label>
                                 <select name="id_hecho_victimizante" class="form-control form-control-sm">
                                     @foreach($hechos_victimizantes as $id => $nombre)
                                     <option value="{{ $id }}" {{ request('id_hecho_victimizante') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
@@ -146,7 +146,7 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group mb-0">
-                                <label class="small text-muted mb-1"><i class="fas fa-hands-helping"></i> Práctica de Resistencia</label>
+                                <label class="small text-muted mb-1"><i class="fas fa-hands-helping"></i> Práctica de resistencia</label>
                                 <select name="id_resistencia" class="form-control form-control-sm">
                                     @foreach($resistencias as $id => $nombre)
                                     <option value="{{ $id }}" {{ request('id_resistencia') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
@@ -158,7 +158,7 @@
                     <div class="row mt-2">
                         <div class="col-md-3">
                             <div class="form-group mb-0">
-                                <label class="small text-muted mb-1"><i class="fas fa-building"></i> Dependencia Origen</label>
+                                <label class="small text-muted mb-1"><i class="fas fa-building"></i> Dependencia origen</label>
                                 <select name="id_dependencia" class="form-control form-control-sm">
                                     @foreach($dependencias as $id => $nombre)
                                     <option value="{{ $id }}" {{ request('id_dependencia') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
@@ -293,7 +293,7 @@
                                         @if(\App\Models\RolModuloPermiso::puedeCrear(Auth::user()->id_nivel, 'permisos') && !$permisosAprobados->contains($entrevista->id_e_ind_fvt) && (!$entrevista->rel_entrevistador || $entrevista->rel_entrevistador->id_usuario != Auth::id()))
                                         <button type="button" class="btn btn-sm btn-outline-info mt-1"
                                             onclick="abrirModalSolicitarAcceso({{ $entrevista->id_e_ind_fvt }}, '{{ $entrevista->entrevista_codigo }}')">
-                                            <i class="fas fa-key"></i> Solicitar Acceso
+                                            <i class="fas fa-key"></i> Solicitar acceso
                                         </button>
                                         @endif
                                     </div>
@@ -509,10 +509,10 @@
                         <h5>No se encontraron resultados</h5>
                         @if($tiene_texto)
                             <p>No hay coincidencias para "<strong>{{ $termino }}</strong>" en entrevistas, personas o documentos.</p>
-                            <p class="small text-muted">Intente con otros terminos de busqueda o ajuste los filtros.</p>
+                            <p class="small text-muted">Intente con otros términos de búsqueda o ajuste los filtros.</p>
                         @else
                             <p>No hay entrevistas que coincidan con los filtros seleccionados.</p>
-                            <p class="small text-muted">Intente con otros filtros o agregue un termino de busqueda.</p>
+                            <p class="small text-muted">Intente con otros filtros o agregue un término de búsqueda.</p>
                         @endif
                     </div>
                 </div>
@@ -525,7 +525,7 @@
                     <i class="fas fa-search fa-3x mb-3"></i>
                     <h5>Busque o filtre entrevistas</h5>
                     <p class="text-muted">
-                        Ingrese un termino de busqueda o aplique alguno de los filtros para ver resultados.
+                        Ingrese un término de búsqueda o aplique alguno de los filtros para ver resultados.
                     </p>
                     <div class="row justify-content-center mt-4">
                         <div class="col-md-3 text-center">
@@ -533,7 +533,7 @@
                                 <i class="fas fa-microphone"></i>
                             </div>
                             <strong>Entrevistas</strong>
-                            <p class="small text-muted">Codigos, titulos, anotaciones y contenido de documentos adjuntos</p>
+                            <p class="small text-muted">Códigos, títulos, anotaciones y contenido de documentos adjuntos</p>
                         </div>
                         <div class="col-md-3 text-center">
                             <div class="icono-fuente documento mx-auto mb-2" style="width:48px;height:48px;font-size:1.5rem;">
@@ -559,7 +559,7 @@
                 <input type="hidden" name="tipo_solicitud" value="acceso">
                 <div class="modal-header bg-info">
                     <h5 class="modal-title text-white" id="modal-solicitar-acceso-label">
-                        <i class="fas fa-key mr-2"></i>Solicitar Acceso
+                        <i class="fas fa-key mr-2"></i>Solicitar acceso
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal">
                         <span>&times;</span>
@@ -577,7 +577,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-info">
-                        <i class="fas fa-paper-plane mr-1"></i> Enviar Solicitud
+                        <i class="fas fa-paper-plane mr-1"></i> Enviar solicitud
                     </button>
                 </div>
             </form>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Revisar Anonimizacion')
+@section('title', 'Revisar anonimización')
 @section('content_header')
 Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
 @endsection
@@ -12,7 +12,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
 @section('content')
 <div class="row mb-3">
     <div class="col-12">
-        @include('procesamientos.partials.anonimizacion-editor', ['tituloEditor' => 'Anonimizacion (Editable)', 'iconoEditor' => 'fa-edit'])
+        @include('procesamientos.partials.anonimizacion-editor', ['tituloEditor' => 'Anonimización (Editable)', 'iconoEditor' => 'fa-edit'])
     </div>
 </div>
 
@@ -22,7 +22,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         {{-- Informacion de la asignacion --}}
         <div class="card card-warning">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Revision Pendiente</h3>
+                <h3 class="card-title"><i class="fas fa-clipboard-check mr-2"></i>Revisión pendiente</h3>
             </div>
             <div class="card-body">
                 <dl class="row mb-0">
@@ -35,10 +35,10 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                     <dt class="col-sm-5">Asignada por:</dt>
                     <dd class="col-sm-7">{{ $asignacion->rel_asignado_por->name ?? 'N/A' }}</dd>
 
-                    <dt class="col-sm-5">Fecha Asignacion:</dt>
+                    <dt class="col-sm-5">Fecha asignación:</dt>
                     <dd class="col-sm-7">{{ $asignacion->fecha_asignacion->format('d/m/Y H:i') }}</dd>
 
-                    <dt class="col-sm-5">Fecha Envio:</dt>
+                    <dt class="col-sm-5">Fecha envío:</dt>
                     <dd class="col-sm-7">
                         @if($asignacion->fecha_envio_revision)
                             {{ $asignacion->fecha_envio_revision->format('d/m/Y H:i') }}
@@ -53,14 +53,14 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         {{-- Informacion de la entrevista --}}
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Datos de la Entrevista</h3>
+                <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Datos de la entrevista</h3>
             </div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Codigo:</dt>
+                    <dt class="col-sm-4">Código:</dt>
                     <dd class="col-sm-8"><code>{{ $entrevista->entrevista_codigo }}</code></dd>
 
-                    <dt class="col-sm-4">Titulo:</dt>
+                    <dt class="col-sm-4">Título:</dt>
                     <dd class="col-sm-8">{{ $entrevista->titulo }}</dd>
 
                     <dt class="col-sm-4">Fecha:</dt>
@@ -82,24 +82,24 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
         {{-- Botones de accion --}}
         <div class="card card-outline card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-gavel mr-2"></i>Decision</h3>
+                <h3 class="card-title"><i class="fas fa-gavel mr-2"></i>Decisión</h3>
             </div>
             <div class="card-body">
                 <form action="{{ route('procesamientos.aprobar-anonimizacion', $asignacion->id_asignacion) }}" method="POST" class="mb-3">
                     @csrf
                     <div class="form-group">
                         <label>Comentario (opcional)</label>
-                        <textarea name="comentario" class="form-control" rows="2" placeholder="Comentario de aprobacion..."></textarea>
+                        <textarea name="comentario" class="form-control" rows="2" placeholder="Comentario de aprobación..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-success btn-block" onclick="return confirm('¿Aprobar esta anonimizacion como version final?')">
-                        <i class="fas fa-check mr-1"></i> Aprobar Anonimizacion
+                        <i class="fas fa-check mr-1"></i> Aprobar anonimización
                     </button>
                 </form>
 
                 <hr>
 
                 <button type="button" class="btn btn-danger btn-block" data-toggle="modal" data-target="#modalRechazar">
-                    <i class="fas fa-times mr-1"></i> Rechazar y Devolver
+                    <i class="fas fa-times mr-1"></i> Rechazar y devolver
                 </button>
 
                 <hr>
@@ -117,7 +117,7 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger">
-                <h5 class="modal-title"><i class="fas fa-times mr-2"></i>Rechazar Anonimizacion</h5>
+                <h5 class="modal-title"><i class="fas fa-times mr-2"></i>Rechazar anonimización</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form id="formRechazar" action="{{ route('procesamientos.rechazar-anonimizacion', $asignacion->id_asignacion) }}" method="POST">
@@ -131,22 +131,22 @@ Revisar Anonimizacion: {{ $entrevista->entrevista_codigo }}
                     </div>
                     @endif
                     <p class="text-muted">
-                        Indique el motivo del rechazo. El anonimizador recibira este comentario
-                        y podra corregir la anonimizacion.
+                        Indique el motivo del rechazo. El anonimizador recibirá este comentario
+                        y podrá corregir la anonimización.
                     </p>
                     <div class="form-group">
                         <label>Motivo del rechazo <span class="text-danger">*</span></label>
                         <textarea name="comentario" id="comentarioRechazo" class="form-control" rows="4" required
                                   minlength="10"
                                   placeholder="Ej: Algunas entidades no fueron anonimizadas correctamente...">{{ old('comentario') }}</textarea>
-                        <small class="text-muted">Minimo 10 caracteres</small>
+                        <small class="text-muted">Mínimo 10 caracteres</small>
                     </div>
                     <div id="errorRechazo" class="alert alert-danger d-none"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger" id="btnRechazar">
-                        <i class="fas fa-times mr-1"></i> Rechazar y Devolver
+                        <i class="fas fa-times mr-1"></i> Rechazar y devolver
                     </button>
                 </div>
             </form>

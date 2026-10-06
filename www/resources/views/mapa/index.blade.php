@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Mapa de Entrevistas')
-@section('content_header', 'Mapa de Entrevistas')
+@section('title', 'Mapa de entrevistas')
+@section('content_header', 'Mapa de entrevistas')
 
 @section('css')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -56,20 +56,20 @@
     <div class="col-12">
         <div class="card card-outline card-primary">
             <div class="card-header py-2">
-                <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Tipo de Ubicacion</h3>
+                <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Tipo de ubicación</h3>
             </div>
             <div class="card-body py-2">
                 <div class="tipo-selector">
                     <button type="button" class="btn btn-outline-primary active" data-tipo="toma" id="btn-toma">
-                        <i class="fas fa-map-pin"></i> Lugar de Toma
-                        <small class="d-block text-muted">Donde se realizo la entrevista</small>
+                        <i class="fas fa-map-pin"></i> Lugar de toma
+                        <small class="d-block text-muted">Donde se realizó la entrevista</small>
                     </button>
                     <button type="button" class="btn btn-outline-success" data-tipo="origen" id="btn-origen">
-                        <i class="fas fa-home"></i> Origen Testimoniante
+                        <i class="fas fa-home"></i> Origen testimoniante
                         <small class="d-block text-muted">Lugar de nacimiento/residencia</small>
                     </button>
                     <button type="button" class="btn btn-outline-warning" data-tipo="mencionados" id="btn-mencionados">
-                        <i class="fas fa-map-marked-alt"></i> Lugares Mencionados
+                        <i class="fas fa-map-marked-alt"></i> Lugares mencionados
                         <small class="d-block text-muted">Lugares referenciados en el relato</small>
                     </button>
                 </div>
@@ -102,7 +102,7 @@
         <div class="info-box bg-warning">
             <span class="info-box-icon"><i class="fas fa-chart-bar"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text">Mayor Concentracion</span>
+                <span class="info-box-text">Mayor Concentración</span>
                 <span class="info-box-number" id="stat-max">-</span>
             </div>
         </div>
@@ -122,7 +122,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-map mr-2"></i>Distribucion Geografica</h3>
+                <h3 class="card-title"><i class="fas fa-map mr-2"></i>Distribución geográfica</h3>
                 <span class="badge badge-primary ml-2" id="tipo-actual">Lugar de Toma</span>
             </div>
             <div class="card-body p-0">
@@ -133,7 +133,7 @@
     <div class="col-md-4">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-list-ol mr-2"></i>Entrevistas por Departamento</h3>
+                <h3 class="card-title"><i class="fas fa-list-ol mr-2"></i>Entrevistas por departamento</h3>
             </div>
             <div class="card-body p-0" style="max-height: 650px; overflow-y: auto;">
                 <table class="table table-striped table-sm" id="tabla-departamentos">
@@ -308,7 +308,7 @@ function llenarTabla(datos) {
     datos.sort((a, b) => b.total - a.total);
 
     if (datos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">No hay datos para este tipo de ubicacion</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">No hay datos para este tipo de ubicación</td></tr>';
         return;
     }
 
@@ -342,7 +342,7 @@ function verDetalle(id) {
             var html = '<table class="table table-sm mb-0">';
 
             if (data.municipios && data.municipios.length > 0) {
-                html += '<thead><tr><th colspan="2" class="bg-light">Municipios con mas entrevistas</th></tr></thead>';
+                html += '<thead><tr><th colspan="2" class="bg-light">Municipios con más entrevistas</th></tr></thead>';
                 html += '<tbody>';
                 data.municipios.forEach(function(mun) {
                     var nombre = mun.nombre || 'Sin municipio';
@@ -354,12 +354,12 @@ function verDetalle(id) {
             html += '</table>';
 
             if (data.entrevistas && data.entrevistas.length > 0) {
-                html += '<div class="p-2 bg-light"><strong>Ultimas entrevistas:</strong></div>';
+                html += '<div class="p-2 bg-light"><strong>Últimas entrevistas:</strong></div>';
                 html += '<ul class="list-group list-group-flush">';
                 data.entrevistas.slice(0, 5).forEach(function(ent) {
                     html += '<li class="list-group-item p-2">';
                     html += '<small class="text-muted">' + ent.entrevista_codigo + '</small><br>';
-                    html += '<a href="{{ url("entrevistas") }}/' + ent.id_e_ind_fvt + '">' + (ent.titulo || 'Sin titulo') + '</a>';
+                    html += '<a href="{{ url("entrevistas") }}/' + ent.id_e_ind_fvt + '">' + (ent.titulo || 'Sin título') + '</a>';
                     html += '</li>';
                 });
                 html += '</ul>';

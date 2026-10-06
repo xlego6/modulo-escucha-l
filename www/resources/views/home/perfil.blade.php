@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Mi Perfil')
-@section('content_header', 'Mi Perfil')
+@section('title', 'Mi perfil')
+@section('content_header', 'Mi perfil')
 
 @section('content')
 <div class="row">
@@ -55,10 +55,10 @@
                     </a>
                 @else
                     <p class="text-muted">
-                        Para acceder a la informacion de testimonios, debe aceptar el compromiso de confidencialidad, reserva y no divulgacion.
+                        Para acceder a la información de testimonios, debe aceptar el compromiso de confidencialidad, reserva y no divulgación.
                     </p>
                     <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#modalCompromiso">
-                        <i class="fas fa-file-signature mr-2"></i>Aceptar Compromiso
+                        <i class="fas fa-file-signature mr-2"></i>Aceptar compromiso
                     </button>
                 @endif
             </div>
@@ -69,7 +69,7 @@
         @if($entrevistador)
         <div class="card card-{{ $entrevistador->compromiso_acceso ? 'success' : 'warning' }}">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-id-badge mr-2"></i>Compromiso de Acceso Interno</h3>
+                <h3 class="card-title"><i class="fas fa-id-badge mr-2"></i>Compromiso de acceso interno</h3>
             </div>
             <div class="card-body">
                 @if($entrevistador->compromiso_acceso)
@@ -86,7 +86,7 @@
                         Para acceder a los módulos del sistema, debe aceptar las condiciones de uso y acceso interno.
                     </p>
                     <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#modalCompromisoAcceso">
-                        <i class="fas fa-id-badge mr-2"></i>Aceptar Compromiso de Acceso
+                        <i class="fas fa-id-badge mr-2"></i>Aceptar compromiso de acceso
                     </button>
                 @endif
             </div>
@@ -99,20 +99,20 @@
         @if(Auth::user()->id_nivel == 1)
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-user-edit mr-2"></i>Editar Datos</h3>
+                <h3 class="card-title"><i class="fas fa-user-edit mr-2"></i>Editar datos</h3>
             </div>
             <form action="{{ route('perfil.actualizar') }}" method="POST">
                 @csrf
                 <div class="card-body">
                     <div class="form-group">
-                        <label for="name">Nombre Completo</label>
+                        <label for="name">Nombre completo</label>
                         <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $user->name) }}" required>
                         @error('name')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="form-group">
-                        <label for="email">Correo Electronico</label>
+                        <label for="email">Correo electrónico</label>
                         <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $user->email) }}" required>
                         @error('email')
                             <span class="invalid-feedback">{{ $message }}</span>
@@ -121,7 +121,7 @@
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-2"></i>Guardar Cambios
+                        <i class="fas fa-save mr-2"></i>Guardar cambios
                     </button>
                 </div>
             </form>
@@ -132,13 +132,13 @@
         @if(Auth::user()->id_nivel == 1)
         <div class="card card-secondary">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-key mr-2"></i>Cambiar Contraseña</h3>
+                <h3 class="card-title"><i class="fas fa-key mr-2"></i>Cambiar contraseña</h3>
             </div>
             <form action="{{ route('perfil.password') }}" method="POST">
                 @csrf
                 <div class="card-body">
                     <div class="form-group">
-                        <label for="password_actual">Contraseña Actual</label>
+                        <label for="password_actual">Contraseña actual</label>
                         <input type="password" class="form-control @error('password_actual') is-invalid @enderror" id="password_actual" name="password_actual" required>
                         @error('password_actual')
                             <span class="invalid-feedback">{{ $message }}</span>
@@ -147,17 +147,17 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="password">Nueva Contraseña</label>
+                                <label for="password">Nueva contraseña</label>
                                 <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
                                 @error('password')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
-                                <small class="form-text text-muted">Minimo 8 caracteres</small>
+                                <small class="form-text text-muted">Mínimo 8 caracteres</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="password_confirmation">Confirmar Contraseña</label>
+                                <label for="password_confirmation">Confirmar contraseña</label>
                                 <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required>
                             </div>
                         </div>
@@ -165,7 +165,7 @@
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-secondary">
-                        <i class="fas fa-lock mr-2"></i>Cambiar Contraseña
+                        <i class="fas fa-lock mr-2"></i>Cambiar contraseña
                     </button>
                 </div>
             </form>
@@ -193,7 +193,7 @@
         <div class="modal-content">
             <div class="modal-header bg-warning">
                 <h5 class="modal-title" id="modalCompromisoLabel">
-                    <i class="fas fa-file-signature mr-2"></i>Compromiso de Confidencialidad, Reserva y No Divulgacion
+                    <i class="fas fa-file-signature mr-2"></i>Compromiso de Confidencialidad, Reserva y No Divulgación
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                     <span aria-hidden="true">&times;</span>
@@ -204,45 +204,45 @@
                 <div class="modal-body">
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        <strong>Importante:</strong> Lea detenidamente el siguiente compromiso antes de aceptar. Su aceptacion queda registrada con fecha y hora.
+                        <strong>Importante:</strong> Lea detenidamente el siguiente compromiso antes de aceptar. Su aceptación queda registrada con fecha y hora.
                     </div>
 
                     <div class="card card-body bg-light" style="max-height: 400px; overflow-y: auto; font-size: 0.92rem;">
 
-                        <p>El <strong>Centro Nacional de Memoria Historica &ndash; CNMH</strong>, como institucion encargada de contribuir al esclarecimiento de lo ocurrido, de promover y contribuir al reconocimiento de las victimas, y promover la convivencia en los territorios, requiere del tratamiento adecuado de la informacion para garantizar la seguridad y proteccion de las personas, asi como proteger y asegurar la satisfaccion de su derecho a la verdad, la justicia, la reparacion integral y las garantias de no repeticion.</p>
+                        <p>El <strong>Centro Nacional de Memoria Histórica &ndash; CNMH</strong>, como institución encargada de contribuir al esclarecimiento de lo ocurrido, de promover y contribuir al reconocimiento de las víctimas, y promover la convivencia en los territorios, requiere del tratamiento adecuado de la información para garantizar la seguridad y protección de las personas, así como proteger y asegurar la satisfacción de su derecho a la verdad, la justicia, la reparación integral y las garantias de no repetición.</p>
 
                         <p>Yo, <strong>{{ $user->name }}</strong>, en mi condicion de {{ Auth::user()->id_nivel == 2 ? 'lider(a)' : 'transcriptor(a)' }} vinculado(a) con la entidad, entiendo y acepto las siguientes condiciones, compromisos, derechos y deberes:</p>
 
                         <ul class="pl-3">
-                            <li class="mb-2">Mantener la informacion confidencial en condiciones de seguridad, usandola <strong>EXCLUSIVAMENTE</strong> para realizar la labor asignada. Una vez finalizada la labor o terminado el vinculo con la entidad, devolver <strong>TODA</strong> la informacion y <strong>NO</strong> conservar copia alguna en ningun formato o dispositivo.</li>
-                            <li class="mb-2">Proteger la informacion confidencial, sea verbal, escrita, visual, en audio, video o cualquier otro formato recibido sobre los archivos, bases de datos e informacion suministrada, restringiendo su uso exclusivamente para el desarrollo de la labor asignada, sin compartirla con ninguna otra persona, incluidos familiares, amigos o conocidos, independientemente de su vinculo con la entidad.</li>
-                            <li class="mb-2"><strong>NO</strong> reproducir en forma mecanica o virtual la informacion entregada bajo ninguna circunstancia, salvo aquellas directamente necesarias para completar la labor asignada.</li>
-                            <li class="mb-2"><strong>NO</strong> divulgar, alterar, entregar, facilitar, filtrar, compartir, publicar, revelar, dar a conocer, enviar, ofrecer, intercambiar, comercializar, utilizar o permitir que alguien emplee la informacion con cualquier fin distinto al de la labor asignada.</li>
-                            <li class="mb-2"><strong>NO</strong> almacenar la informacion en dispositivos personales o medios no autorizados por la entidad. Realizar la labor <strong>UNICAMENTE</strong> en los equipos y/o sistemas designados oficialmente, cumpliendo con todos los protocolos de seguridad informatica establecidos.</li>
-                            <li class="mb-2"><strong>ELIMINAR</strong> de manera inmediata y definitiva cualquier archivo temporal, copia de trabajo o fragmento de informacion que haya sido necesario crear durante el proceso, una vez finalizado cada trabajo y entregado el producto final al supervisor.</li>
-                            <li class="mb-2"><strong>INFORMAR</strong> inmediatamente al jefe inmediato sobre cualquier incidente, sustraccion, perdida, filtracion o acceso no autorizado a la informacion bajo custodia.</li>
-                            <li class="mb-2"><strong>RECONOCER</strong> que la informacion a la que se tiene acceso contiene relatos y datos de victimas del conflicto y personas en situacion de vulnerabilidad, con el compromiso de manejarla con el maximo respeto y sensibilidad etica.</li>
-                            <li class="mb-2"><strong>ABSTENERSE</strong> de realizar busquedas adicionales sobre las personas o hechos mencionados en las entrevistas o informacion a la que accedo, limitandose exclusivamente a la labor tecnica asignada.</li>
-                            <li class="mb-2"><strong>FACILITAR</strong> cualquier informacion necesaria para el seguimiento y verificacion de las actividades cuando sea requerido por la entidad, incluyendo el acceso a los equipos y sistemas que utilizo para el desarrollo de la labor.</li>
-                            <li class="mb-2"><strong>MANTENER</strong> la confidencialidad de la informacion incluso despues de finalizada la vinculacion con la entidad, reconociendo que este compromiso es extensible incluso despues a la cesacion de servicios y/o actividades contractuales.</li>
+                            <li class="mb-2">Mantener la información confidencial en condiciones de seguridad, usandola <strong>EXCLUSIVAMENTE</strong> para realizar la labor asignada. Una vez finalizada la labor o terminado el vínculo con la entidad, devolver <strong>TODA</strong> la información y <strong>NO</strong> conservar copia alguna en ningún formato o dispositivo.</li>
+                            <li class="mb-2">Proteger la información confidencial, sea verbal, escrita, visual, en audio, video o cualquier otro formato recibido sobre los archivos, bases de datos e información suministrada, restringiendo su uso exclusivamente para el desarrollo de la labor asignada, sin compartirla con ninguna otra persona, incluidos familiares, amigos o conocidos, independientemente de su vínculo con la entidad.</li>
+                            <li class="mb-2"><strong>NO</strong> reproducir en forma mecanica o virtual la información entregada bajo ninguna circunstancia, salvo aquellas directamente necesarias para completar la labor asignada.</li>
+                            <li class="mb-2"><strong>NO</strong> divulgar, alterar, entregar, facilitar, filtrar, compartir, publicar, revelar, dar a conocer, enviar, ofrecer, intercambiar, comercializar, utilizar o permitir que alguien emplee la información con cualquier fin distinto al de la labor asignada.</li>
+                            <li class="mb-2"><strong>NO</strong> almacenar la información en dispositivos personales o medios no autorizados por la entidad. Realizar la labor <strong>ÚNICAMENTE</strong> en los equipos y/o sistemas designados oficialmente, cumpliendo con todos los protocolos de seguridad informática establecidos.</li>
+                            <li class="mb-2"><strong>ELIMINAR</strong> de manera inmediata y definitiva cualquier archivo temporal, copia de trabajo o fragmento de información que haya sido necesario crear durante el proceso, una vez finalizado cada trabajo y entregado el producto final al supervisor.</li>
+                            <li class="mb-2"><strong>INFORMAR</strong> inmediatamente al jefe inmediato sobre cualquier incidente, sustracción, perdida, filtración o acceso no autorizado a la información bajo custodia.</li>
+                            <li class="mb-2"><strong>RECONOCER</strong> que la información a la que se tiene acceso contiene relatos y datos de víctimas del conflicto y personas en situación de vulnerabilidad, con el compromiso de manejarla con el máximo respeto y sensibilidad etica.</li>
+                            <li class="mb-2"><strong>ABSTENERSE</strong> de realizar búsquedas adicionales sobre las personas o hechos mencionados en las entrevistas o información a la que accedo, limitandose exclusivamente a la labor técnica asignada.</li>
+                            <li class="mb-2"><strong>FACILITAR</strong> cualquier información necesaria para el seguimiento y verificación de las actividades cuando sea requerido por la entidad, incluyendo el acceso a los equipos y sistemas que utilizo para el desarrollo de la labor.</li>
+                            <li class="mb-2"><strong>MANTENER</strong> la confidencialidad de la información incluso después de finalizada la vinculación con la entidad, reconociendo que este compromiso es extensible incluso después a la cesación de servicios y/o actividades contractuales.</li>
                         </ul>
 
-                        <p>La informacion a la que se tiene acceso en el desarrollo de estas actividades debe tener una vocacion restringida de circulacion, buscando garantizar la seguridad y proteccion de las personas victimas, testigos y de la entidad.</p>
+                        <p>La información a la que se tiene acceso en el desarrollo de estas actividades debe tener una vocación restringida de circulación, buscando garantizar la seguridad y protección de las personas víctimas, testigos y de la entidad.</p>
 
-                        <p>Entiendo plenamente que el incumplimiento del presente <strong>COMPROMISO DE CONFIDENCIALIDAD, RESERVA Y NO DIVULGACION</strong>, por accion u omision, puede acarrear la terminacion inmediata de mi vinculo contractual con la entidad, sanciones disciplinarias conforme al regimen aplicable, responsabilidades civiles por los danos y perjuicios causados, y responsabilidades penales bajo los delitos tipificados en la Ley 599 de 2000 (Codigo Penal), segun sea el caso.</p>
+                        <p>Entiendo plenamente que el incumplimiento del presente <strong>COMPROMISO DE CONFIDENCIALIDAD, RESERVA Y NO DIVULGACIÓN</strong>, por acción u omisión, puede acarrear la terminación inmediata de mi vínculo contractual con la entidad, sanciones disciplinarias conforme al regimen aplicable, responsabilidades civiles por los daños y perjuicios causados, y responsabilidades penales bajo los delitos tipificados en la Ley 599 de 2000 (Código Penal), según sea el caso.</p>
 
-                        <p>Este acuerdo se rige por las leyes colombianas, incluyendo, pero no limitadas a: Ley 1621 de 2013 (Ley de Inteligencia), Ley 1712 de 2014 (Ley de Transparencia), Ley 1581 de 2012 (Proteccion de Datos Personales), Ley 1448 de 2011 (Ley de Victimas), Ley 599 de 2000 (Codigo Penal), Ley 600 de 2000 (Codigo de Procedimiento Penal), y demas normas aplicables.</p>
+                        <p>Este acuerdo se rige por las leyes colombianas, incluyendo, pero no limitadas a: Ley 1621 de 2013 (Ley de Inteligencia), Ley 1712 de 2014 (Ley de Transparencia), Ley 1581 de 2012 (Protección de Datos Personales), Ley 1448 de 2011 (Ley de Víctimas), Ley 599 de 2000 (Código Penal), Ley 600 de 2000 (Código de Procedimiento Penal), y demás normas aplicables.</p>
 
-                        <p>Dada la naturaleza juridica del Centro Nacional de Memoria Historica y su compromiso con las victimas establecidas en el articulo 3&deg; de la Ley 1448 de 2011, el presente instrumento, su interpretacion y aplicacion se hara en virtud del principio <em>pro victima</em>, de manera tal que contribuya a garantizar la mayor proteccion a sus derechos.</p>
+                        <p>Dada la naturaleza jurídica del Centro Nacional de Memoria Histórica y su compromiso con las víctimas establecidas en el artículo 3&deg; de la Ley 1448 de 2011, el presente instrumento, su interpretación y aplicación se hara en virtud del principio <em>pro víctima</em>, de manera tal que contribuya a garantizar la mayor protección a sus derechos.</p>
 
-                        <p class="mb-0"><strong>Declaro que he leido y comprendido completamente este documento y que entiendo la naturaleza sensible de la informacion a la que tendre acceso. Reconozco la responsabilidad asumida y las consecuencias que podria enfrentar en caso de incumplimiento.</strong></p>
+                        <p class="mb-0"><strong>Declaro que he leído y comprendido completamente este documento y que entiendo la naturaleza sensible de la información a la que tendre acceso. Reconozco la responsabilidad asumida y las consecuencias que podria enfrentar en caso de incumplimiento.</strong></p>
                     </div>
 
                     <div class="form-group mt-3">
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="acepto_compromiso" name="acepto_compromiso" value="1" required>
                             <label class="custom-control-label" for="acepto_compromiso">
-                                <strong>He leido, entendido y acepto el Compromiso de Confidencialidad, Reserva y No Divulgacion</strong>
+                                <strong>He leído, entendido y acepto el Compromiso de Confidencialidad, Reserva y No Divulgación</strong>
                             </label>
                         </div>
                     </div>
@@ -252,7 +252,7 @@
                         <i class="fas fa-times mr-1"></i>Cancelar
                     </button>
                     <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-check mr-2"></i>Aceptar Compromiso
+                        <i class="fas fa-check mr-2"></i>Aceptar compromiso
                     </button>
                 </div>
             </form>
@@ -268,7 +268,7 @@
         <div class="modal-content">
             <div class="modal-header bg-warning">
                 <h5 class="modal-title" id="modalCompromisoAccesoLabel">
-                    <i class="fas fa-id-badge mr-2"></i>Compromiso de Acceso Interno
+                    <i class="fas fa-id-badge mr-2"></i>Compromiso de acceso interno
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                     <span aria-hidden="true">&times;</span>

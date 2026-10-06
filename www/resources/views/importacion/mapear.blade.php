@@ -2,12 +2,13 @@
 
 @section('title', 'Mapeo de catálogos — Importación #' . $importacion->id_importacion)
 
+@section('content_header', 'Importación #' . $importacion->id_importacion . ' — Paso 2 de 4')
+
 @section('content')
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-8">
-                <h1>Importación #{{ $importacion->id_importacion }} — Paso 2 de 4</h1>
                 <p class="text-muted mb-0">
                     <i class="fas fa-file-csv text-success"></i> {{ $importacion->nombre_archivo }}
                     · {{ $importacion->total_expedientes }} expedientes

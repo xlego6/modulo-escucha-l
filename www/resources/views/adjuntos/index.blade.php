@@ -1,24 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Archivos Adjuntos')
-@section('content_header', 'Todos los Archivos Adjuntos')
+@section('title', 'Archivos adjuntos')
+@section('content_header', 'Todos los archivos adjuntos')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Filtros de busqueda</h3>
+        <h3 class="card-title">Filtros de búsqueda</h3>
     </div>
     <div class="card-body">
         <form method="GET" action="{{ route('adjuntos.index') }}" class="row">
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Codigo Entrevista</label>
+                    <label>Código entrevista</label>
                     <input type="text" name="codigo" class="form-control form-control-sm" value="{{ request('codigo') }}" placeholder="VI-0001-001">
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="form-group">
-                    <label>Nombre Archivo</label>
+                    <label>Nombre archivo</label>
                     <input type="text" name="nombre" class="form-control form-control-sm" value="{{ request('nombre') }}" placeholder="Buscar por nombre...">
                 </div>
             </div>
@@ -56,7 +56,7 @@
                     <th>Nombre</th>
                     <th style="width: 120px">Entrevista</th>
                     <th style="width: 100px">Tipo</th>
-                    <th style="width: 100px">Tamano</th>
+                    <th style="width: 100px">Tamaño</th>
                     <th style="width: 120px">Fecha</th>
                     <th style="width: 120px">Acciones</th>
                 </tr>

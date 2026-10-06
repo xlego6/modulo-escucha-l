@@ -2,12 +2,13 @@
 
 @section('title', 'Nueva importación masiva')
 
+@section('content_header', 'Nueva importación — Paso 1 de 4')
+
 @section('content')
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1>Nueva importación — Paso 1 de 4</h1>
                 <p class="text-muted mb-0">Subir CSV y configurar acceso al NAS</p>
             </div>
             <div class="col-sm-6 text-right">

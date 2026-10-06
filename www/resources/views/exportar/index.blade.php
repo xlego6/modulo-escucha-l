@@ -18,14 +18,14 @@
                 @csrf
                 <div class="card-body pb-1">
 
-                    <small class="filter-hint d-block">
+                    <small class="form-text text-muted">
                         <i class="fas fa-info-circle mr-1"></i>En los filtros de lista puede seleccionar varias opciones: haga clic en cada una para agregarla.
                     </small>
 
                     {{-- Códigos --}}
-                    <p class="filter-section-label">
+                    <h6 class="seccion-titulo">
                         <i class="fas fa-hashtag mr-1"></i>Códigos de entrevista
-                    </p>
+                    </h6>
                     <div class="row">
                         <div class="col-12">
                             <div class="form-group">
@@ -37,51 +37,51 @@
                     </div>
 
                     {{-- Fechas de toma --}}
-                    <p class="filter-section-label mt-1">
+                    <h6 class="seccion-titulo">
                         <i class="fas fa-calendar-alt mr-1"></i>Fecha de toma
-                    </p>
+                    </h6>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Desde</label>
+                                <label>Desde</label>
                                 <input type="date" class="form-control form-control-sm" name="fecha_desde">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Hasta</label>
+                                <label>Hasta</label>
                                 <input type="date" class="form-control form-control-sm" name="fecha_hasta">
                             </div>
                         </div>
                     </div>
 
                     {{-- Fechas de carga --}}
-                    <p class="filter-section-label mt-1">
+                    <h6 class="seccion-titulo">
                         <i class="fas fa-cloud-upload-alt mr-1"></i>Fecha de carga al sistema
-                    </p>
+                    </h6>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Desde</label>
+                                <label>Desde</label>
                                 <input type="date" class="form-control form-control-sm" name="carga_desde">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Hasta</label>
+                                <label>Hasta</label>
                                 <input type="date" class="form-control form-control-sm" name="carga_hasta">
                             </div>
                         </div>
                     </div>
 
                     {{-- Lugar y entrevistador --}}
-                    <p class="filter-section-label mt-1">
+                    <h6 class="seccion-titulo">
                         <i class="fas fa-map-marker-alt mr-1"></i>Lugar y entrevistador
-                    </p>
+                    </h6>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Departamento de toma</label>
+                                <label>Departamento de toma</label>
                                 <select class="form-control form-control-sm select2-exportar" name="id_territorio[]" multiple data-placeholder="-- Todos --">
                                     @foreach($territorios as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -91,7 +91,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Entrevistador</label>
+                                <label>Entrevistador</label>
                                 <select class="form-control form-control-sm select2-exportar" name="id_entrevistador[]" multiple data-placeholder="-- Todos --">
                                     @foreach($entrevistadores as $id => $nombre)
                                         <option value="{{ $id }}">{{ $nombre }}</option>
@@ -102,13 +102,13 @@
                     </div>
 
                     {{-- Tipo de testimonio --}}
-                    <p class="filter-section-label mt-1">
+                    <h6 class="seccion-titulo">
                         <i class="fas fa-file-alt mr-1"></i>Tipo de testimonio
-                    </p>
+                    </h6>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Dependencia de origen</label>
+                                <label>Dependencia de origen</label>
                                 <select class="form-control form-control-sm select2-exportar" name="id_dependencia_origen[]" multiple data-placeholder="-- Todas --">
                                     @foreach($dependencias as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -118,7 +118,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Tipo de testimonio</label>
+                                <label>Tipo de testimonio</label>
                                 <select class="form-control form-control-sm select2-exportar" name="id_tipo_testimonio[]" multiple data-placeholder="-- Todos --">
                                     @foreach($tipos_testimonio as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -129,13 +129,13 @@
                     </div>
 
                     {{-- Adjuntos --}}
-                    <p class="filter-section-label mt-1">
+                    <h6 class="seccion-titulo">
                         <i class="fas fa-paperclip mr-1"></i>Adjuntos
-                    </p>
+                    </h6>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Tiene adjuntos</label>
+                                <label>Tiene adjuntos</label>
                                 <select class="form-control form-control-sm" name="tiene_adjuntos">
                                     <option value="">— Todos —</option>
                                     <option value="1">Con adjuntos</option>
@@ -145,7 +145,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="filter-label">Tipo de adjunto</label>
+                                <label>Tipo de adjunto</label>
                                 <select class="form-control form-control-sm select2-exportar" name="id_tipo_adjunto[]" multiple data-placeholder="-- Todos --">
                                     @foreach($tipos_adjunto as $id => $descripcion)
                                         <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -182,11 +182,11 @@
             <form action="{{ route('exportar.personas') }}" method="POST">
                 @csrf
                 <div class="card-body pb-1">
-                    <small class="filter-hint d-block">
+                    <small class="form-text text-muted">
                         <i class="fas fa-info-circle mr-1"></i>Puede seleccionar varias opciones: haga clic en cada una para agregarla.
                     </small>
                     <div class="form-group">
-                        <label class="filter-label">Sexo</label>
+                        <label>Sexo</label>
                         <select class="form-control form-control-sm select2-exportar" name="id_sexo[]" multiple data-placeholder="-- Todos --">
                             @foreach($sexos as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -194,7 +194,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="filter-label">Grupo étnico</label>
+                        <label>Grupo étnico</label>
                         <select class="form-control form-control-sm select2-exportar" name="id_etnia[]" multiple data-placeholder="-- Todos --">
                             @foreach($etnias as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -202,7 +202,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="filter-label">Departamento de residencia</label>
+                        <label>Departamento de residencia</label>
                         <select class="form-control form-control-sm select2-exportar" name="id_lugar_residencia_depto[]" multiple data-placeholder="-- Todos --">
                             @foreach($territorios as $id => $descripcion)
                                 <option value="{{ $id }}">{{ $descripcion }}</option>
@@ -270,7 +270,7 @@
             </div>
             <div class="card-footer">
                 <a href="{{ route('traza.index') }}" class="btn btn-primary">
-                    <i class="fas fa-filter mr-1"></i>Ir a Traza
+                    <i class="fas fa-filter mr-1"></i>Ir a traza
                 </a>
             </div>
         </div>
@@ -285,25 +285,6 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet">
 <style>
-.filter-section-label {
-    font-size: .7rem;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    color: #6c757d;
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: .25rem;
-    margin-bottom: .75rem;
-}
-.filter-label {
-    font-size: .8rem;
-    color: #495057;
-    margin-bottom: .2rem;
-}
-.filter-hint {
-    color: #6c757d;
-    margin-top: -.35rem;
-    margin-bottom: .5rem;
-}
 .select2-exportar + .select2-container--bootstrap4 .select2-selection {
     font-size: .875rem;
 }

@@ -1,0 +1,144 @@
+/* Tipografía institucional: Barlow servida desde el propio servidor */
+
+@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 300; font-display: swap; src: url('../fonts/barlow/barlow-light.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 400; font-display: swap; src: url('../fonts/barlow/barlow-regular.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 500; font-display: swap; src: url('../fonts/barlow/barlow-medium.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 600; font-display: swap; src: url('../fonts/barlow/barlow-semibold.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-style: normal; font-weight: 700; font-display: swap; src: url('../fonts/barlow/barlow-bold.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-style: italic; font-weight: 400; font-display: swap; src: url('../fonts/barlow/barlow-italic.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-style: italic; font-weight: 700; font-display: swap; src: url('../fonts/barlow/barlow-bolditalic.woff2') format('woff2'); }
+
+:root {
+    --fuente-base: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+/* AdminLTE y Bootstrap fijan su propia fuente en estos elementos */
+body,
+.tooltip,
+.popover,
+.main-sidebar,
+.brand-link,
+.btn,
+.form-control,
+.custom-select,
+.dropdown-menu,
+.modal,
+.toast,
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: var(--fuente-base);
+}
+
+/* Títulos: un solo estilo en todo el aplicativo */
+.content-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #343a40;
+}
+
+.card-title,
+.modal-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.card-title > i:first-child,
+.modal-title > i:first-child {
+    margin-right: .4rem !important;
+}
+
+.card-body h4,
+.card-body h5,
+.card-body h6 {
+    font-weight: 500;
+}
+
+/* Subtítulo de sección dentro de tarjetas y formularios */
+.seccion-titulo,
+.card-body .seccion-titulo {
+    font-size: .95rem;
+    font-weight: 600;
+    color: #343a40;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: .4rem;
+    margin: 1.5rem 0 1rem;
+}
+
+.seccion-titulo:first-child {
+    margin-top: 0;
+}
+
+.seccion-titulo > i:first-child {
+    color: #6c757d;
+    width: 1.1em;
+    text-align: center;
+    margin-right: .4rem !important;
+}
+
+/* Etiquetas de campos de formulario */
+label:not(.custom-control-label):not(.form-check-label):not(.custom-file-label):not(.btn) {
+    font-size: .875rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: .3rem;
+}
+
+/* Datos en fichas de detalle */
+dt,
+.dato-etiqueta {
+    font-size: .85rem;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.dato-valor {
+    margin-bottom: .5rem;
+}
+
+/* Tarjetas: un solo estilo (encabezado blanco con línea de acento arriba).
+   AdminLTE usa encabezados sólidos o líneas de distintos colores según la vista. */
+:root {
+    --color-acento: #007bff;
+}
+
+.content-wrapper .card:not(.card-mapeo):not(.seccion-resultado):not(.testimoniante-card):not(.bg-light) {
+    border-top: 3px solid var(--color-acento);
+}
+
+.content-wrapper .card .card {
+    border-top: 1px solid rgba(0, 0, 0, .125);
+}
+
+.card-primary:not(.card-outline) > .card-header,
+.card-secondary:not(.card-outline) > .card-header,
+.card-info:not(.card-outline) > .card-header,
+.card-success:not(.card-outline) > .card-header,
+.card-warning:not(.card-outline) > .card-header,
+.card-danger:not(.card-outline) > .card-header,
+.card-dark:not(.card-outline) > .card-header {
+    background-color: #fff;
+    color: #212529;
+    border-bottom: 1px solid rgba(0, 0, 0, .125);
+}
+
+.card-primary:not(.card-outline) > .card-header a:not(.btn),
+.card-secondary:not(.card-outline) > .card-header a:not(.btn),
+.card-info:not(.card-outline) > .card-header a:not(.btn),
+.card-success:not(.card-outline) > .card-header a:not(.btn),
+.card-warning:not(.card-outline) > .card-header a:not(.btn),
+.card-danger:not(.card-outline) > .card-header a:not(.btn),
+.card-dark:not(.card-outline) > .card-header a:not(.btn),
+.card-header .btn-tool {
+    color: #6c757d;
+}
+
+.card-header .btn-tool:hover {
+    color: #343a40;
+}
+
+/* Tablas de detalle (clave: valor) con el mismo estilo de dato que las fichas */
+.table-borderless th {
+    font-size: .85rem;
+    font-weight: 600;
+    color: #6c757d;
+}

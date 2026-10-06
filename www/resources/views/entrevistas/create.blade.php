@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Nueva Entrevista')
-@section('content_header', 'Crear Nueva Entrevista')
+@section('title', 'Nueva entrevista')
+@section('content_header', 'Crear nueva entrevista')
 
 @section('content')
 <div class="row">
     <div class="col-md-12">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title">Datos de la Entrevista</h3>
+                <h3 class="card-title">Datos de la entrevista</h3>
             </div>
             <form action="{{ route('entrevistas.store') }}" method="POST">
                 @csrf
@@ -25,12 +25,12 @@
 
                     <div class="row">
                         <div class="col-md-6">
-                            <h5 class="text-primary mb-3"><i class="fas fa-info-circle"></i> Informacion Basica</h5>
+                            <h5 class="seccion-titulo"><i class="fas fa-info-circle"></i> Información básica</h5>
 
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="entrevista_numero">Numero de Entrevista <span class="text-danger">*</span></label>
+                                        <label for="entrevista_numero">Número de entrevista <span class="text-danger">*</span></label>
                                         <input type="number" name="entrevista_numero" id="entrevista_numero"
                                             class="form-control @error('entrevista_numero') is-invalid @enderror"
                                             value="{{ old('entrevista_numero', $siguiente_numero) }}" required min="1">
@@ -42,7 +42,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="entrevista_fecha">Fecha de Entrevista <span class="text-danger">*</span></label>
+                                        <label for="entrevista_fecha">Fecha de entrevista <span class="text-danger">*</span></label>
                                         <input type="date" name="entrevista_fecha" id="entrevista_fecha"
                                             class="form-control @error('entrevista_fecha') is-invalid @enderror"
                                             value="{{ old('entrevista_fecha', date('Y-m-d')) }}" required>
@@ -53,7 +53,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="tiempo_entrevista">Duracion (minutos)</label>
+                                        <label for="tiempo_entrevista">Duración (minutos)</label>
                                         <input type="number" name="tiempo_entrevista" id="tiempo_entrevista"
                                             class="form-control" value="{{ old('tiempo_entrevista') }}" min="1" placeholder="Ej: 60">
                                     </div>
@@ -61,11 +61,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="titulo">Titulo <span class="text-danger">*</span></label>
+                                <label for="titulo">Título <span class="text-danger">*</span></label>
                                 <input type="text" name="titulo" id="titulo"
                                     class="form-control @error('titulo') is-invalid @enderror"
                                     value="{{ old('titulo') }}" required maxlength="500"
-                                    placeholder="Titulo descriptivo de la entrevista">
+                                    placeholder="Título descriptivo de la entrevista">
                                 @error('titulo')
                                 <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -80,7 +80,7 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>Entrevista Virtual</label>
+                                        <label>Entrevista virtual</label>
                                         <div>
                                             <div class="custom-control custom-radio custom-control-inline">
                                                 <input type="radio" id="es_virtual_no" name="es_virtual" value="0" class="custom-control-input" {{ old('es_virtual', 0) == 0 ? 'checked' : '' }}>
@@ -110,7 +110,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>Interes Etnico</label>
+                                        <label>Interés étnico</label>
                                         <div>
                                             <div class="custom-control custom-radio custom-control-inline">
                                                 <input type="radio" id="id_etnico_no" name="id_etnico" value="" class="custom-control-input" {{ empty(old('id_etnico')) ? 'checked' : '' }}>
@@ -127,7 +127,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <h5 class="text-primary mb-3"><i class="fas fa-map-marker-alt"></i> Ubicacion y Hechos</h5>
+                            <h5 class="seccion-titulo"><i class="fas fa-map-marker-alt"></i> Ubicación y hechos</h5>
 
                             <div class="form-group">
                                 <label for="id_territorio">Territorio</label>
@@ -139,7 +139,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="entrevista_lugar">Lugar de la Entrevista (Municipio)</label>
+                                <label for="entrevista_lugar">Lugar de la entrevista (municipio)</label>
                                 <select name="entrevista_lugar" id="entrevista_lugar" class="form-control">
                                     @foreach($municipios as $id => $nombre)
                                     <option value="{{ $id }}" {{ old('entrevista_lugar') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
@@ -150,14 +150,14 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="hechos_del">Hechos Desde</label>
+                                        <label for="hechos_del">Hechos desde</label>
                                         <input type="date" name="hechos_del" id="hechos_del" class="form-control"
                                             value="{{ old('hechos_del') }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="hechos_al">Hechos Hasta</label>
+                                        <label for="hechos_al">Hechos hasta</label>
                                         <input type="date" name="hechos_al" id="hechos_al" class="form-control"
                                             value="{{ old('hechos_al') }}">
                                     </div>
@@ -165,7 +165,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="hechos_lugar">Lugar de los Hechos (Municipio)</label>
+                                <label for="hechos_lugar">Lugar de los hechos (municipio)</label>
                                 <select name="hechos_lugar" id="hechos_lugar" class="form-control">
                                     @foreach($municipios as $id => $nombre)
                                     <option value="{{ $id }}" {{ old('hechos_lugar') == $id ? 'selected' : '' }}>{{ $nombre }}</option>
@@ -174,7 +174,7 @@
                             </div>
 
                             <div class="callout callout-info">
-                                <h6><i class="fas fa-user-tie"></i> Entrevistador</h6>
+                                <h6 class="seccion-titulo"><i class="fas fa-user-tie"></i> Entrevistador</h6>
                                 <p class="mb-0">
                                     <strong>{{ $entrevistador->rel_usuario->name ?? 'Usuario' }}</strong><br>
                                     <small class="text-muted">Numero: {{ str_pad($entrevistador->numero_entrevistador ?? 0, 4, '0', STR_PAD_LEFT) }}</small>
@@ -185,7 +185,7 @@
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar Entrevista
+                        <i class="fas fa-save"></i> Guardar entrevista
                     </button>
                     <a href="{{ route('entrevistas.index') }}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Cancelar

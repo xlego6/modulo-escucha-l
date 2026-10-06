@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Traza de Actividad')
-@section('content_header', 'Traza de Actividad del Sistema')
+@section('title', 'Traza de actividad')
+@section('content_header', 'Traza de actividad del sistema')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filtros de Busqueda</h3>
+        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filtros de búsqueda</h3>
         <div class="card-tools">
             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                 <i class="fas fa-minus"></i>
@@ -30,7 +30,7 @@
                 @endif
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label for="accion">Accion</label>
+                        <label for="accion">Acción</label>
                         <select class="form-control" id="accion" name="accion">
                             @foreach($acciones as $key => $valor)
                                 <option value="{{ $key }}" {{ request('accion') == $key ? 'selected' : '' }}>{{ $valor }}</option>
@@ -50,13 +50,13 @@
                 </div>
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label for="fecha_desde">Fecha Desde</label>
+                        <label for="fecha_desde">Fecha desde</label>
                         <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" value="{{ request('fecha_desde') }}">
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label for="fecha_hasta">Fecha Hasta</label>
+                        <label for="fecha_hasta">Fecha hasta</label>
                         <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" value="{{ request('fecha_hasta') }}">
                     </div>
                 </div>
@@ -71,7 +71,7 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group mb-0">
-                        <label for="busqueda">Buscar en Codigo/Referencia</label>
+                        <label for="busqueda">Buscar en codigo/referencia</label>
                         <input type="text" class="form-control" id="busqueda" name="busqueda" value="{{ request('busqueda') }}" placeholder="Buscar...">
                     </div>
                 </div>
@@ -80,7 +80,7 @@
                         <i class="fas fa-eraser mr-1"></i>Limpiar
                     </a>
                     <a href="{{ route('traza.estadisticas') }}" class="btn btn-info mr-2">
-                        <i class="fas fa-chart-bar mr-1"></i>Estadisticas
+                        <i class="fas fa-chart-bar mr-1"></i>Estadísticas
                     </a>
                     @if(Auth::user()->id_nivel == 1)
                     <a href="{{ route('traza.exportar', request()->query()) }}" class="btn btn-success">
@@ -95,7 +95,7 @@
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-list mr-2"></i>Registro de Actividad</h3>
+        <h3 class="card-title"><i class="fas fa-list mr-2"></i>Registro de actividad</h3>
         <div class="card-tools">
             <span class="badge badge-info">{{ $trazas->total() }} registros</span>
         </div>
@@ -104,11 +104,11 @@
         <table class="table table-striped table-hover table-sm">
             <thead>
                 <tr>
-                    <th style="width: 150px">Fecha/Hora</th>
+                    <th style="width: 150px">Fecha/hora</th>
                     <th style="width: 180px">Usuario</th>
-                    <th style="width: 120px">Accion</th>
+                    <th style="width: 120px">Acción</th>
                     <th style="width: 100px">Objeto</th>
-                    <th>Codigo</th>
+                    <th>Código</th>
                     <th>Referencia</th>
                     <th style="width: 80px">IP</th>
                     <th style="width: 60px">Ver</th>
