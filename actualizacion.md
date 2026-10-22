@@ -116,7 +116,18 @@ docker compose build transcription   # o 'ner' según corresponda
 docker compose up -d --no-deps transcription
 ```
 
-**c) Si cambió `docker-compose.yml`**:
+**c) Si cambió `.docker/Dockerfile`** (imagen PHP, p. ej. subir la versión de PHP):
+
+```bash
+docker tag <imagen-php> <imagen-php>:respaldo        # respaldo para revertir (ver nombre con: docker images)
+docker compose build --pull php
+docker compose up -d --no-deps php                    # solo recrea php; no toca transcripción ni BD
+docker exec <php> php -v
+```
+
+Revertir: `docker tag <imagen-php>:respaldo <imagen-php>:latest && docker compose up -d --no-deps php`.
+
+**d) Si cambió `docker-compose.yml`**:
 
 ```bash
 docker compose up -d
