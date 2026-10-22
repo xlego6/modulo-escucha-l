@@ -23,7 +23,8 @@ El flujo de trabajo habitual es:
   | Entorno | Contenedor PHP (ejemplo) |
   |---------|--------------------------|
   | Desarrollo local | `modulo-escucha-l-php-1` |
-  | Servidores (pruebas/producción) | `escucha-php-1` |
+  | Producción (juno) | `modulo-escucha-l-php-1` |
+  | Pruebas (aplicativo) | `escucha-php-1` |
 
   En los comandos de esta guía, reemplazar `<php>` por el nombre que muestre `docker ps`.
 
