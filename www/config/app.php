@@ -3,7 +3,7 @@
 return [
     'name' => env('APP_NAME', 'Testimonios'),
     'env' => env('APP_ENV', 'local'),
-    'debug' => env('APP_DEBUG', true),
+    'debug' => env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
     'timezone' => 'America/Bogota',
     'locale' => 'es',
