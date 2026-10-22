@@ -69,7 +69,7 @@ class TrazaExport implements FromQuery, WithHeadings, WithMapping, WithStyles, S
     public function map($traza): array
     {
         return [
-            $traza->fecha_hora ? $traza->fecha_hora->format('d/m/Y H:i:s') : '',
+            $traza->fmt_fecha_hora,
             $traza->rel_usuario->name ?? 'Usuario eliminado',
             $traza->rel_usuario->email ?? '',
             $traza->accion ?? '',
