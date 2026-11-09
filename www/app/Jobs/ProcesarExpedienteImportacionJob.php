@@ -15,6 +15,7 @@ use App\Models\ImportacionMasiva;
 use App\Models\Persona;
 use App\Models\PersonaEntrevistada;
 use App\Models\TrazaActividad;
+use App\Services\AudioCompatibilidadService;
 use App\Services\ImportacionMasivaService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -309,6 +310,12 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
         $idTipo     = $arch['id_tipo'];
         $convertir  = $arch['convertir'] ?? ($tamano > 500 * 1024 * 1024);
 
+        // Audio con códec que el navegador no reproduce (p. ej. WAV ADPCM): convertir
+        if (!$convertir && $idTipo === 310
+            && AudioCompatibilidadService::esReproducible($rutaFuente) === false) {
+            $convertir = true;
+        }
+
         if ($convertir && $idTipo === 310) {
             $this->copiarConvertirM4a($rutaFuente, $entrevista, $carpetaStorage);
             return Adjunto::where('id_e_ind_fvt', $entrevista->id_e_ind_fvt)
@@ -407,24 +414,11 @@ class ProcesarExpedienteImportacionJob implements ShouldQueue
 
     private function copiarConvertirM4a(string $rutaFuente, Entrevista $entrevista, string $carpetaStorage): void
     {
-        $ffmpeg       = trim(shell_exec('which ffmpeg 2>/dev/null') ?? '') ?: '/usr/bin/ffmpeg';
         $nombreM4a    = time() . '_' . Str::random(8) . '.m4a';
         $ubicacion    = $carpetaStorage . '/' . $nombreM4a;
         $rutaDest     = Storage::disk('public')->path($ubicacion);
 
-        $cmd = sprintf(
-            '%s -hide_banner -loglevel error -i %s -vn -c:a aac -b:a 64k -ar 22050 -ac 1 -y %s 2>&1',
-            escapeshellcmd($ffmpeg),
-            escapeshellarg($rutaFuente),
-            escapeshellarg($rutaDest)
-        );
-
-        exec($cmd, $output, $rc);
-
-        if ($rc !== 0 || !file_exists($rutaDest) || filesize($rutaDest) === 0) {
-            @unlink($rutaDest);
-            throw new \RuntimeException('Error ffmpeg al convertir a m4a: ' . implode(' ', array_slice($output, -3)));
-        }
+        AudioCompatibilidadService::convertirAM4a($rutaFuente, $rutaDest);
 
         $md5 = md5_file($rutaDest);
 
