@@ -7,6 +7,7 @@ use App\Models\Entrevista;
 use App\Models\CatItem;
 use App\Models\TrazaActividad;
 use App\Models\RolModuloPermiso;
+use App\Services\AudioCompatibilidadService;
 use App\Services\TextExtractorService;
 use App\Services\TranscripcionDocService;
 use Illuminate\Http\Request;
@@ -159,6 +160,7 @@ class AdjuntoController extends Controller
         $nombre_original = $archivo->getClientOriginalName();
         $tipo_mime = $archivo->getMimeType();
         $tamano = $archivo->getSize();
+        $tamano_bruto = $tamano;
         $md5 = md5_file($archivo->getRealPath());
 
         // Crear directorio basado en código de entrevista
@@ -178,6 +180,26 @@ class AdjuntoController extends Controller
                 throw new \Exception('Error al guardar el archivo');
             }
 
+            // Audio que el navegador no reproduce (p. ej. WAV ADPCM, WMA, AMR):
+            // se convierte a .m4a y se guarda solo el convertido
+            $convertido = false;
+            if (str_contains($tipo_mime, 'audio') || str_contains($tipo_mime, 'video')) {
+                $rutaSubida = Storage::disk('public')->path($ruta);
+                if (AudioCompatibilidadService::esReproducible($rutaSubida) === false) {
+                    set_time_limit(0);
+                    $rutaM4a = $carpeta . '/' . pathinfo($nombre_archivo, PATHINFO_FILENAME) . '.m4a';
+                    AudioCompatibilidadService::convertirAM4a($rutaSubida, Storage::disk('public')->path($rutaM4a));
+                    Storage::disk('public')->delete($ruta);
+                    $ruta = $rutaM4a;
+                    $rutaAbsM4a = Storage::disk('public')->path($ruta);
+                    $nombre_original = pathinfo($nombre_original, PATHINFO_FILENAME) . '.m4a';
+                    $tipo_mime = 'audio/mp4';
+                    $tamano = filesize($rutaAbsM4a);
+                    $md5 = md5_file($rutaAbsM4a);
+                    $convertido = true;
+                }
+            }
+
             // Crear registro en base de datos
             $adjunto = Adjunto::create([
                 'id_e_ind_fvt' => $id_entrevista,
@@ -186,7 +208,7 @@ class AdjuntoController extends Controller
                 'tipo_mime' => $tipo_mime,
                 'id_tipo' => $request->id_tipo,
                 'tamano' => $tamano,
-                'tamano_bruto' => $tamano,
+                'tamano_bruto' => $tamano_bruto,
                 'md5' => $md5,
                 'existe_archivo' => 1,
             ]);
@@ -209,7 +231,7 @@ class AdjuntoController extends Controller
                 'objeto' => 'adjunto',
                 'id_registro' => $adjunto->id_adjunto,
                 'codigo' => $entrevista->entrevista_codigo,
-                'referencia' => 'Subida de archivo: ' . $nombre_original,
+                'referencia' => ($convertido ? 'Subida con conversion a m4a (codec no reproducible): ' . $archivo->getClientOriginalName() : 'Subida de archivo: ' . $nombre_original),
                 'ip' => $request->ip(),
             ]);
 
@@ -229,7 +251,9 @@ class AdjuntoController extends Controller
                 \Log::warning('Error extrayendo texto: ' . $e->getMessage());
             }
 
-            flash('Archivo subido exitosamente.')->success();
+            flash($convertido
+                ? 'Archivo subido. Su formato de audio no se podía reproducir en el navegador, así que se convirtió a .m4a.'
+                : 'Archivo subido exitosamente.')->success();
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -524,16 +548,33 @@ class AdjuntoController extends Controller
 
         $nombre = $adjunto->nombre_original;
 
-        // Eliminar archivo físico
-        if ($adjunto->ubicacion && Storage::disk('public')->exists($adjunto->ubicacion)) {
-            Storage::disk('public')->delete($adjunto->ubicacion);
+        // No eliminar si hay asignaciones de transcripción o anonimización ligadas a este archivo
+        $asignacionesTrans = DB::table('esclarecimiento.asignacion_transcripcion')->where('id_adjunto', $adjunto->id_adjunto)->count();
+        $asignacionesAnon  = DB::table('esclarecimiento.asignacion_anonimizacion')->where('id_adjunto', $adjunto->id_adjunto)->count();
+        if ($asignacionesTrans || $asignacionesAnon) {
+            $detalle = [];
+            if ($asignacionesTrans) {
+                $detalle[] = $asignacionesTrans . ($asignacionesTrans == 1 ? ' asignación' : ' asignaciones') . ' de transcripción';
+            }
+            if ($asignacionesAnon) {
+                $detalle[] = $asignacionesAnon . ($asignacionesAnon == 1 ? ' asignación' : ' asignaciones') . ' de anonimización';
+            }
+            flash('No se puede eliminar «' . $nombre . '» porque tiene ' . implode(' y ', $detalle)
+                . ' ligada(s). Elimine o reasigne esas asignaciones antes de borrar el archivo.')->error();
+            return redirect()->route('adjuntos.gestionar', $id_entrevista);
         }
 
         // Obtener código de entrevista antes de eliminar
         $codigo_entrevista = $adjunto->rel_entrevista->entrevista_codigo ?? null;
+        $ubicacion = $adjunto->ubicacion;
 
-        // Eliminar registro
+        // Eliminar registro (antes que el archivo, para no dejar registros sin archivo si falla)
         $adjunto->delete();
+
+        // Eliminar archivo físico
+        if ($ubicacion && Storage::disk('public')->exists($ubicacion)) {
+            Storage::disk('public')->delete($ubicacion);
+        }
 
         // Registrar traza
         TrazaActividad::create([
